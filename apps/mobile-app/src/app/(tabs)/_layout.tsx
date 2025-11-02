@@ -24,7 +24,7 @@ export default function TabsLayout() {
         style={styles.notificationButton}
         onPress={() => router.push('/(tabs)/notifications')}
       >
-        <Ionicons name="notifications-outline" size={25} color="#292929ff" />
+        <Ionicons name="notifications-outline" size={24} color="#292929ff" />
       </TouchableOpacity>
     </View>
   );
@@ -43,6 +43,8 @@ export default function TabsLayout() {
                   ? 'My Bookings'
                   : route.name === 'dm'
                   ? 'Messages'
+                  : route.name === 'notifications'
+                  ? 'Notifications'
                   : route.name === 'profile'
                   ? 'Profile'
                   : 'App' // Fallback
@@ -107,6 +109,21 @@ export default function TabsLayout() {
         />
 
         {/* 👤 Profile */}
+        {/* <Tabs.Screen
+          name="notifications"
+          options={{
+            title: 'Notices',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? 'notifications' : 'person-outline'}
+                size={22}
+                color={color}
+              />
+            ),
+          }}
+        /> */}
+
+        {/* 👤 Profile */}
         <Tabs.Screen
           name="profile"
           options={{
@@ -125,7 +142,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="notifications"
           // href: null hides it from the tab bar
-          options={{ href: null, headerShown: false }}
+          options={{ href: null, headerShown: true }}
         />
       </Tabs>
     </View>
