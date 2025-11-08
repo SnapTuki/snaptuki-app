@@ -66,3 +66,5 @@ pnpm-lock.yaml
 # Misc
 *.local
 apps/mobile-app/node_modules/
+apps/api/src/generated/
+apps/api/src/prisma/client/
