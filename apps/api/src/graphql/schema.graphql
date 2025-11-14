@@ -1,0 +1,58 @@
+
+# --- Role Enum ---
+enum Role {
+  FAMILY
+  CAREGIVER
+  ELDER
+  ADMIN
+}
+
+# --- Core User Type ---
+type User {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  role: Role!
+}
+
+# --- Authentication Response ---
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
+# --- Input Types ---
+input InitialRegisterationInput{
+    email: String!
+}
+
+input CoderVerificationInput{
+    email: String!
+    code: String!
+}
+
+input CompeleteRegisterationInput{
+    firstName: String!
+    lastName: String!
+    dateOfBirth: String!
+    password: String!
+    passwordRepeat: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+
+#Query & Mutations
+
+type Query{
+  getAllUser: [User]
+}
+type Mutation {
+    initialRegister(data: InitialRegisterationInput): User
+    verifyUserEmail(data: CoderVerificationInput): User
+    completeUserRegisteration(data: CompeleteRegisterationInput): User
+} 

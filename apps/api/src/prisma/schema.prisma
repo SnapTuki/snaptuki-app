@@ -55,13 +55,18 @@ model elderprofile {
   familyelderlink familyelderlink[]
 }
 
-model emailverificationcode {
+enum TokenType{
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+model authtokens {
   id                 Int       @id @default(autoincrement())
   user_id            Int
   verification_title String?   @db.VarChar(200)
   code               String    @db.VarChar(255)
   expires_at         DateTime  @db.Timestamp(6)
   used               Boolean?  @default(false)
+  type               TokenType @default(EMAIL_VERIFICATION)
   created_at         DateTime? @default(now()) @db.Timestamp(6)
   users              users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -143,6 +148,6 @@ model users {
   updated_at            DateTime?               @default(now()) @db.Timestamp(6)
   email_verified        Boolean?                @default(false)
   caregiverprofile      caregiverprofile[]
-  emailverificationcode emailverificationcode[]
+  emailverificationcode authtokens[]
   familymemberprofile   familymemberprofile?
 }
