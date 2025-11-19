@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -8,40 +8,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-enum BackgroundCheckStatus{
-  pending
-  approved
-  rejected
-}
-
-enum Availability{
-  offline
-  online
-  busy
-}
-
-model caregiverprofile {
-  id                      Int       @id @default(autoincrement())
-  user_id                 Int
+model CaregiverProfile {
+  id                      Int                   @id @default(autoincrement())
+  user_id                 Int                   @unique(map: "caregiver_user_id")
   bio                     String?
-  availability_status     Availability @default(offline) 
-  hourly_rate             Decimal?  @db.Decimal(10, 2)
-  verified                Boolean?  @default(false)
-  background_check_status BackgroundCheckStatus    @default(pending)
-  created_at              DateTime? @default(now()) @db.Timestamp(6)
-  updated_at              DateTime? @default(now()) @db.Timestamp(6)
-  users                   users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  availability_status     Availability          @default(offline)
+  hourly_rate             Decimal?              @db.Decimal(10, 2)
+  verified                Boolean?              @default(false)
+  background_check_status BackgroundCheckStatus @default(pending)
+  created_at              DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?             @default(now()) @db.Timestamp(6)
+  users                   User                  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("caregiverprofile")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-enum MobilityLevel {
-  independent
-  needs_assistant
-  wheelchair
-}
-
-model elderprofile {
+model ElderProfile {
   id              Int               @id @default(autoincrement())
   first_name      String            @db.VarChar(100)
   last_name       String            @db.VarChar(100)
@@ -52,102 +34,135 @@ model elderprofile {
   mobility_level  MobilityLevel     @default(independent)
   notes           String?
   created_at      DateTime?         @default(now()) @db.Timestamp(6)
-  familyelderlink familyelderlink[]
+  familyelderlink FamilyElderLink[]
+
+  @@map("elderprofile")
 }
 
-enum TokenType{
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-}
-model authtokens {
-  id                 Int       @id @default(autoincrement())
-  user_id            Int
-  verification_title String?   @db.VarChar(200)
-  code               String    @db.VarChar(255)
-  expires_at         DateTime  @db.Timestamp(6)
-  used               Boolean?  @default(false)
-  type               TokenType @default(EMAIL_VERIFICATION)
-  created_at         DateTime? @default(now()) @db.Timestamp(6)
-  users              users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+model AuthTokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  title      String?   @map("verification_title") @db.VarChar(200)
+  code       String    @db.VarChar(255)
+  expires_at DateTime  @db.Timestamp(6)
+  used       Boolean?  @default(false)
+  type       TokenType @default(EMAIL_VERIFICATION)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("authtokens")
 }
 
-model familyelderlink {
-  id                  Int                 @id @default(autoincrement())
-  family_member_id    Int
-  elder_id            Int
-  relationship        String?             @db.VarChar(50)
-  is_primary_contact  Boolean?            @default(false)
-  created_at          DateTime?           @default(now()) @db.Timestamp(6)
-  elderprofile        elderprofile        @relation(fields: [elder_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  familymemberprofile familymemberprofile @relation(fields: [family_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model FamilyElderLink {
+  id                 Int                 @id @default(autoincrement())
+  family_member_id   Int
+  elder_id           Int
+  relationship       String?             @db.VarChar(50)
+  is_primary_contact Boolean?            @default(false)
+  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  elderprofile       ElderProfile        @relation(fields: [elder_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  managed_by         FamilymemberProfile @relation(fields: [family_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([family_member_id, elder_id])
+  @@map("familyelderlink")
 }
 
-model familymemberprofile {
+model FamilymemberProfile {
   id                    Int               @id @default(autoincrement())
   user_id               Int               @unique
   relationship_to_elder String?           @db.VarChar(50)
   created_at            DateTime?         @default(now()) @db.Timestamp(6)
-  familyelderlink       familyelderlink[]
-  users                 users             @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  familyelderlink       FamilyElderLink[]
+  users                 User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("familymemberprofile")
 }
 
-model servicecategories {
-  category_id   Int            @id @default(autoincrement())
-  category_name String         @unique @db.VarChar(100)
+model ServiceCategory {
+  category_id   Int           @id @default(autoincrement())
+  category_name String        @unique @db.VarChar(100)
   description   String?
-  is_active     Boolean?       @default(true)
-  created_at    DateTime?      @default(now()) @db.Timestamp(6)
-  servicetasks  servicetasks[]
+  is_active     Boolean?      @default(true)
+  created_at    DateTime?     @default(now()) @db.Timestamp(6)
+  servicetasks  ServiceTask[]
+
+  @@map("servicecategories")
 }
 
-model servicetasks {
-  service_id        Int               @id @default(autoincrement())
+model ServiceTask {
+  service_id        Int             @id @default(autoincrement())
   category_id       Int
-  service_name      String            @db.VarChar(100)
+  service_name      String          @db.VarChar(100)
   description       String?
-  is_active         Boolean?          @default(true)
-  created_at        DateTime?         @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
-  servicecategories servicecategories @relation(fields: [category_id], references: [category_id], onDelete: Cascade, onUpdate: NoAction)
+  is_active         Boolean?        @default(true)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?       @default(now()) @db.Timestamp(6)
+  servicecategories ServiceCategory @relation(fields: [category_id], references: [category_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([category_id, service_name])
+  @@map("servicetasks")
+}
+
+model User {
+  user_id               Int                  @id @default(autoincrement())
+  role                  UserRole             @default(FAMILY)
+  first_name            String?              @db.VarChar(100)
+  last_name             String?              @db.VarChar(100)
+  email                 String               @unique @db.VarChar(255)
+  phone_number          String?              @unique @db.VarChar(30)
+  password_hash         String?
+  date_of_birth         DateTime?            @db.Date
+  gender                Gender?
+  address               String?
+  city                  String?              @db.VarChar(100)
+  country               String?              @default("Finland") @db.VarChar(100)
+  is_verified           Boolean?             @default(false)
+  created_at            DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?            @default(now()) @db.Timestamp(6)
+  email_verified        Boolean?             @default(false)
+  emailverificationcode AuthTokens[]
+  caregiverprofile      CaregiverProfile?
+  familymemberprofile   FamilymemberProfile?
+
+  @@map("users")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-enum UserRole{
-  elder
-  family
-  caregiver
-  admin
+enum BackgroundCheckStatus {
+  pending
+  approved
+  rejected
 }
 
-enum Gender{
-  male
-  female
-  other
-  pnts
+enum Availability {
+  offline
+  online
+  busy
 }
 
-model users {
-  user_id               Int                     @id @default(autoincrement())
-  role                  UserRole                @default(family)
-  first_name            String?                 @db.VarChar(100)
-  last_name             String?                 @db.VarChar(100)
-  email                 String                  @unique @db.VarChar(255)
-  phone_number          String?                 @unique @db.VarChar(30)
-  password_hash         String?
-  date_of_birth         DateTime?               @db.Date
-  gender                Gender?                 
-  address               String?
-  city                  String?                 @db.VarChar(100)
-  country               String?                 @default("Finland") @db.VarChar(100)
-  is_verified           Boolean?                @default(false)
-  created_at            DateTime?               @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?               @default(now()) @db.Timestamp(6)
-  email_verified        Boolean?                @default(false)
-  caregiverprofile      caregiverprofile[]
-  emailverificationcode authtokens[]
-  familymemberprofile   familymemberprofile?
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+enum MobilityLevel {
+  independent
+  needs_assistant
+  wheelchair
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+enum UserRole {
+  ELDER
+  FAMILY
+  CAREGIVER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PNTS
 }
