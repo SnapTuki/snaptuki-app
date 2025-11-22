@@ -17,13 +17,28 @@ export class User{
     @Field(type => ID)
     id: string;
     
-    @Field()
+    @Field(type => String)
     firstName: string;
 
-    @Field()
+    @Field(type => String)
     lastName: string;
 
     @Field(type => UserRole)
     role: UserRole;
 }
 
+@ObjectType()
+export class OtpRegisteration{
+
+    @Field(type => Boolean)
+    success: boolean;
+
+    @Field(type => String)
+    email: string;
+
+    @Field(type => String)
+    otpCode: string;
+
+    @Field(type => String)
+    msg: string;
+}

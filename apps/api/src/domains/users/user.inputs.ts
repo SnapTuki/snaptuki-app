@@ -1,5 +1,5 @@
 import { InputType, Field } from "type-graphql";
-import {UserRole} from "./user.types.js";
+import {UserRole} from "./user.types";
 
 @InputType()
 export class RequestOtpInput{
