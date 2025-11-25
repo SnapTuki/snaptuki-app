@@ -23,6 +23,9 @@ export class User{
     @Field(type => String)
     lastName: string;
 
+    @Field(type => String)
+    email: string;
+
     @Field(type => UserRole)
     role: UserRole;
 }
@@ -42,3 +45,14 @@ export class OtpRegisteration{
     @Field(type => String)
     msg: string;
 }
+
+@ObjectType()
+export class UserWithToken{
+
+    @Field(type => User)
+    user: User;
+
+    @Field(type => String)
+    token: string;
+}
+

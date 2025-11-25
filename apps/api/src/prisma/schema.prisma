@@ -119,8 +119,8 @@ model User {
   is_verified           Boolean?             @default(false)
   created_at            DateTime?            @default(now()) @db.Timestamp(6)
   updated_at            DateTime?            @default(now()) @db.Timestamp(6)
-  email_verified        Boolean?             @default(false)
-  emailverificationcode AuthTokens[]
+  email_verified        Boolean?             @default(false) //this field should be removed
+  emailverificationcode AuthTokens[] // this field is also useless
   caregiverprofile      CaregiverProfile?
   familymemberprofile   FamilymemberProfile?
 

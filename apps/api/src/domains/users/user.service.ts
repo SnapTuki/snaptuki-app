@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client"; 
-import { CompleteRegisterationInput } from "./user.inputs";
-import { OtpRegisteration } from "./user.types";
+import { CompleteRegisterationInput, LoginCredentials } from "./user.inputs";
+import { OtpRegisteration, User, UserWithToken } from "./user.types";
 import * as otpGenerator from 'otp-generator';
 import {Redis} from 'ioredis';
 import bcrypt from 'bcrypt';
+import { InvalidCredentialsError, OtpCodeError } from "../errors";
+import jwt from 'jsonwebtoken';
+import { config } from "../../config";
 
 
 export class UserService {
@@ -55,20 +58,66 @@ export class UserService {
 
     }
 
-    public async completeRegisteration(data: CompleteRegisterationInput) {
+    public async completeRegisteration(data: CompleteRegisterationInput): Promise<UserWithToken> {
         console.log("Compelete registeration logic")
+        
+        // step1 - Verification & Validation
+        const otpHash = await this.redisClient.get('otp:email');
+        if (!otpHash) throw new OtpCodeError("Code has not been found or expired");
 
-        // step1 - 
+        const isOtpValid = bcrypt.compare(data.otpCode, otpHash);
+        if(!isOtpValid) throw new OtpCodeError("Invalid Code");
+
+        // step2 - User creation
+        const passwordHash = await bcrypt.hash(data.password, 12);
+
+        const newUser = this.dbClient.user.create({
+            data: {
+                role: data.role,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                password_hash: passwordHash,
+                date_of_birth: data.birthdate,
+                email_verified: true,
+            }
+        });
+
+
+        //generate token
+        const token = this.generateToken(newUser);
+        const { passwordHash: _, ...userWithoutHash } = newUser;
+        return {token, user: userWithoutHash};
+    };
+
+    public async login(credentials: LoginCredentials): Promise<UserWithToken>{
+
+        //check if user exists
+        const user = this.dbClient.user.findUnique({where: {
+            email: credentials.email
+        }});
+
+        if(!user) throw new InvalidCredentialsError("Email does not exists");
+
+        // check passowrd
+        const isPassValid = bcrypt.compare(credentials.password, user.passwordHash);
+        if (!isPassValid) throw new InvalidCredentialsError("Password is not correct");
+
+        const token = this.generateToken(user);
+
+        const {passwordHash: _, ...userWithoutHash} = user;
+        return {token, user: userWithoutHash};
     }
 
-    private generateToken(): String {
-        return ""
-    }
+    private generateToken(user: User): string {
+        const payload = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+        };
 
-
-
-
-
+        return jwt.sign(payload, config.jwtSecret);
+    };
 
 }
 

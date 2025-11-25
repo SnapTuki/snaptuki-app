@@ -4,7 +4,8 @@ import path from 'path';
 interface Config {
     postgresUrl: string;
     redisUrl: string;
-    nodeEnv: string
+    nodeEnv: string;
+    jwtSecret: string;
 };
 
 //helper function to  get env vars safely
@@ -20,5 +21,6 @@ const getEnvVar = (key: string): string => {
 export const config: Config = {
     postgresUrl: getEnvVar('DATABASE_URL'),
     redisUrl: getEnvVar('REDIS_URL'),
-    nodeEnv: process.env.NODE_ENV || 'development'
+    nodeEnv: process.env.NODE_ENV || 'development',
+    jwtSecret: getEnvVar('JWT_SECRET')
 };

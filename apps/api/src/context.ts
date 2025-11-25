@@ -4,5 +4,6 @@ export interface GraphQLContext {
     services: {
         userService: UserService,
     },
+    user: null
 }
 
