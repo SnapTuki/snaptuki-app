@@ -5,9 +5,11 @@ import { buttonStyles } from "../theme/components";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import SnapTukiLogo from "@/assets/images/SnapTukiLogo.svg";
-
+import Constants from "expo-constants";
 
 export default function LandingPage() {
+  console.log("Expo Configuration file");
+  console.log(Constants.expoConfig?.extra);
   const router = useRouter();
 
   return (

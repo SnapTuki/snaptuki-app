@@ -10,6 +10,15 @@ import { UserResolver } from "./domains/users/user.resolver";
 import { UserService } from "./domains/users/user.service";
 import prisma from "./prisma/client";
 import { redisClient } from "./lib/redis";
+import jwt from "jsonwebtoken";
+import { config } from "./config";
+import { UserRole } from "./domains/users/user.types";
+
+export interface DecodedUserToken {
+  id: string;
+  email: string;
+  role: UserRole; // Used for fast authorization checks
+}
 
 
 async function startApolloServer() {
@@ -31,11 +40,25 @@ async function startApolloServer() {
         listen: {
             port: 4000
         },
-        context: async() => {
-            return{
+        context: async ({ req }) => {
+            const auth = req.headers.authorization || "";
+            let user = null;
+
+            if (auth.startsWith("Bearer ")) {
+                const token = auth.split(" ")[1];
+                try {
+                    const payload = jwt.verify(token, config.jwtSecret!) as DecodedUserToken;
+                    user = payload
+                } catch (error) {
+                    // token invalid → user stays undefined
+                    user = null;
+                }
+            }
+            return {
                 services: {
                     userService,
-                }
+                },
+                user
             }
         }
     });

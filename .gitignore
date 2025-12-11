@@ -67,3 +67,4 @@ pnpm-lock.yaml
 *.local
 apps/mobile-app/node_modules/
 apps/api/src/generated
+apps/mobile-app/expo-env.d.ts

@@ -1,4 +1,7 @@
-{
+import "dotenv/config";
+
+export default {
+  
   "expo": {
     "name": "mobile-app",
     "slug": "mobile-app",
@@ -45,6 +48,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+    env: process.env.ENV,
+    apollo_url: process.env.APOLLO_URL,
+  },
   }
 }

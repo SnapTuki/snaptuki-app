@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Button,
   Alert, // Using native Alert for mobile
 } from 'react-native';
 import { Formik, FormikProps, FormikHelpers } from 'formik';
@@ -21,7 +22,6 @@ import { useRouter } from 'expo-router';
  * Defines the shape of the form's values.
  */
 interface SignupFormValues {
-  phoneNumber: string;
   code: string;
   email: string;
   firstName: string;
@@ -51,10 +51,6 @@ interface FormButtonProps {
 
 // --- Validation Schema ---
 const signupValidationSchema = Yup.object().shape({
-  phoneNumber: Yup.string()
-    .required('Phone number is required')
-    .matches(/^[0-9]+$/, 'Must be only digits')
-    .min(10, 'Must be at least 10 digits'),
   code: Yup.string()
     .required('Verification code is required')
     .oneOf(['123456'], 'Invalid verification code (Hint: it\'s 123456)'),
@@ -112,29 +108,12 @@ const FormButton: React.FC<FormButtonProps> = ({ title, onPress, disabled }) => 
 const FamilySignUp: React.FC = () => {
   // State to manage which step of the form is visible
   const [step, setStep] = useState(1);
-  
+
   // State to track if the (simulated) code has been "sent"
   const [codeSent, setCodeSent] = useState(false);
 
   // --- Step Handlers ---
 
-  /**
-   * Step 1: Validate phone number and "send" code
-   */
-  const handleSendCode = async (formikProps: FormikProps<SignupFormValues>) => {
-    formikProps.setFieldTouched('phoneNumber', true, false);
-    await formikProps.validateField('phoneNumber');
-
-    if (!formikProps.errors.phoneNumber) {
-      console.log(
-        'Simulating sending code 123456 to:',
-        formikProps.values.phoneNumber
-      );
-      Alert.alert("Code Sent (Simulated)", "Please use 123456 to verify.");
-      setCodeSent(true);
-      setStep(2); // Move to step 2
-    }
-  };
 
   /**
    * Step 2: Validate the verification code
@@ -157,12 +136,18 @@ const FamilySignUp: React.FC = () => {
     await formikProps.validateField('email');
 
     if (!formikProps.errors.email) {
-      setStep(4); // Move to step 4
+      console.log(
+        'Simulating sending code 123456 to:',
+        formikProps.values.email
+      );
+      Alert.alert("Code Sent (Simulated)", "Please use 123456 to verify.");
+      setCodeSent(true);
+      setStep(2); // Move to step 2
     }
   };
 
   /**
-   * Step 4: Validate First and Last Name
+   * Step 3: Validate First and Last Name
    */
   const handleValidateNames = async (formikProps: FormikProps<SignupFormValues>) => {
     formikProps.setFieldTouched('firstName', true, false);
@@ -173,7 +158,9 @@ const FamilySignUp: React.FC = () => {
     ]);
 
     if (!formikProps.errors.firstName && !formikProps.errors.lastName) {
-      setStep(5); // Move to step 5
+      console.log("Name compleed")
+      console.log(formikProps.values.firstName + " " + formikProps.values.lastName)
+      setStep(4); // Move to step 4
     }
   };
 
@@ -182,27 +169,12 @@ const FamilySignUp: React.FC = () => {
    */
   const router = useRouter()
 
-  const handleSignup = (
-    values: SignupFormValues,
-    { setSubmitting, resetForm }: FormikHelpers<SignupFormValues>
-  ) => {
+  const handleSignup = (values: SignupFormValues) => {
     console.log('Submitting form with values:', values);
     // In a real app, you would make your API call here for the elder-care platform.
-    setTimeout(() => {
-      setSubmitting(false);
-      Alert.alert(
-        'Signup Successful!',
-        `Welcome, ${values.firstName}! Your account is created.`,
-        [{ text: 'OK', onPress: () => {
-            resetForm(); // Reset form fields
-            router.push('/(auth)/login')
-        }}]
-      );
-    }, 1000);
   };
 
   const initialFormValues: SignupFormValues = {
-    phoneNumber: '',
     code: '',
     email: '',
     firstName: '',
@@ -233,19 +205,19 @@ const FamilySignUp: React.FC = () => {
           >
             {(formikProps: FormikProps<SignupFormValues>) => (
               <View>
-                {/* --- Step 1: Phone Number --- */}
+                {/* --- Step 1: Email --- */}
                 {step === 1 && (
                   <>
                     <FormInput
                       formikProps={formikProps}
-                      fieldName="phoneNumber"
-                      label="Phone Number"
-                      keyboardType="phone-pad"
-                      placeholder="Enter your phone number"
+                      fieldName="email"
+                      label="Email Address"
+                      keyboardType="email-address"
+                      placeholder="Enter your email"
                     />
                     <FormButton
                       title="Send Verification Code"
-                      onPress={() => handleSendCode(formikProps)}
+                      onPress={() => handleValidateEmail(formikProps)}
                       disabled={formikProps.isSubmitting}
                     />
                   </>
@@ -255,7 +227,7 @@ const FamilySignUp: React.FC = () => {
                 {step === 2 && codeSent && (
                   <>
                     <Text style={styles.infoText}>
-                      We "sent" a code to {formikProps.values.phoneNumber}.
+                      We "sent" a code to {formikProps.values.email}.
                       (Please enter 123456)
                     </Text>
                     <FormInput
@@ -274,27 +246,9 @@ const FamilySignUp: React.FC = () => {
                   </>
                 )}
 
-                {/* --- Step 3: Email --- */}
-                {step === 3 && (
-                  <>
-                    <FormInput
-                      formikProps={formikProps}
-                      fieldName="email"
-                      label="Email Address"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      placeholder="you@example.com"
-                    />
-                    <FormButton
-                      title="Next"
-                      onPress={() => handleValidateEmail(formikProps)}
-                      disabled={formikProps.isSubmitting}
-                    />
-                  </>
-                )}
 
-                {/* --- Step 4: First & Last Name --- */}
-                {step === 4 && (
+                {/* --- Step 3: First & Last Name --- */}
+                {step === 3 && (
                   <>
                     <FormInput
                       formikProps={formikProps}
@@ -316,8 +270,8 @@ const FamilySignUp: React.FC = () => {
                   </>
                 )}
 
-                {/* --- Step 5: Password --- */}
-                {step === 5 && (
+                {/* --- Step 4: Password --- */}
+                {step === 4 && (
                   <>
                     <FormInput
                       formikProps={formikProps}
@@ -337,11 +291,14 @@ const FamilySignUp: React.FC = () => {
                       onPress={formikProps.handleSubmit} // This is the final submit
                       disabled={formikProps.isSubmitting}
                     />
+
                   </>
                 )}
               </View>
             )}
           </Formik>
+
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

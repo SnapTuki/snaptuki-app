@@ -9,5 +9,6 @@ config.resolver.assetExts = config.resolver.assetExts.filter(
   (ext) => ext !== "svg"
 );
 config.resolver.sourceExts.push("svg");
+config.resolver.sourceExts.push('cjs');
 
 module.exports = config;

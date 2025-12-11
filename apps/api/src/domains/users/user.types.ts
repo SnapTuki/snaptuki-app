@@ -1,14 +1,14 @@
 import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
 export enum UserRole{
-    FAMILY_MEMBER = "FAMILY MEMBER",
-    CAREGIVER = "CAREGIVER",
-    ELDER = "ELDER",
-    ADMIN = "ADMIN"
+    FAMILY="FAMILY",
+    CAREGIVER="CAREGIVER",
+    ELDER="ELDER",
+    ADMIN="ADMIN"
 }
 
 registerEnumType(UserRole, {
-    name: "Role"
+    name: "UserRole"
 })
 
 
