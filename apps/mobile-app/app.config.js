@@ -50,8 +50,8 @@ export default {
       "reactCompiler": true
     },
     "extra": {
-    env: process.env.ENV,
-    apollo_url: process.env.APOLLO_URL,
+    "env": process.env.ENV,
+    "apollo_url": process.env.APOLLO_URL,
   },
   }
 }

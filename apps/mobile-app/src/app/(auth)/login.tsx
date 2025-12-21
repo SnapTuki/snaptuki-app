@@ -8,13 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { colors } from "../../theme/colors";
 import { typography } from "../../theme/typography";
 import { buttonStyles } from "../../theme/components";
 import SnapTukiLogo from '@/assets/images/SnapTukiLogo'; // SVG logo component
+import { useSession } from "@/src/hooks/useSession";
+import useAuthStorage from "@/src/hooks/useAuthStorage";
 
 export const unstable_settings = {
   headerShown: false,
@@ -24,11 +25,15 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const {signIn} = useSession();
+  const authStorage = useAuthStorage();
 
   const handleLogin = () => {
-    console.log("Login credentials:", { email, password });
-    router.push("/(tabs)");
+    signIn({email, password});
+    setEmail("");
+    setPassword("");
   };
+
 
   return (
     <KeyboardAvoidingView
