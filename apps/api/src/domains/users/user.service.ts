@@ -115,7 +115,7 @@ export class UserService {
         if (!user) throw new InvalidCredentialsError("Email does not exists");
 
         // check passowrd
-        const isPassValid = bcrypt.compare(credentials.password, user.password_hash);
+        const isPassValid = await bcrypt.compare(credentials.password, user.password_hash);
         if (!isPassValid) throw new InvalidCredentialsError("Password is not correct");
 
 
