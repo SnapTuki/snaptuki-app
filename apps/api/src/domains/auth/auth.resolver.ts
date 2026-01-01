@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { Arg, AuthenticationError, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { GraphQLContext } from "../../context";
-import { OtpRegisteration, User, UserWithToken } from "./user.types";
-import { CompleteRegisterationInput, LoginCredentials } from "./user.inputs";
+import { OtpRegisteration, User, UserWithToken } from "./auth.types";
+import { CompleteRegisterationInput, LoginCredentials } from "./auth.inputs";
 import { DomainError } from "../errors";
 import { GraphQLError } from "graphql";
 

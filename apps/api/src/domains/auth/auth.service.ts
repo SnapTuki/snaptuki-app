@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { CompleteRegisterationInput, LoginCredentials } from "./user.inputs";
-import { OtpRegisteration, User, UserWithToken } from "./user.types";
+import { CompleteRegisterationInput, LoginCredentials } from "./auth.inputs";
+import { OtpRegisteration, User, UserWithToken } from "./auth.types";
 import * as otpGenerator from 'otp-generator';
 import { Redis } from 'ioredis';
 import bcrypt from 'bcrypt';

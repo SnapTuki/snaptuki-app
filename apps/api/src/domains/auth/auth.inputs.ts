@@ -1,5 +1,5 @@
-import { InputType, Field, ArgsType } from "type-graphql";
-import {UserRole} from "./user.types";
+import { InputType, Field } from "type-graphql";
+import {UserRole} from "./auth.types";
 
 @InputType()
 export class RequestOtpInput{
@@ -40,5 +40,3 @@ export class LoginCredentials {
     @Field(type => String)
     password: string;
 }
-
-
