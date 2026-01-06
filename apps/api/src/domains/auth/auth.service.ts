@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import { config } from "../../config";
 import { AuthenticationError } from "type-graphql";
 
-export class UserService {
+export class AuthService {
 
     private dbClient: PrismaClient;
     private redisClient: Redis;

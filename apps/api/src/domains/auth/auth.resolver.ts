@@ -24,7 +24,7 @@ export class UserResolver {
         @Ctx() ctx: GraphQLContext): Promise<UserWithToken> {
 
         try {
-            return ctx.services.userService.login(credentials);
+            return ctx.services.authService.login(credentials);
 
         } catch (error) {
             if (error instanceof DomainError) {
@@ -46,7 +46,7 @@ export class UserResolver {
     async requestRegisterationOtp(
         @Arg('email', ()=>String) email: string,
         @Ctx() ctx: GraphQLContext) {
-        return ctx.services.userService.requestRegisterationOtp(email)
+        return ctx.services.authService.requestRegisterationOtp(email)
     }
 
     @Mutation( () => UserWithToken)
@@ -55,7 +55,7 @@ export class UserResolver {
         @Ctx() ctx: GraphQLContext
     ){
         try {
-            return ctx.services.userService.completeRegisteration(data);
+            return ctx.services.authService.completeRegisteration(data);
         } catch (error) {
             if(error instanceof DomainError){
                 throw new GraphQLError(error.message, {extensions: {code: error.code}});

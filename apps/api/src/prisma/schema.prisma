@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url= env("DATABASE_URL")
 }
 
 model CaregiverProfile {
@@ -19,6 +19,7 @@ model CaregiverProfile {
   created_at              DateTime?             @default(now()) @db.Timestamp(6)
   updated_at              DateTime?             @default(now()) @db.Timestamp(6)
   users                   User                  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  bookings                Booking[]
 
   @@map("caregiverprofile")
 }
@@ -35,7 +36,7 @@ model ElderProfile {
   notes           String?
   created_at      DateTime?         @default(now()) @db.Timestamp(6)
   familyelderlink FamilyElderLink[]
-
+  bookings Booking[]
   @@map("elderprofile")
 }
 
@@ -73,6 +74,7 @@ model FamilymemberProfile {
   created_at            DateTime?         @default(now()) @db.Timestamp(6)
   familyelderlink       FamilyElderLink[]
   users                 User              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  bookings              Booking[]
 
   @@map("familymemberprofile")
 }
@@ -89,7 +91,7 @@ model ServiceCategory {
 }
 
 model ServiceTask {
-  service_id        Int             @id @default(autoincrement())
+  id        Int             @id @default(autoincrement())
   category_id       Int
   service_name      String          @db.VarChar(100)
   description       String?
@@ -97,31 +99,66 @@ model ServiceTask {
   created_at        DateTime?       @default(now()) @db.Timestamp(6)
   updated_at        DateTime?       @default(now()) @db.Timestamp(6)
   servicecategories ServiceCategory @relation(fields: [category_id], references: [category_id], onDelete: Cascade, onUpdate: NoAction)
+  bookings Booking[]
 
   @@unique([category_id, service_name])
   @@map("servicetasks")
 }
 
 model User {
-  user_id               Int                  @id @default(autoincrement())
-  role                  UserRole             @default(FAMILY)
-  first_name            String?              @db.VarChar(100)
-  last_name             String?              @db.VarChar(100)
-  email                 String               @unique @db.VarChar(255)
-  phone_number          String?              @unique @db.VarChar(30)
-  password_hash         String?
-  date_of_birth         DateTime?            @db.Date
-  gender                Gender?
-  address               String?
-  city                  String?              @db.VarChar(100)
-  country               String?              @default("Finland") @db.VarChar(100)
-  is_verified           Boolean?             @default(false)
-  created_at            DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at            DateTime?            @default(now()) @db.Timestamp(6)
-  caregiverprofile      CaregiverProfile?
-  familymemberprofile   FamilymemberProfile?
+  user_id             Int                  @id @default(autoincrement())
+  role                UserRole             @default(FAMILY)
+  first_name          String?              @db.VarChar(100)
+  last_name           String?              @db.VarChar(100)
+  email               String               @unique @db.VarChar(255)
+  phone_number        String?              @unique @db.VarChar(30)
+  password_hash       String?
+  date_of_birth       DateTime?            @db.Date
+  gender              Gender?
+  address             String?
+  city                String?              @db.VarChar(100)
+  country             String?              @default("Finland") @db.VarChar(100)
+  is_verified         Boolean?             @default(false)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?            @default(now()) @db.Timestamp(6)
+  caregiverprofile    CaregiverProfile?
+  familymemberprofile FamilymemberProfile?
 
   @@map("users")
+}
+
+model Booking {
+  id Int @id @default(autoincrement())
+
+  //relations
+  family_member    FamilymemberProfile @relation(fields: [family_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  family_member_id Int
+
+  caregiver    CaregiverProfile @relation(fields: [caregiver_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  caregiver_id Int
+
+
+  elder ElderProfile @relation(fields: [elder_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  elder_id Int
+
+  care_service ServiceTask @relation(fields: [care_service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  care_service_id Int
+
+  //bookings details
+  status BookingStatus @default(PENDING)
+  
+  start_time          DateTime      @db.Timestamp(6)
+  end_time            DateTime      @db.Timestamp(6)
+
+  notes  String?
+
+  total_price Int
+
+  // Audit fields
+  created_at          DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?     @default(now()) @db.Timestamp(6)
+
+  @@map("bookings")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -162,4 +199,13 @@ enum Gender {
   FEMALE
   OTHER
   PNTS
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  EXPIRED
 }

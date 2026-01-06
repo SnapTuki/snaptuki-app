@@ -1,9 +1,11 @@
-import { UserService } from "./domains/users/user.service.js"
-import { User } from "./domains/users/user.types.js"
+import { AuthService } from "./domains/auth/auth.service"
+import { BookingService } from "./domains/booking/booking.service"
+import { User } from "./domains/auth/auth.types"
 
 export interface GraphQLContext {
     services: {
-        userService: UserService,
+        authService: AuthService,
+        bookingService: BookingService,
     },
     user: User | null
 }
