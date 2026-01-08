@@ -6,13 +6,17 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSchema } from "type-graphql";
-import { UserResolver } from "./domains/users/user.resolver";
-import { UserService } from "./domains/users/user.service";
+import { AuthResolver } from "./domains/auth/auth.resolver";
+import { AuthService } from "./domains/auth/auth.service";
 import prisma from "./prisma/client";
 import { redisClient } from "./lib/redis";
 import jwt from "jsonwebtoken";
 import { config } from "./config";
-import { UserRole } from "./domains/users/user.types";
+import { UserRole } from "./domains/auth/auth.types";
+import { BookingService } from "./domains/booking/booking.service";
+import { FamilyProfileService } from "./domains/family-profile/family-profile.service";
+import { BookingResolver } from "./domains/booking/booking.resolver";
+import { FamilyProfileResolver } from "./domains/family-profile/family-profile.resolvers";
 
 export interface DecodedUserToken {
   id: string;
@@ -24,11 +28,13 @@ export interface DecodedUserToken {
 async function startApolloServer() {
 
     // initialize services
-    const userService = new UserService(prisma, redisClient);
+    const authService = new AuthService(prisma, redisClient);
+    const bookingService = new BookingService(prisma);
+    const familyProfileService = new FamilyProfileService(prisma);
     // ... Build schema
 
     const schema = await buildSchema({
-        resolvers: [UserResolver]
+        resolvers: [AuthResolver, BookingResolver, FamilyProfileResolver]
     });
 
 
@@ -56,7 +62,9 @@ async function startApolloServer() {
             }
             return {
                 services: {
-                    userService,
+                    authService,
+                    bookingService,
+                    familyProfileService,
                 },
                 user
             }

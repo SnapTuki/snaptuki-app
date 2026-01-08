@@ -11,7 +11,7 @@ export class BookingService {
     }
 
 
-    public async getAllBookings(userId: string, filter?: BookingStatus) {
+    public async getAllBookings(userId: number, filter?: BookingStatus) {
         return this.dbClient.booking.findMany({
             where: {
                 OR: [
@@ -26,7 +26,7 @@ export class BookingService {
         });
     }
 
-    public async getBooking(bookingId: string) {
+    public async getBooking(bookingId: number) {
         return this.dbClient.booking.findUnique({
             where: {
                 id: Number(bookingId),
@@ -52,7 +52,7 @@ export class BookingService {
         });
     }
 
-    public async cancelBooking(bookingId: string) {
+    public async cancelBooking(bookingId: number) {
         return this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),
@@ -64,7 +64,7 @@ export class BookingService {
     }
 
     // Confirm booking (caregiver accepts)
-    public async confirmBooking(bookingId: string) {
+    public async confirmBooking(bookingId: number) {
         return this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),
@@ -76,7 +76,7 @@ export class BookingService {
     }
 
     // Reschedule booking
-    public async rescheduelBooking(bookingId: Number, newScheduel: UpdatedBookingScheduelInput) {
+    public async rescheduelBooking(bookingId: number, newScheduel: UpdatedBookingScheduelInput) {
         if (newScheduel.startTime >= newScheduel.endTime) {
             throw new Error("Start time must be before end time");
         }
@@ -94,7 +94,7 @@ export class BookingService {
     }
 
     // Complete booking
-    public async completeBooking(bookingId: string) {
+    public async completeBooking(bookingId: number) {
         return this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),

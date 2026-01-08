@@ -10,7 +10,7 @@ export class BookingResolver {
 
     @Query(returns => [Booking]!)
     async getAllBookings(
-        @Arg('userId') userId: string,
+        @Arg('userId') userId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking[]> {
         return ctx.services.bookingService.getAllBookings(userId);
@@ -18,7 +18,7 @@ export class BookingResolver {
 
     @Query(() => Booking)
     async getBookingDetails(
-        @Arg("bookingId") bookingId: string,
+        @Arg("bookingId") bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.getBooking(bookingId);
@@ -47,7 +47,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async rescheduelBooking(
-        @Arg("bookingId") bookingId: Number,
+        @Arg("bookingId") bookingId: number,
         @Arg("data") newScheduel: UpdatedBookingScheduelInput,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
@@ -59,7 +59,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async cancleBooking(
-        @Arg("bookingId") bookingId: string,
+        @Arg("bookingId") bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.cancelBooking(bookingId);
@@ -67,7 +67,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async confirmBooking(
-        @Arg("bookingId") bookingId: string,
+        @Arg("bookingId") bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.confirmBooking(bookingId);
@@ -75,7 +75,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async completeBooking(
-        @Arg("bookingId") bookingId: string,
+        @Arg("bookingId") bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.completeBooking(bookingId);

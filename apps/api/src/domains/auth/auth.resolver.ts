@@ -8,7 +8,7 @@ import { GraphQLError } from "graphql";
 
 
 @Resolver()
-export class UserResolver {
+export class AuthResolver {
 
     @Query(() => User, {nullable: true})
     me(@Ctx() ctx : GraphQLContext): User | null{
