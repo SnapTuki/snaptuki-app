@@ -2,6 +2,7 @@ import { AuthService } from "./domains/auth/auth.service"
 import { BookingService } from "./domains/booking/booking.service"
 import { FamilyProfileService } from "./domains/family-profile/family-profile.service"
 import { ElderProfileService } from "./domains/elder-profile/elder-profile.service"
+import { CareTaskBookService } from "./domains/care-task-book/ctb.service"
 import { User } from "./domains/auth/auth.types"
 
 export interface GraphQLContext {
@@ -10,6 +11,7 @@ export interface GraphQLContext {
         bookingService: BookingService,
         familyProfileService: FamilyProfileService,
         elderProfileService: ElderProfileService,
+        careTaskBookService: CareTaskBookService,
     },
     user: User | null
 }

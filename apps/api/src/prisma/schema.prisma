@@ -239,6 +239,7 @@ enum CareTaskBookStatus {
 
 enum CareTaskStatus {
   PENDING
+  IN_PROGRESS
   DONE
   SKIPPED
 }
