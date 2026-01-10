@@ -29,25 +29,27 @@ model CaregiverProfile {
   user                    User                  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
   user_id                 Int                   @unique(map: "caregiver_user_id")
   bookings                Booking[]
+  care_task_books         CareTaskBook[]
 
   @@map("caregiver_profiles")
 }
 
 model ElderProfile {
-  id              Int               @id @default(autoincrement())
-  first_name      String            @db.VarChar(100)
-  last_name       String            @db.VarChar(100)
-  date_of_birth   DateTime?         @db.Date
-  address         String?           @db.VarChar(100)
-  postal_code     String?           @db.VarChar(10)
-  city            String?           @db.VarChar(100)
-  country         String?
-  phone           String?           @db.VarChar(30)
-  medical_notes   String?
-  mobility_level  MobilityLevel     @default(independent)
-  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  id             Int               @id @default(autoincrement())
+  first_name     String            @db.VarChar(100)
+  last_name      String            @db.VarChar(100)
+  date_of_birth  DateTime?         @db.Date
+  address        String?           @db.VarChar(100)
+  postal_code    String?           @db.VarChar(10)
+  city           String?           @db.VarChar(100)
+  country        String?
+  phone          String?           @db.VarChar(30)
+  medical_notes  String?
+  mobility_level MobilityLevel     @default(independent)
+  created_at     DateTime?         @default(now()) @db.Timestamp(6)
   family_members FamilyWithElder[]
-  bookings        Booking[]
+  bookings       Booking[]
+  careTaskBooks  CareTaskBook[]
 
   @@map("elder_profiles")
 }
@@ -66,13 +68,13 @@ model AuthTokens {
 }
 
 model FamilyWithElder {
-  id                 Int                 @id @default(autoincrement())
-  family         FamilymemberProfile @relation(fields: [family_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  family_member_id   Int
-  elderprofile       ElderProfile        @relation(fields: [elder_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  elder_id           Int
-  relationship       String?             @db.VarChar(50)
-  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  id               Int                 @id @default(autoincrement())
+  family           FamilymemberProfile @relation(fields: [family_member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  family_member_id Int
+  elderprofile     ElderProfile        @relation(fields: [elder_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  elder_id         Int
+  relationship     String?             @db.VarChar(50)
+  created_at       DateTime?           @default(now()) @db.Timestamp(6)
 
   @@map("family_with_elders")
 }
@@ -165,11 +167,80 @@ model Booking {
 
   total_price Int
 
+  //taskbook
+  care_task_book CareTaskBook?
+
   // Audit fields
   created_at DateTime? @default(now()) @db.Timestamp(6)
   updated_at DateTime? @default(now()) @db.Timestamp(6)
 
   @@map("bookings")
+}
+
+model CareTaskBook {
+  id Int @id @default(autoincrement())
+
+  booking_id   Int @unique
+  caregiver_id Int
+  elder_id     Int
+
+  status CareTaskBookStatus @default(ACTIVE)
+
+  started_at   DateTime? @db.Timestamp(6)
+  completed_at DateTime? @db.Timestamp(6)
+
+  notes String?
+
+  // relations
+  booking   Booking          @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  caregiver CaregiverProfile @relation(fields: [caregiver_id], references: [id], onDelete: Cascade)
+  elder     ElderProfile     @relation(fields: [elder_id], references: [id], onDelete: Cascade)
+
+  tasks CareTask[]
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  @@map("caretaskbooks")
+}
+
+model CareTask {
+  id Int @id @default(autoincrement())
+
+  task_book_id Int
+  title        String  @db.VarChar(200)
+  description  String?
+
+  task_order   Int
+  is_mandatory Boolean @default(true)
+
+  status CareTaskStatus @default(PENDING)
+
+  completed_at    DateTime? @db.Timestamp(6)
+  caregiver_notes String?
+
+  // relations
+  taskbook CareTaskBook @relation(fields: [task_book_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  @@index([task_book_id])
+  @@map("caretasks")
+}
+
+// ENUMS
+
+enum CareTaskBookStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CareTaskStatus {
+  PENDING
+  DONE
+  SKIPPED
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

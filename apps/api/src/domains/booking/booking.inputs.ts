@@ -3,16 +3,17 @@ import { Booking } from "./booking.types";
 
 @InputType()
 export class NewBookingInput implements Partial<Booking> {
-    @Field(type => ID)
-    elderId: string;
+    @Field(() => ID)
+    elderId: number;
 
-    familyMemberId?: string;
+    @Field(() => ID)
+    familyMemberId?: number;
 
-    @Field(type => ID)
-    caregiverId: string;
+    @Field(() => ID)
+    caregiverId: number;
 
-    @Field(type => ID)
-    serviceId: string;
+    @Field(() => ID)
+    serviceId: number;
 
     @Field(type => Date)
     startTime: Date;
@@ -20,8 +21,8 @@ export class NewBookingInput implements Partial<Booking> {
     @Field(type => Date)
     endTime: Date;
 
-    @Field(type => Number)
-    totalPrice: Number;
+    @Field(() => Number)
+    totalPrice: number;
 
     @Field(type => String)
     notes: string;
@@ -30,12 +31,12 @@ export class NewBookingInput implements Partial<Booking> {
 
 @InputType()
 export class UpdatedBookingScheduelInput implements Partial<NewBookingInput> {
-    @Field(type => Date)
+    @Field(() => Date)
     startTime?: Date;
 
-    @Field(type => Date)
+    @Field(() => Date)
     endTime?: Date;
 
-    @Field(type => Number)
-    totalPrice?: Number;
+    @Field(() => Number)
+    totalPrice?: number;
 }

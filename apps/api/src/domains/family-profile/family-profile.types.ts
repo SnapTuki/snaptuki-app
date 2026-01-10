@@ -11,7 +11,7 @@ export class FamilyProfile {
   @Field(() => [ManagedElder])
   elders: ManagedElder[];
 
-  @Field()
+  @Field(() => Date)
   createdAt: Date;
 }
 
@@ -20,34 +20,34 @@ export class ManagedElder {
   @Field(() => ID)
   elderId: number;
 
-  @Field()
+  @Field(() => String)
   firstName: string;
 
-  @Field()
+  @Field(() => String)
   lastName: string;
 
-  @Field({ nullable: true })
+  @Field(()=>Date,{ nullable: true })
   dateOfBirth?: Date;
 
-  @Field()
+  @Field(()=>String)
   mobilityLevel: string;
 
-  @Field({ nullable: true })
+  @Field(()=>FamilyElderRelationship,{ nullable: true })
   relationship?: FamilyElderRelationship;
 
-  @Field()
+  @Field(()=>Boolean)
   isPrimaryContact: boolean;
 }
 
 @ObjectType()
 class FamilyElderRelationship {
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   relationship?: string;
 
-  @Field()
+  @Field(()=>Boolean)
   isPrimaryContact: boolean;
 
-  @Field()
+  @Field(()=>Date)
   createdAt: Date;
 }

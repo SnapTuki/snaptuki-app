@@ -15,30 +15,30 @@ export class ElderProfile {
   @Field(() => ID)
   id: number;
 
-  @Field()
+  @Field(()=>String)
   first_name: string;
 
-  @Field()
+  @Field(()=>String)
   last_name: string;
 
-  @Field({ nullable: true })
+  @Field(()=>Date,{ nullable: true })
   date_of_birth?: Date;
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   address?: string;
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   phone?: string;
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   medical_notes?: string;
 
   @Field(() => MobilityLevel)
   mobility_level: MobilityLevel;
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   notes?: string;
 
-  @Field()
+  @Field(()=>Date)
   created_at: Date;
 }

@@ -1,4 +1,4 @@
-import { Arg, Mutation, Query, Resolver, Ctx } from "type-graphql";
+import { Arg, Mutation, Query, Resolver, Ctx, ID } from "type-graphql";
 import { Booking } from "./booking.types";
 import { NewBookingInput, UpdatedBookingScheduelInput } from "./booking.inputs";
 import { GraphQLContext } from '../../context'
@@ -10,7 +10,7 @@ export class BookingResolver {
 
     @Query(returns => [Booking]!)
     async getAllBookings(
-        @Arg('userId') userId: number,
+        @Arg("userId", ()=>ID) userId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking[]> {
         return ctx.services.bookingService.getAllBookings(userId);
@@ -18,7 +18,7 @@ export class BookingResolver {
 
     @Query(() => Booking)
     async getBookingDetails(
-        @Arg("bookingId") bookingId: number,
+        @Arg("bookingId", ()=>ID) bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.getBooking(bookingId);
@@ -30,7 +30,7 @@ export class BookingResolver {
     /** Mutations */
     @Mutation(() => Booking)
     async createNewBooking(
-        @Arg("data") newBookingData: NewBookingInput,
+        @Arg("data", () => NewBookingInput) newBookingData: NewBookingInput,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.createBooking({
@@ -47,8 +47,8 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async rescheduelBooking(
-        @Arg("bookingId") bookingId: number,
-        @Arg("data") newScheduel: UpdatedBookingScheduelInput,
+        @Arg("bookingId", () => ID) bookingId: number,
+        @Arg("data", ()=>UpdatedBookingScheduelInput) newScheduel: UpdatedBookingScheduelInput,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.rescheduelBooking(
@@ -59,7 +59,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async cancleBooking(
-        @Arg("bookingId") bookingId: number,
+        @Arg("bookingId", () => ID) bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.cancelBooking(bookingId);
@@ -67,7 +67,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async confirmBooking(
-        @Arg("bookingId") bookingId: number,
+        @Arg("bookingId", () => ID) bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.confirmBooking(bookingId);
@@ -75,7 +75,7 @@ export class BookingResolver {
 
     @Mutation(() => Booking)
     async completeBooking(
-        @Arg("bookingId") bookingId: number,
+        @Arg("bookingId", () => ID) bookingId: number,
         @Ctx() ctx: GraphQLContext
     ): Promise<Booking> {
         return ctx.services.bookingService.completeBooking(bookingId);

@@ -17,7 +17,8 @@ import { BookingService } from "./domains/booking/booking.service";
 import { FamilyProfileService } from "./domains/family-profile/family-profile.service";
 import { BookingResolver } from "./domains/booking/booking.resolver";
 import { FamilyProfileResolver } from "./domains/family-profile/family-profile.resolvers";
-
+import { ElderProfileResolver } from "./domains/elder-profile/elder-profile.resolvers";
+import { ElderProfileService } from "./domains/elder-profile/elder-profile.service";
 export interface DecodedUserToken {
   id: string;
   email: string;
@@ -31,10 +32,11 @@ async function startApolloServer() {
     const authService = new AuthService(prisma, redisClient);
     const bookingService = new BookingService(prisma);
     const familyProfileService = new FamilyProfileService(prisma);
+    const elderProfileService = new ElderProfileService(prisma);
     // ... Build schema
 
     const schema = await buildSchema({
-        resolvers: [AuthResolver, BookingResolver, FamilyProfileResolver]
+        resolvers: [AuthResolver, BookingResolver, FamilyProfileResolver, ElderProfileResolver]
     });
 
 
@@ -65,6 +67,7 @@ async function startApolloServer() {
                     authService,
                     bookingService,
                     familyProfileService,
+                    elderProfileService
                 },
                 user
             }

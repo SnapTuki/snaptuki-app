@@ -3,84 +3,84 @@ import { MobilityLevel } from "../../generated/prisma";
 
 @InputType()
 export class CreateElderInput {
-  @Field()
+  @Field(() => String)
   firstName: string;
 
-  @Field()
+  @Field(() => String)
   lastName: string;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   dateOfBirth?: Date;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   address?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   phone?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   medicalNotes?: string;
 
-  @Field({ nullable: true })
+  @Field(() => MobilityLevel, { nullable: true })
   mobilityLevel?: MobilityLevel //will be MobilityLevel enum later;
 }
 
 @InputType()
-export class CreateFamilyProfileInput{
+export class CreateFamilyProfileInput {
 
-    @Field()
-    firstName: string;
+  @Field(() => String)
+  firstName: string;
 
-    @Field()
-    lastName: string;
+  @Field(() => String)
+  lastName: string;
 
-    @Field()
-    dateOfBirth: Date;
+  @Field(() => Date)
+  dateOfBirth: Date;
 
-    @Field()
-    address: string;
+  @Field(() => String)
+  address: string;
 
-    @Field()
-    postalCode: string;
+  @Field(() => String)
+  postalCode: string;
 
-    @Field()
-    city: string;
+  @Field(() => String)
+  city: string;
 
-    @Field()
-    country: string
+  @Field(() => String)
+  country: string
 }
 
 @InputType()
-export class ElderProfileData{
+export class ElderProfileData {
 
-  @Field()
+  @Field(() => String)
   firstName: string;
 
-  @Field()
+  @Field(() => String)
   lastName: string;
 
-  @Field()
+  @Field(() => String)
   dateOfBirth: Date;
 
-  @Field()
+  @Field(() => String)
   phone: string;
 
-  @Field()
+  @Field(() => String)
   address: string;
 
-  @Field()
+  @Field(() => String)
   postalCode: string;
 
-  @Field()
+  @Field(() => String)
   city: string;
 
-  @Field()
+  @Field(() => String)
   country: string;
 
-  @Field()
+  @Field(() => String)
   medicalNotes: string;
 
-  @Field()
+  @Field(() => MobilityLevel)
   mobilityLevel: MobilityLevel;
 
 }

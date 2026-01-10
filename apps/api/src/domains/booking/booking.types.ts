@@ -17,36 +17,36 @@ registerEnumType(BookingStatus, {
 @ObjectType()
 export class Booking {
     @Field(() => ID)
-    id: string;
+    id: number;
 
     @Field(() => ID)
-    elderId: string;
+    elderId: number;
 
     @Field(() => ID)
-    familyMemberId: string;
+    familyMemberId: number;
 
     @Field(() => ID, { nullable: true })
-    caregiverId: string;
+    caregiverId: number;
 
     @Field(() => ID)
-    serviceId: string;
+    serviceId: number;
 
     @Field(() => BookingStatus)
     status: BookingStatus;
 
-    @Field()
+    @Field(() => Date)
     startTime: Date;
 
-    @Field()
+    @Field(() => Date)
     endTime: Date;
 
-    @Field({ nullable: true })
+    @Field(() => String,{ nullable: true })
     notes: string;
 
-    @Field()
+    @Field(() => Date)
     createdAt: Date;
 
-    @Field(type => Number)
-    totalPrice: Number
+    @Field(() => Number)
+    totalPrice: number
 }
 

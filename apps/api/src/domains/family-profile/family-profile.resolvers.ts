@@ -1,4 +1,4 @@
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, ID, Mutation, Query, Resolver } from "type-graphql";
 import { FamilyProfile } from "./family-profile.types";
 import { ElderProfile } from "../elder-profile/elder-profile.types";
 import {
@@ -30,7 +30,7 @@ export class FamilyProfileResolver {
 
   @Mutation(() => FamilyProfile)
   async createFamilyProfile(
-    @Arg("data") data: CreateFamilyProfileInput,
+    @Arg("data", () => CreateFamilyProfileInput) data: CreateFamilyProfileInput,
     @Ctx() ctx: GraphQLContext
   ) {
     return ctx.services.familyProfileService.createFamilyProfile(
@@ -41,7 +41,7 @@ export class FamilyProfileResolver {
 
   @Mutation(() => ElderProfile)
   async createElderAndLink(
-    @Arg("data") data: ElderProfileData,
+    @Arg("data", ()=>ElderProfileData) data: ElderProfileData,
     @Ctx() ctx: GraphQLContext
   ) {
     const profile = await ctx.services.familyProfileService.getMyFamilyProfile(
@@ -53,7 +53,7 @@ export class FamilyProfileResolver {
 
   @Mutation(() => Boolean)
   async linkExistingElder(
-    @Arg("elderId") elderId: number,
+    @Arg("elderId", () => ID) elderId: number,
     @Ctx() ctx: GraphQLContext
   ) {
     const profile = await ctx.services.familyProfileService.getMyFamilyProfile(
@@ -66,7 +66,7 @@ export class FamilyProfileResolver {
 
   @Mutation(() => Boolean)
   async unlinkElder(
-    @Arg("elderId") elderId: number,
+    @Arg("elderId", () => ID) elderId: number,
     @Ctx() ctx: GraphQLContext
   ) {
     const profile = await ctx.services.familyProfileService.getMyFamilyProfile(
