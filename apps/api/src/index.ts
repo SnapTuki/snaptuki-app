@@ -20,6 +20,7 @@ import { FamilyProfileResolver } from "./domains/family-profile/family-profile.r
 import { ElderProfileResolver } from "./domains/elder-profile/elder-profile.resolvers";
 import { ElderProfileService } from "./domains/elder-profile/elder-profile.service";
 import { CareTaskBookService } from "./domains/care-task-book/ctb.service";
+import { EmailService } from "./domains/email/email.service";
 export interface DecodedUserToken {
   id: string;
   email: string;
@@ -30,7 +31,8 @@ export interface DecodedUserToken {
 async function startApolloServer() {
 
     // initialize services
-    const authService = new AuthService(prisma, redisClient);
+    const emailService = new EmailService();
+    const authService = new AuthService(prisma, redisClient, emailService);
     const bookingService = new BookingService(prisma);
     const familyProfileService = new FamilyProfileService(prisma);
     const elderProfileService = new ElderProfileService(prisma);

@@ -16,6 +16,12 @@ export class OtpCodeError extends DomainError {
     };
 };
 
+export class OtpCodeInvalid extends DomainError {
+    constructor(message: string ){
+        super(message, 'OTP_CODE_INVALID');
+    };
+};
+
 export class InvalidCredentialsError extends DomainError {
     constructor(messaage: string){
         super(messaage, 'INVALID_CREDENTIALS');

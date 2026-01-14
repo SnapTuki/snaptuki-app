@@ -1,22 +1,25 @@
 import { PrismaClient } from "@prisma/client";
-import { CompleteRegisterationInput, LoginCredentials } from "./auth.inputs";
+import { CompleteRegisterationInput, LoginCredentials, VerifyEmailInput } from "./auth.inputs";
 import { OtpRegisteration, User, UserWithToken } from "./auth.types";
 import * as otpGenerator from 'otp-generator';
 import { Redis } from 'ioredis';
 import bcrypt from 'bcrypt';
-import { InvalidCredentialsError, OtpCodeError } from "../errors";
+import { InvalidCredentialsError, OtpCodeError, OtpCodeInvalid } from "../errors";
 import jwt from 'jsonwebtoken';
 import { config } from "../../config";
 import { AuthenticationError } from "type-graphql";
+import { EmailService } from "../email/email.service";
 
 export class AuthService {
 
     private dbClient: PrismaClient;
     private redisClient: Redis;
+    private emailService: EmailService;
 
-    constructor(dbClient: PrismaClient, redisClient: Redis) {
+    constructor(dbClient: PrismaClient, redisClient: Redis, email: EmailService) {
         this.dbClient = dbClient;
         this.redisClient = redisClient;
+        this.emailService = email;
     };
 
     public async requestRegisterationOtp(email: string): Promise<OtpRegisteration> {
@@ -47,6 +50,9 @@ export class AuthService {
         // step4 - Send it via email to user
 
 
+        // step 4 - Send the email
+        this.emailService.sendVerificationEmail(email, otpCode);
+
         // step5 - return result as a promise
 
         return {
@@ -58,46 +64,50 @@ export class AuthService {
 
     }
 
-    public async completeRegisteration(data: CompleteRegisterationInput): Promise<UserWithToken> {
-        console.log("Compelete registeration logic")
+    public async verifyEmail(data: VerifyEmailInput) {
+        console.log("Verify email")
 
-        // step1 - Verification & Validation
         const otpHash = await this.redisClient.get(`otp:${data.email}`);
         if (!otpHash) throw new OtpCodeError("Code has not been found or expired");
 
         const isOtpValid = bcrypt.compare(data.otpCode, otpHash);
-        if (!isOtpValid) throw new OtpCodeError("Invalid Code");
+        if (!isOtpValid) throw new OtpCodeInvalid("Verification Code is Invalid");
+
+        // Code used! remove it.
+        await this.redisClient.del(`otp:${data.email}`)
+        return true;
+
+    }
+
+    public async completeRegisteration(data: CompleteRegisterationInput): Promise<UserWithToken> {
+        console.log("Compelete registeration logic")
 
         // step2 - User creation
         const passwordHash = await bcrypt.hash(data.password, 12);
 
 
-        const newUser = this.dbClient.user.create({
+        const newUser = await this.dbClient.user.create({
             data: {
                 role: data.role,
-                first_name: data.firstName,
-                last_name: data.lastName,
                 email: data.email,
                 password_hash: passwordHash,
-                date_of_birth: new Date(data.birthdate),
             }
         });
 
-
-
-
+        console.log("Account Created!")
         //generate token
         const token = this.generateToken(newUser);
         const createdUser: UserWithToken = {
             user: {
                 id: newUser.user_id,
-                firstName: newUser.first_name,
-                lastName: newUser.last_name,
+                firstName: null,
+                lastName: null,
                 email: newUser.email,
                 role: newUser.role
             },
             token: token
         }
+
         return createdUser;
     };
 
@@ -135,12 +145,12 @@ export class AuthService {
         return authPayload;
     }
 
-    public async getMe(user_id: string): Promise<User>{
+    public async getMe(user_id: string): Promise<User> {
         const me = this.dbClient.findUnique({
-            where: {user_id}
+            where: { user_id }
         });
 
-        if(!me) throw new AuthenticationError("User Not Found");
+        if (!me) throw new AuthenticationError("User Not Found");
 
         return {
             id: me.user_id,

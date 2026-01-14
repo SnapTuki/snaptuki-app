@@ -15,7 +15,10 @@ import {
 import { Formik, FormikProps, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { useRouter } from 'expo-router';
-
+import { useMutation } from '@apollo/client/react';
+import { COMPLETE_REGISTERATION, REQUEST_REGISTERATION_OTP, VERIFY_EMAIL } from '@/src/graphql/mutations';
+import { UserRole } from '@/src/types/__generated__/graphql';
+import { useSession } from '@/src/hooks/useSession';
 // --- TypeScript Interfaces ---
 
 /**
@@ -24,8 +27,6 @@ import { useRouter } from 'expo-router';
 interface SignupFormValues {
   code: string;
   email: string;
-  firstName: string;
-  lastName: string;
   password: string;
   confirmPassword: string;
 }
@@ -52,13 +53,11 @@ interface FormButtonProps {
 // --- Validation Schema ---
 const signupValidationSchema = Yup.object().shape({
   code: Yup.string()
-    .required('Verification code is required')
-    .oneOf(['123456'], 'Invalid verification code (Hint: it\'s 123456)'),
+    .required('Verification code is required'),
   email: Yup.string()
     .email('Please enter a valid email')
     .required('Email is required'),
-  firstName: Yup.string().required('First name is required'),
-  lastName: Yup.string().required('Last name is required'),
+
   password: Yup.string()
     .min(8, 'Password must be at least 8 characters')
     .required('Password is required'),
@@ -108,59 +107,60 @@ const FormButton: React.FC<FormButtonProps> = ({ title, onPress, disabled }) => 
 const FamilySignUp: React.FC = () => {
   // State to manage which step of the form is visible
   const [step, setStep] = useState(1);
-
   // State to track if the (simulated) code has been "sent"
   const [codeSent, setCodeSent] = useState(false);
 
+  const [VerifyEmail, { data: verifyEmailData, error: verifyEmailError }] = useMutation(VERIFY_EMAIL);
+  const [requestRegisterationOtp, { data: reqRegOtpData, error: reqREgOtpError }] = useMutation(REQUEST_REGISTERATION_OTP);
+  const [completeRegisteration, {data: compRegData, error: compRegError}] = useMutation(COMPLETE_REGISTERATION);
   // --- Step Handlers ---
 
 
-  /**
-   * Step 2: Validate the verification code
-   */
-  const handleVerifyCode = async (formikProps: FormikProps<SignupFormValues>) => {
-    formikProps.setFieldTouched('code', true, false);
-    await formikProps.validateField('code');
-
-    if (!formikProps.errors.code) {
-      console.log('Code verified!');
-      setStep(3); // Move to step 3
-    }
-  };
 
   /**
-   * Step 3: Validate Email
+   * Step 2: Validate Email
    */
   const handleValidateEmail = async (formikProps: FormikProps<SignupFormValues>) => {
     formikProps.setFieldTouched('email', true, false);
     await formikProps.validateField('email');
 
     if (!formikProps.errors.email) {
-      console.log(
-        'Simulating sending code 123456 to:',
-        formikProps.values.email
-      );
-      Alert.alert("Code Sent (Simulated)", "Please use 123456 to verify.");
-      setCodeSent(true);
-      setStep(2); // Move to step 2
+      requestRegisterationOtp({ variables: { email: formikProps.values.email } });
+      if (reqREgOtpError) {
+        console.log("Error happened while requesting OTP")
+      } else {
+        console.log(reqREgOtpError)
+        setCodeSent(true);
+        setStep(2); // Move to step 2
+      }
     }
   };
 
-  /**
-   * Step 3: Validate First and Last Name
-   */
-  const handleValidateNames = async (formikProps: FormikProps<SignupFormValues>) => {
-    formikProps.setFieldTouched('firstName', true, false);
-    formikProps.setFieldTouched('lastName', true, false);
-    await Promise.all([
-      formikProps.validateField('firstName'),
-      formikProps.validateField('lastName'),
-    ]);
 
-    if (!formikProps.errors.firstName && !formikProps.errors.lastName) {
-      console.log("Name compleed")
-      console.log(formikProps.values.firstName + " " + formikProps.values.lastName)
-      setStep(4); // Move to step 4
+  /**
+   * Step 3: Validate the verification code
+   */
+  const handleVerifyCode = async (formikProps: FormikProps<SignupFormValues>) => {
+    formikProps.setFieldTouched('code', true, false);
+    await formikProps.validateField('code');
+
+    if (!formikProps.errors.code) {
+
+      VerifyEmail({
+        variables: {
+          data: {
+            email: formikProps.values.email,
+            otpCode: formikProps.values.code
+          }
+        }
+      })
+
+      if(verifyEmailError){
+        console.log(verifyEmailError.message)
+        return
+      }
+      setStep(3); // Move to step 3
+
     }
   };
 
@@ -171,14 +171,31 @@ const FamilySignUp: React.FC = () => {
 
   const handleSignup = (values: SignupFormValues) => {
     console.log('Submitting form with values:', values);
-    // In a real app, you would make your API call here for the elder-care platform.
+    
+    completeRegisteration({
+      variables: {
+        data:{
+          email: values.email,
+          password: values.password,
+          role: UserRole.Family
+        }
+      }
+    })
+
+
+    console.log("Registeration Completed");
+
+    if(compRegError){
+      Alert.alert('ERROR', 'Account cannot be created');
+    }else if(compRegData){
+      console.log("Go to loging view")
+      router.replace('/(auth)/login');
+    }
   };
 
   const initialFormValues: SignupFormValues = {
     code: '',
     email: '',
-    firstName: '',
-    lastName: '',
     password: '',
     confirmPassword: '',
   };
@@ -247,31 +264,8 @@ const FamilySignUp: React.FC = () => {
                 )}
 
 
-                {/* --- Step 3: First & Last Name --- */}
+                {/* --- Step 3: Password --- */}
                 {step === 3 && (
-                  <>
-                    <FormInput
-                      formikProps={formikProps}
-                      fieldName="firstName"
-                      label="First Name"
-                      autoCapitalize="words"
-                    />
-                    <FormInput
-                      formikProps={formikProps}
-                      fieldName="lastName"
-                      label="Last Name"
-                      autoCapitalize="words"
-                    />
-                    <FormButton
-                      title="Next"
-                      onPress={() => handleValidateNames(formikProps)}
-                      disabled={formikProps.isSubmitting}
-                    />
-                  </>
-                )}
-
-                {/* --- Step 4: Password --- */}
-                {step === 4 && (
                   <>
                     <FormInput
                       formikProps={formikProps}

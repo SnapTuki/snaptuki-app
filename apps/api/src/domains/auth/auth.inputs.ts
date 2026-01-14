@@ -1,4 +1,4 @@
-import { InputType, Field } from "type-graphql";
+import { InputType, Field, Int } from "type-graphql";
 import {UserRole} from "./auth.types";
 
 @InputType()
@@ -8,19 +8,18 @@ export class RequestOtpInput{
 }
 
 @InputType()
+export class VerifyEmailInput {
+    @Field(type => String)
+    email: string;
+
+    @Field(type => String)
+    otpCode: string
+}
+
+
+@InputType()
 export class CompleteRegisterationInput {
 
-    @Field(type => String)
-    otpCode: string;
-
-    @Field(type => String)
-    firstName: string;
-
-    @Field( type => String)
-    lastName: string;
-
-    @Field(() => Date)
-    birthdate: Date;
 
     @Field(type => String)
     password: string;
