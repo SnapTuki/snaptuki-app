@@ -8,12 +8,6 @@ interface AuthenticationContext {
     session?: String | null | undefined;
     isLoading: boolean;
 }
-const AuthContext = createContext<AuthenticationContext>({
-    signIn: (credentials) => null,
-    signOut: () => null,
-    user: null,
-    session: null,
-    isLoading: false,
-});
+const AuthContext = createContext<AuthenticationContext | undefined>(undefined);
 
 export default AuthContext;

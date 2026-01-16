@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 export default {
-  
+
   "expo": {
     "name": "mobile-app",
     "slug": "mobile-app",
@@ -20,7 +20,7 @@ export default {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png",
-        
+
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -43,15 +43,14 @@ export default {
             "backgroundColor": "#000000"
           }
         }
-      ]
-    ],
+      ]],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-    "env": process.env.ENV,
-    "apollo_url": process.env.APOLLO_URL,
-  },
+      "env": process.env.ENV,
+      "apollo_url": process.env.APOLLO_URL,
+    },
   }
 }

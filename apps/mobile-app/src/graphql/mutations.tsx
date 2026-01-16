@@ -8,6 +8,9 @@ mutation Login($credentials: LoginCredentials!){
         user{
             id
             role
+            firstName
+            lastName
+            email
         }
         token
     }

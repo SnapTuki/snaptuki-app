@@ -36,12 +36,11 @@ function NavigationContent() {
     <Stack screenOptions={{ headerShown: false }}>
       {session ? (
         // Main App Experience
-        <Stack.Screen name="(client)/(tabs)" />
+        <Stack.Screen name="(client)" />
       ) : (
         // Authentication Flow
         <>
-          <Stack.Screen name="AuthLanding" />
-          <Stack.Screen name="signup-family" />
+          <Stack.Screen name="(auth)" />
         </>
       )}
     </Stack>

@@ -17,7 +17,7 @@ export default function HomeStackLayout() {
         name="index"
         options={{
           // We use the custom component as the header
-          header: () => <GlobalHeader />,
+          headerShown: false
         }}
       />
 
@@ -25,10 +25,9 @@ export default function HomeStackLayout() {
         name="caregivers"
         options={{
           title: 'Find Caregiver',
-          headerShown: true, 
+          headerShown: false, 
           headerBackVisible: true, // Hides the word "Back" on iOS for a cleaner arrow
           headerTintColor: '#007AFF', // Matches your brand color
-          header: () => <GlobalHeader />,
         }}
       />
 

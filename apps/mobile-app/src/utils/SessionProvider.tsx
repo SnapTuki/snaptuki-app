@@ -2,11 +2,10 @@
 import { type PropsWithChildren, useState, useEffect } from "react";
 import AuthContext from "../contexts/authContext";
 import useAuthStorage from "../hooks/useAuthStorage";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { LOGIN } from "../graphql/mutations";
 import { Alert } from "react-native";
 import { LoginCredentials } from "../types/__generated__/graphql";
-import { WHO_IS_ME } from "../graphql/queries";
 
 export function SessionProvider({ children }: PropsWithChildren) {
     const authStorage = useAuthStorage();
@@ -15,9 +14,24 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const [user, setUser] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        const restoreSession = async () => {
+            try {
+                setIsLoading(true);
+                const token = await authStorage?.getAccessToken();
+                if (token) {
+                    setSession(token);
+                    // optionally fetch user profile here
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        restoreSession();
+    }, []);
 
 
-    
 
     /**
   * Performs the sign-in logic.
@@ -31,7 +45,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
         try {
             setIsLoading(true);
-            console.log("Login started...")
             const result = await login({
                 variables: { credentials: { email: email.trim(), password } }
             });
@@ -41,7 +54,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
             if (loginPayload && loginPayload.token) {
 
-            
+
                 // 1. Save to persistent storage
                 await authStorage?.setAccessToken(loginPayload.token);
 

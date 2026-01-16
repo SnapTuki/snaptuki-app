@@ -10,8 +10,7 @@ datasource db {
 
 model CaregiverProfile {
   id            Int       @id @default(autoincrement())
-  first_name    String?   @db.VarChar(100)
-  last_name     String?   @db.VarChar(100)
+
   phone_number  String?   @unique @db.VarChar(30)
   date_of_birth DateTime? @db.Date
   gender        Gender?
@@ -81,8 +80,6 @@ model FamilyWithElder {
 
 model FamilymemberProfile {
   id            Int       @id @default(autoincrement())
-  first_name    String?   @db.VarChar(100)
-  last_name     String?   @db.VarChar(100)
   phone_number  String?   @unique @db.VarChar(30)
   date_of_birth DateTime? @db.Date
   gender        Gender?
@@ -130,7 +127,10 @@ model User {
   role    UserRole
 
   email         String  @unique @db.VarChar(255)
-  password_hash String?
+  password_hash String
+
+  first_name    String   @db.VarChar(100)
+  last_name     String   @db.VarChar(100)
 
   is_verified         Boolean?             @default(false)
   created_at          DateTime?            @default(now()) @db.Timestamp(6)

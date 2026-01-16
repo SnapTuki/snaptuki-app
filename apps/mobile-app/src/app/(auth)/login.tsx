@@ -25,8 +25,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const {signIn} = useSession();
-  const authStorage = useAuthStorage();
+  const {signIn, user} = useSession();
 
   const handleLogin = () => {
     signIn({email, password});

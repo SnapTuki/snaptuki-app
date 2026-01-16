@@ -27,6 +27,12 @@ export class CompleteRegisterationInput {
     @Field(type => String)
     email: string;
 
+    @Field(type => String)
+    firstName: string;
+
+    @Field(type => String)
+    lastName: string;
+
     @Field(type => UserRole)
     role: UserRole;
 }

@@ -90,6 +90,8 @@ export class AuthService {
             data: {
                 role: data.role,
                 email: data.email,
+                first_name: data.firstName,
+                last_name: data.lastName,
                 password_hash: passwordHash,
             }
         });
@@ -100,8 +102,8 @@ export class AuthService {
         const createdUser: UserWithToken = {
             user: {
                 id: newUser.user_id,
-                firstName: null,
-                lastName: null,
+                firstName: newUser.first_name,
+                lastName: newUser.last_name,
                 email: newUser.email,
                 role: newUser.role
             },

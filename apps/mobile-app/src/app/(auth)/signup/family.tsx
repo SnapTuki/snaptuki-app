@@ -27,6 +27,8 @@ import { useSession } from '@/src/hooks/useSession';
 interface SignupFormValues {
   code: string;
   email: string;
+  firstName: string;
+  lastName: string;
   password: string;
   confirmPassword: string;
 }
@@ -112,7 +114,7 @@ const FamilySignUp: React.FC = () => {
 
   const [VerifyEmail, { data: verifyEmailData, error: verifyEmailError }] = useMutation(VERIFY_EMAIL);
   const [requestRegisterationOtp, { data: reqRegOtpData, error: reqREgOtpError }] = useMutation(REQUEST_REGISTERATION_OTP);
-  const [completeRegisteration, {data: compRegData, error: compRegError}] = useMutation(COMPLETE_REGISTERATION);
+  const [completeRegisteration, { data: compRegData, error: compRegError }] = useMutation(COMPLETE_REGISTERATION);
   // --- Step Handlers ---
 
 
@@ -155,7 +157,7 @@ const FamilySignUp: React.FC = () => {
         }
       })
 
-      if(verifyEmailError){
+      if (verifyEmailError) {
         console.log(verifyEmailError.message)
         return
       }
@@ -171,31 +173,38 @@ const FamilySignUp: React.FC = () => {
 
   const handleSignup = (values: SignupFormValues) => {
     console.log('Submitting form with values:', values);
-    
+
     completeRegisteration({
       variables: {
-        data:{
+        data: {
           email: values.email,
           password: values.password,
+          firstName: values.firstName,
+          lastName: values.lastName,
           role: UserRole.Family
         }
       }
     })
 
 
-    console.log("Registeration Completed");
 
-    if(compRegError){
+
+    if (compRegError) {
       Alert.alert('ERROR', 'Account cannot be created');
-    }else if(compRegData){
-      console.log("Go to loging view")
-      router.replace('/(auth)/login');
+      return;
     }
+
+    console.log("Registeration Completed");
+    console.log("Go to loging view")
+    router.replace('/(auth)/login');
+
   };
 
   const initialFormValues: SignupFormValues = {
     code: '',
     email: '',
+    firstName: '',
+    lastName: '',
     password: '',
     confirmPassword: '',
   };
@@ -264,8 +273,31 @@ const FamilySignUp: React.FC = () => {
                 )}
 
 
-                {/* --- Step 3: Password --- */}
+                {/* --- Step 3: Full name --- */}
                 {step === 3 && (
+                  <>
+                    <FormInput
+                      formikProps={formikProps}
+                      fieldName="firstName"
+                      label="First Name"
+                      placeholder="First name"
+                    />
+                    <FormInput
+                      formikProps={formikProps}
+                      fieldName="lastName"
+                      label="Last Name"
+                    />
+                    <FormButton
+                      title="Continue"
+                      onPress={() => setStep(4)} // This is the final submit
+                      disabled={formikProps.isSubmitting}
+                    />
+
+                  </>
+                )}
+
+                {/* --- Step 3: Password --- */}
+                {step === 4 && (
                   <>
                     <FormInput
                       formikProps={formikProps}
