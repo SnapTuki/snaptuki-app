@@ -35,7 +35,7 @@ export default function ClientLayout() {
       })}
       >
         <Drawer.Screen name="(tabs)" />
-        <Drawer.Screen name="elders" />
+        <Drawer.Screen name="my-elders/" />
         <Drawer.Screen name="care-history" />
         <Drawer.Screen name="payments" />
         <Drawer.Screen name="profile" />

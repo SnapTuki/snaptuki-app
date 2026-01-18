@@ -35,11 +35,18 @@ export default function CustomDrawerContent(props: any) {
       {/* ===== Main Section ===== */}
       <View style={styles.section}>
         <DrawerItem
+          label="Home"
+          icon={({ size, color }) => (
+            <Ionicons name="home" size={size} color={color} />
+          )}
+          onPress={() => router.push("/(client)/(tabs)/find-help")}
+        />
+        <DrawerItem
           label="My Elders"
           icon={({ size, color }) => (
             <Ionicons name="people-outline" size={size} color={color} />
           )}
-          onPress={() => router.push("/(client)/elders")}
+          onPress={() => router.push("/(client)/my-elders")}
         />
 
         <DrawerItem
