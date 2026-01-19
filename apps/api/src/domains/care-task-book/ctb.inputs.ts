@@ -28,10 +28,10 @@ export class CreateCareTaskInput {
   @Field(() => Int)
   taskBookId: number;
 
-  @Field()
+  @Field(() => String)
   title: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   description?: string;
 }
 
@@ -48,7 +48,7 @@ export class UpdateCareTaskStatusInput {
   @Field(() => CareTaskStatus)
   status: CareTaskStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   caregiverNotes?: string;
 }
 

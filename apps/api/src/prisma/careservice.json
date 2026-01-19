@@ -1,0 +1,138 @@
+{
+  "service_categories": [
+    {
+      "id": "daily_care",
+      "name": "Päivittäinen elämä ja henkilökohtainen huolenpito",
+      "services": [
+        "Pukeutumisessa avustaminen",
+        "Peseytymisessä avustaminen",
+        "WC-käynneissä avustaminen",
+        "Henkilökohtainen hygienia",
+        "Aamutoimet",
+        "Iltatoimet",
+        "Syömisessä avustaminen",
+        "Lääkkeiden ottamisen muistuttaminen",
+        "Vuodepotilaan avustaminen",
+        "Asennon vaihtaminen ja ergonominen tuki"
+      ]
+    },
+    {
+      "id": "home_management",
+      "name": "Kotiaskareet ja arjen hallinta",
+      "services": [
+        "Kevyt siivous",
+        "Pyykinpesu ja vaatehuolto",
+        "Ruoanlaitto",
+        "Aterioiden lämmitys",
+        "Tiskaus",
+        "Roskien vienti",
+        "Petivaatteiden vaihto",
+        "Kodinjärjestely",
+        "Postin käsittely"
+      ]
+    },
+    {
+      "id": "errands",
+      "name": "Asiointi ja ulkopuolinen liikkuminen",
+      "services": [
+        "Kaupassa käynti",
+        "Apteekkiasiointi",
+        "Pankkiasiointi",
+        "Virastoasiointi",
+        "Lääkärikäynnille saattaminen",
+        "Sairaalassa asiointi",
+        "Postiasiat",
+        "Kirjastokäynnit"
+      ]
+    },
+    {
+      "id": "mobility_support",
+      "name": "Liikkumisen tuki ja saattajapalvelut",
+      "services": [
+        "Saattaminen kävellen",
+        "Pyörätuolissa avustaminen",
+        "Joukkoliikenteessä avustaminen",
+        "Taksisaattaminen",
+        "Ulkoiluapu",
+        "Portaissa liikkumisen tuki",
+        "Apuvälineiden käytön avustus"
+      ]
+    },
+    {
+      "id": "social_support",
+      "name": "Sosiaalinen tuki ja seurapalvelut",
+      "services": [
+        "Seurana oleminen",
+        "Keskustelu ja kuuntelu",
+        "Yhdessä ulkoilu",
+        "Vierailut ystävien luona",
+        "Harrastuksiin osallistuminen",
+        "Kulttuuritapahtumiin saattaminen",
+        "Yksinäisyyden lievittäminen"
+      ]
+    },
+    {
+      "id": "leisure",
+      "name": "Harrastukset ja vapaa-aika",
+      "services": [
+        "Liikuntaharrastukset",
+        "Kuntosali tai jumppa",
+        "Uinti",
+        "Kävelylenkit",
+        "Käsityöt ja luova toiminta",
+        "Musiikki ja lukeminen",
+        "Retket ja matkat",
+        "Uskonnollisiin tilaisuuksiin saattaminen"
+      ]
+    },
+    {
+      "id": "digital_help",
+      "name": "Digitaalinen ja tekninen apu",
+      "services": [
+        "Puhelimen käyttöapu",
+        "Tablet-laitteiden käyttö",
+        "Tietokoneen käyttö",
+        "Sähköpostin käyttö",
+        "Verkkopankin käytön ohjaus",
+        "Kela- ja Omakanta-palveluiden käyttö",
+        "Videopuhelujen käyttö",
+        "Sovellusten asentaminen",
+        "TV- ja älylaitteiden käyttö"
+      ]
+    },
+    {
+      "id": "communication_support",
+      "name": "Kommunikaation ja ymmärtämisen tuki",
+      "services": [
+        "Avustaminen puhetilanteissa",
+        "Viestien lukeminen",
+        "Viestien kirjoittaminen",
+        "Lomakkeiden täyttö yhdessä",
+        "Muistamisen ja hahmottamisen tuki"
+      ]
+    },
+    {
+      "id": "work_and_study",
+      "name": "Työ, opiskelu ja aktiivinen osallistuminen",
+      "services": [
+        "Työpaikalla avustaminen",
+        "Etätyön tuki",
+        "Opiskelun tuki",
+        "Koulutukseen saattaminen",
+        "Yhteiskunnalliseen toimintaan osallistuminen"
+      ]
+    },
+    {
+      "id": "temporary_help",
+      "name": "Erityistilanteet ja tilapäinen apu",
+      "services": [
+        "Toipilasapu leikkauksen jälkeen",
+        "Sairastumisen aikainen apu",
+        "Omaishoitajan vapaan aikainen apu",
+        "Yöaikainen avustus",
+        "Lyhytaikainen avuntarve",
+        "Kriisitilanteen tuki"
+      ]
+    }
+  ]
+}

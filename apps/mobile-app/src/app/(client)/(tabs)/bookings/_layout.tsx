@@ -26,6 +26,7 @@ export default function BookingStackLayout() {
         name="[bookingId]"
         options={{ 
           title: "Booking Details",
+          headerBackTitle: "Back"
          }}
       />
 

@@ -24,9 +24,10 @@ export default function DmStackLayout() {
         name="[dmId]"
         options={{
           title: 'DM',
-          headerShown: false, 
+          headerShown: true, 
           headerBackVisible: true, // Hides the word "Back" on iOS for a cleaner arrow
           headerTintColor: '#007AFF', // Matches your brand color
+          headerBackTitle:"DM"
         }}
       />
 

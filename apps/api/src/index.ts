@@ -21,6 +21,9 @@ import { ElderProfileResolver } from "./domains/elder-profile/elder-profile.reso
 import { ElderProfileService } from "./domains/elder-profile/elder-profile.service";
 import { CareTaskBookService } from "./domains/care-task-book/ctb.service";
 import { EmailService } from "./domains/email/email.service";
+import { CareServiceService } from "./domains/care-service/care-service.service";
+import { CareTaskBookResolver } from "./domains/care-task-book/ctb.resolvers";
+import { CareServiceResolver } from "./domains/care-service/care-service.resolvers";
 export interface DecodedUserToken {
   id: string;
   email: string;
@@ -37,10 +40,17 @@ async function startApolloServer() {
     const familyProfileService = new FamilyProfileService(prisma);
     const elderProfileService = new ElderProfileService(prisma);
     const careTaskBookService = new CareTaskBookService(prisma);
+    const careServiceService = new CareServiceService(prisma);
     // ... Build schema
 
     const schema = await buildSchema({
-        resolvers: [AuthResolver, BookingResolver, FamilyProfileResolver, ElderProfileResolver]
+        resolvers: [
+            AuthResolver, 
+            BookingResolver, 
+            FamilyProfileResolver, 
+            ElderProfileResolver, 
+            CareTaskBookResolver, 
+            CareServiceResolver]
     });
 
 
@@ -72,7 +82,8 @@ async function startApolloServer() {
                     bookingService,
                     familyProfileService,
                     elderProfileService,
-                    careTaskBookService
+                    careTaskBookService,
+                    careServiceService
                 },
                 user
             }

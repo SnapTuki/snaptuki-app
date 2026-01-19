@@ -36,57 +36,21 @@ import {
   ArrowRight
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useQuery } from '@apollo/client/react';
+import { GET_ALL_CARE_SERVICES } from '@/src/graphql/queries';
 
 // Data structure containing all required tasks
-const CARE_CATEGORIES = [
-  {
-    id: 'personal',
-    title: 'Physical & Personal Care (ADLs)',
-    tasks: [
-      { id: 'hygiene', label: 'Hygiene', desc: 'Bathing, grooming (shaving, brushing teeth, hair care)', icon: ShowerHead },
-      { id: 'dressing', label: 'Dressing', desc: 'Choosing, putting on, and removing clothes', icon: Shirt },
-      { id: 'eating', label: 'Eating/Feeding', desc: 'Preparing food, eating, and drinking', icon: Utensils },
-      { id: 'toileting', label: 'Toileting & Continence', desc: 'Using the toilet, managing continence, bedpans, commodes', icon: Activity },
-      { id: 'mobility', label: 'Mobility/Transfers', desc: 'Moving safely (walking, moving from bed to chair)', icon: Accessibility },
-    ]
-  },
-  {
-    id: 'home',
-    title: 'Home & Community (IADLs)',
-    tasks: [
-      { id: 'meals', label: 'Meal Planning & Prep', desc: 'Grocery shopping, cooking, cleaning up', icon: ChefHat },
-      { id: 'housekeeping', label: 'Housekeeping', desc: 'Light cleaning, laundry, tidying', icon: Home },
-      { id: 'meds', label: 'Medication Management', desc: 'Reminders, refills, monitoring doses', icon: Pill },
-      { id: 'transport', label: 'Transportation', desc: 'Rides to appointments, errands, social events', icon: Car },
-      { id: 'errands', label: 'Errands', desc: 'Shopping, picking up prescriptions, banking', icon: ShoppingBag },
-      { id: 'finance', label: 'Financial Management', desc: 'Bill paying, managing budgets', icon: CreditCard },
-      { id: 'health', label: 'Health Management', desc: 'Monitoring vitals, coordinating care, scheduling appointments', icon: HeartPulse },
-    ]
-  },
-  {
-    id: 'emotional',
-    title: 'Emotional & Social Support',
-    tasks: [
-      { id: 'companionship', label: 'Companionship', desc: 'Reducing isolation through conversation, games, activities', icon: Smile },
-      { id: 'social', label: 'Social Engagement', desc: 'Arranging outings, community events', icon: CalendarHeart },
-      { id: 'emotional', label: 'Emotional Reassurance', desc: 'Offering comfort and support', icon: Heart },
-    ]
-  },
-  {
-    id: 'safety',
-    title: 'Safety & Monitoring',
-    tasks: [
-      { id: 'home_safety', label: 'Home Safety', desc: 'Identifying hazards, installing grab bars, fall prevention', icon: ShieldAlert },
-      { id: 'emergency', label: 'Emergency Response', desc: 'Knowing safety procedures and emergency contacts', icon: PhoneCall },
-      { id: 'monitoring', label: 'Activity Monitoring', desc: 'Encouraging gentle physical activity', icon: Activity },
-    ]
-  }
-];
+
 
 export default function FindHelpScreen() {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const {loading, error, data} = useQuery(GET_ALL_CARE_SERVICES);
+
+  let serviceCategories = data?.getAllServiceCategories ?? [];
+
+  console.log(serviceCategories);
   const toggleTask = (taskId: string) => {
     setSelectedTasks(prev => 
       prev.includes(taskId) 
@@ -95,12 +59,12 @@ export default function FindHelpScreen() {
     );
   };
 
-  const filteredCategories = CARE_CATEGORIES.map(cat => ({
+  if(error){console.log(error)}
+
+  const filteredCategories = serviceCategories.map(cat => ({
     ...cat,
-    tasks: cat.tasks.filter(t => 
-      t.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.desc.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    tasks: cat.servicetasks.filter(t => 
+      t.service_name.toLowerCase().includes(searchQuery.toLowerCase()))
   })).filter(cat => cat.tasks.length > 0);
 
   return (
@@ -136,12 +100,11 @@ export default function FindHelpScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredCategories.map((category) => (
-          <View key={category.id} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>{category.title.toUpperCase()}</Text>
+        {filteredCategories?.map((category) => (
+          <View key={category.category_id} style={styles.categoryBlock}>
+            <Text style={styles.categoryTitle}>{category.category_name.toUpperCase()}</Text>
             {category.tasks.map((task) => {
               const isSelected = selectedTasks.includes(task.id);
-              const IconComponent = task.icon;
               return (
                 <TouchableOpacity
                   key={task.id}
@@ -156,7 +119,6 @@ export default function FindHelpScreen() {
                     styles.iconContainer,
                     isSelected ? styles.iconContainerSelected : styles.iconContainerDefault
                   ]}>
-                    <IconComponent size={22} color={isSelected ? '#FFFFFF' : '#64748B'} />
                   </View>
                   
                   <View style={styles.taskInfo}>
@@ -165,7 +127,7 @@ export default function FindHelpScreen() {
                         styles.taskLabel,
                         isSelected && styles.taskLabelSelected
                       ]}>
-                        {task.label}
+                        {task.service_name}
                       </Text>
                       {isSelected && (
                         <View style={styles.checkBadge}>
@@ -177,7 +139,7 @@ export default function FindHelpScreen() {
                       styles.taskDesc,
                       isSelected && styles.taskDescSelected
                     ]}>
-                      {task.desc}
+                      No description yet
                     </Text>
                   </View>
                 </TouchableOpacity>

@@ -48,7 +48,7 @@ export class CareTaskBookResolver {
 
   @Mutation(() => CareTask)
   async updateCareTaskStatus(
-    @Arg("data") data: UpdateCareTaskStatusInput,
+    @Arg("data", () => UpdateCareTaskStatusInput) data: UpdateCareTaskStatusInput,
     @Ctx() ctx: GraphQLContext
   ) {
     const user = ctx.user;

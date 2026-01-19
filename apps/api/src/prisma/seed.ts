@@ -1,4 +1,7 @@
-import { PrismaClient, UserRole, MobilityLevel, BookingStatus } from "../generated/prisma";
+import { PrismaClient } from "../generated/prisma";
+import { UserRole, Gender, MobilityLevel, Availability } from "../generated/prisma";
+import bcrypt from "bcrypt";
+import careServices from "./careservice.json";
 
 const prisma = new PrismaClient();
 
@@ -7,98 +10,121 @@ async function main() {
 
   /* ---------------- USERS ---------------- */
 
+  const familyPassword = await bcrypt.hash("Awmpp19m461", 10);
+  const caregiverPassword = await bcrypt.hash("Awmpp19m461", 10);
+
   const familyUser = await prisma.user.create({
     data: {
-      email: "sara.mayar@gmail.com",
-      password_hash: "1234",
+      email: "hamidebadi1996@yahoo.com",
+      first_name: "Hamid",
+      last_name: "Aebadi",
+      password_hash: familyPassword,
       role: UserRole.FAMILY,
+      is_verified: true,
+      familymemberprofile: {
+        create: {
+          phone_number: "+358401234567",
+          gender: Gender.MALE,
+          city: "Helsinki",
+        },
+      },
     },
+    include: { familymemberprofile: true },
   });
 
   const caregiverUser = await prisma.user.create({
     data: {
-      email: "minna.cari@gmail.com",
-      password_hash: "1234",
+      email: "marko.laine@snaptuki.com",
+      password_hash: caregiverPassword,
+      first_name: "Marko",
+      last_name: "Laine",
       role: UserRole.CAREGIVER,
+      is_verified: true,
+      caregiverprofile: {
+        create: {
+          phone_number: "+358409876543",
+          gender: Gender.MALE,
+          availability_status: Availability.online,
+          hourly_rate: 25,
+          verified: true,
+        },
+      },
     },
-  });
-
-  /* ---------------- PROFILES ---------------- */
-
-  const familyProfile = await prisma.familymemberProfile.create({
-    data: {
-      user_id: familyUser.user_id,
-      first_name: "Sara",
-      last_name: "Mayar",
-      phone_number: "0401234567",
-    },
-  });
-
-  const caregiverProfile = await prisma.caregiverProfile.create({
-    data: {
-      user_id: caregiverUser.user_id,
-      first_name: "Minna",
-      last_name: "Cari",
-      availability_status: "online",
-    },
+    include: { caregiverprofile: true },
   });
 
   /* ---------------- ELDER ---------------- */
 
   const elder = await prisma.elderProfile.create({
     data: {
-      first_name: "Liisa",
+      first_name: "Matti",
       last_name: "Korhonen",
+      date_of_birth: new Date("1945-05-10"),
       mobility_level: MobilityLevel.needs_assistant,
-      medical_notes: "Diabetes Type 2",
+      medical_notes: "Diabetes, mild memory loss",
+      
     },
   });
 
-  await prisma.familyWithElder.create({
+  /* ---------------- SERVICE CATEGORIES ---------------- */
+
+
+
+
+  for (const category of careServices.service_categories) {
+    await prisma.serviceCategory.create({
+      data: {
+        category_name: category.name,
+        //description: category.description,
+        servicetasks: {
+          createMany: {
+            data: category.services.map((task: any) => ({
+              service_name: task,
+            })),
+          },
+        },
+      },
+    });
+  }
+
+  const medicalCare = await prisma.serviceCategory.create({
     data: {
-      family_member_id: familyProfile.id,
-      elder_id: elder.id,
-      relationship: "Mother",
+      category_name: "Medical Care",
+      description: "Medical-related home care",
+      servicetasks: {
+        createMany: {
+          data: [
+            { service_name: "Medication reminder" },
+            { service_name: "Blood pressure monitoring" },
+            { service_name: "Insulin injection support" },
+          ],
+        },
+      },
     },
   });
 
-  /* ---------------- SERVICES ---------------- */
-
-  const category = await prisma.serviceCategory.create({
+  const householdHelp = await prisma.serviceCategory.create({
     data: {
-      category_name: "Daily Care",
+      category_name: "Household Help",
+      description: "Help with daily household tasks",
+      servicetasks: {
+        createMany: {
+          data: [
+            { service_name: "Meal preparation" },
+            { service_name: "Light cleaning" },
+            { service_name: "Laundry assistance" },
+          ],
+        },
+      },
     },
   });
 
-  const service = await prisma.serviceTask.create({
-    data: {
-      category_id: category.category_id,
-      service_name: "Morning Assistance",
-      description: "Help with morning routine",
-    },
-  });
-
-  /* ---------------- BOOKING ---------------- */
-
-  await prisma.booking.create({
-    data: {
-      family_member_id: familyProfile.id,
-      caregiver_id: caregiverProfile.id,
-      elder_id: elder.id,
-      care_service_id: service.id,
-      status: BookingStatus.CONFIRMED,
-      start_time: new Date(),
-      end_time: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      total_price: 50,
-    },
-  });
-
-  console.log("✅ Database seeded successfully");
+  console.log("✅ Seeding completed successfully");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding error:", e);
+    console.error("❌ Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {
