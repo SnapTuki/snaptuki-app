@@ -1,5 +1,16 @@
 import { gql, TypedDocumentNode } from "@apollo/client";
-import { Mutation, MutationCompleteRegisterationArgs, MutationLoginArgs, MutationRequestRegisterationOtpArgs, MutationVerifyEmailArgs, VerifyEmailInput } from "../types/__generated__/graphql";
+import { 
+    Mutation, 
+    MutationCompleteRegisterationArgs, 
+    MutationLoginArgs, 
+    MutationRequestRegisterationOtpArgs, 
+    MutationVerifyEmailArgs, 
+    VerifyEmailInput,
+    // Imported Args for Elder Profile operations
+    MutationCreateElderProfileArgs,
+    MutationUpdateElderProfileArgs,
+    MutationRemoveElderProfileArgs
+} from "../types/__generated__/graphql";
 
 
 export const LOGIN: TypedDocumentNode<{login: Mutation['login']}, MutationLoginArgs> = gql`
@@ -52,3 +63,33 @@ export const COMPLETE_REGISTERATION: TypedDocumentNode<{
         }
     }  
 `
+
+// --- Elder Profile Mutations ---
+
+export const CREATE_ELDER_PROFILE: TypedDocumentNode<Mutation, MutationCreateElderProfileArgs> = gql`
+    mutation CreateElderProfile($input: CreateElderProfileInput!) {
+        createElderProfile(input: $input) {
+            id
+            firstName
+            lastName
+            dateOfBirth
+            mobilityLevel
+            address
+            city
+        }
+    }
+`
+
+export const UPDATE_ELDER_PROFILE: TypedDocumentNode<Mutation, MutationUpdateElderProfileArgs> = gql`
+    mutation UpdateElderProfile($elderId: Int!, $input: UpdateElderProfileInput!) {
+        updateElderProfile(elderId: $elderId, input: $input) {
+            id
+        }
+    }
+`
+
+export const REMOVE_ELDER_PROFILE: TypedDocumentNode<Mutation, MutationRemoveElderProfileArgs> = gql`
+    mutation RemoveElderProfile($elderId: Int!) {
+        removeElderProfile(elderId: $elderId)
+    }
+` 

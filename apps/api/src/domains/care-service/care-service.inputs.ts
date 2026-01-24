@@ -7,7 +7,7 @@ import { Field, ID, InputType } from "type-graphql";
 @InputType()
 export class CreateServiceCategoryInput {
   @Field(() => String)
-  category_name!: string;
+  categoryName!: string;
 
   @Field(() => String, { nullable: true })
   description?: string;
@@ -16,13 +16,13 @@ export class CreateServiceCategoryInput {
 @InputType()
 export class UpdateServiceCategoryInput {
   @Field(() => String, { nullable: true })
-  category_name?: string;
+  categoryName?: string;
 
   @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => String, { nullable: true })
-  is_active?: boolean;
+  isActive?: boolean;
 }
 
 /* -------------------------------
@@ -32,10 +32,10 @@ export class UpdateServiceCategoryInput {
 @InputType()
 export class CreateServiceTaskInput {
   @Field(() => ID)
-  category_id!: number;
+  categoryId!: number;
 
   @Field(() => String)
-  service_name!: string;
+  serviceName!: string;
 
   @Field(() => String, { nullable: true })
   description?: string;
@@ -44,11 +44,11 @@ export class CreateServiceTaskInput {
 @InputType()
 export class UpdateServiceTaskInput {
   @Field(() => String, { nullable: true })
-  service_name?: string;
+  serviceName?: string;
 
   @Field(() => String, { nullable: true })
   description?: string;
 
   @Field(() => Boolean, { nullable: true })
-  is_active?: boolean;
+  isActive?: boolean;
 }

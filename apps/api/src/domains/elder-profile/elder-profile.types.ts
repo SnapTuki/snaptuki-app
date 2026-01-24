@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 import { MobilityLevel } from "../../generated/prisma";
-
+import { GraphQLDateTime } from "graphql-scalars";
 /* ---------------- ENUMS ---------------- */
 
 registerEnumType(MobilityLevel, {
@@ -15,30 +15,56 @@ export class ElderProfile {
   @Field(() => ID)
   id: number;
 
-  @Field(()=>String)
-  first_name: string;
+  @Field(() => String)
+  firstName: string;
 
-  @Field(()=>String)
-  last_name: string;
+  @Field(() => String)
+  lastName: string;
 
-  @Field(()=>Date,{ nullable: true })
-  date_of_birth?: Date;
+  @Field(() => Date, { nullable: true })
+  dateOfBirth?: Date;
 
-  @Field(()=>String,{ nullable: true })
+  @Field(() => String, { nullable: true })
   address?: string;
 
-  @Field(()=>String,{ nullable: true })
+  @Field(() => String, { nullable: true })
+  country?: string;
+
+  @Field(() => String, { nullable: true })
+  city?: string;
+
+  @Field(() => String, { nullable: true })
+  postalCode?: string;
+
+  @Field(() => String, { nullable: true })
   phone?: string;
 
-  @Field(()=>String,{ nullable: true })
-  medical_notes?: string;
+  @Field(() => String, { nullable: true })
+  medicalNotes?: string;
 
   @Field(() => MobilityLevel)
-  mobility_level: MobilityLevel;
+  mobilityLevel: MobilityLevel;
 
-  @Field(()=>String,{ nullable: true })
+  @Field(() => String, { nullable: true })
   notes?: string;
 
-  @Field(()=>Date)
-  created_at: Date;
+}
+
+
+@ObjectType()
+export class ElderProfileCard {
+  @Field(() => ID)
+  id: number;
+
+  @Field(() => String)
+  firstName: string;
+
+  @Field(() => String)
+  lastName: string;
+
+  @Field(() => GraphQLDateTime)
+  dateOfBirth?: Date;
+
+  @Field(() => MobilityLevel)
+  mobilityLevel: MobilityLevel;
 }

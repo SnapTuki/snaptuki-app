@@ -2,34 +2,49 @@
 import { type PropsWithChildren, useState, useEffect } from "react";
 import AuthContext from "../contexts/authContext";
 import useAuthStorage from "../hooks/useAuthStorage";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { LOGIN } from "../graphql/mutations";
 import { Alert } from "react-native";
+import { WHO_IS_ME } from "../graphql/queries";
 import { LoginCredentials } from "../types/__generated__/graphql";
 
 export function SessionProvider({ children }: PropsWithChildren) {
     const authStorage = useAuthStorage();
     const [login,] = useMutation(LOGIN);
+    const client = useApolloClient(); // Access the Apollo Client instance
     const [session, setSession] = useState<string | null>(null);
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<any | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        const restoreSession = async () => {
-            try {
-                setIsLoading(true);
-                const token = await authStorage?.getAccessToken();
-                if (token) {
-                    setSession(token);
-                    // optionally fetch user profile here
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const restoreSession = async () => {
+      try {
+        const token = await authStorage?.getAccessToken();
 
-        restoreSession();
-    }, []);
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+
+        setSession(token);
+
+        // Fetch current user
+        const { data } = await client.query({
+          query: WHO_IS_ME,
+        });
+
+        setUser(data?.me);
+      } catch (e) {
+        console.error("Session restore failed", e);
+        await authStorage?.removeAccessToken();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
 
 
 
@@ -56,11 +71,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
 
                 // 1. Save to persistent storage
+               
                 await authStorage?.setAccessToken(loginPayload.token);
-
+                console.log(`Token from storage:`)
+                const tok = await authStorage?.getAccessToken();
+                console.log(tok);
 
                 setSession(loginPayload.token);
                 setUser(loginPayload.user);
+                
 
             }
         } catch (error: any) {

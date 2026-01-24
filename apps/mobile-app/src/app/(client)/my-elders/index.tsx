@@ -1,48 +1,57 @@
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, Alert, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
 import { useRouter } from "expo-router";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { GET_MY_ELDERS } from "../../../graphql/queries"; // Adjust path based on your folder structure
+import { REMOVE_ELDER_PROFILE } from "../../../graphql/mutations"; // Adjust path based on your folder structure
+import { useSession } from "@/src/hooks/useSession";
+import { ElderProfileCard } from "@/src/types/__generated__/graphql";
 
-type Elder = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  age?: number;
-  mobilityLevel: "independent" | "needs_assistant" | "wheelchair";
-};
 
 export default function MyEldersScreen() {
   const router = useRouter();
+  const {user} = useSession();
+  // 1. Fetch Data
+  const { data, loading, error, refetch } = useQuery(GET_MY_ELDERS, {
+    fetchPolicy: "cache-and-network" // Ensures list is fresh on navigation
+  });
 
-  // 🔹 TEMP DATA (replace with GraphQL query)
-  const [elders, setElders] = useState<Elder[]>([
-    {
-      id: "1",
-      firstName: "Aisha",
-      lastName: "Khan",
-      age: 78,
-      mobilityLevel: "needs_assistant",
+  console.log(`User loaded : ${user}`);
+
+  // 2. Setup Delete Mutation
+  const [removeElderMutation] = useMutation(REMOVE_ELDER_PROFILE, {
+    onCompleted: () => {
+      // Option A: Refetch list
+      refetch();
     },
-  ]);
+    onError: (err) => {
+      Alert.alert("Error", "Failed to remove elder profile: " + err.message);
+    }
+  });
+
+  // 3. Transform Backend Data to UI Model
+  const elders = data?.listMyElders ?? [];
 
   const removeElder = (id: string) => {
     Alert.alert(
       "Remove Elder",
-      "Are you sure you want to remove this elder profile?",
+      "Are you sure you want to remove this elder profile? This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Remove",
           style: "destructive",
           onPress: () => {
-            setElders((prev) => prev.filter((e) => e.id !== id));
+            removeElderMutation({
+              variables: { elderId: parseInt(id) }
+            });
           },
         },
       ]
     );
   };
 
-  const renderElder = ({ item }: { item: Elder }) => (
+  const renderElder = ({ item }: { item: ElderProfileCard }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View>
@@ -50,12 +59,13 @@ export default function MyEldersScreen() {
             {item.firstName} {item.lastName}
           </Text>
           <Text style={styles.subText}>
-            Age: {item.age ?? "—"} · Mobility: {formatMobility(item.mobilityLevel)}
+            Age: {calculateAge(item.dateOfBirth) ?? "—"} · Mobility: {formatMobility(item.mobilityLevel)}
           </Text>
         </View>
 
         <Pressable
-          onPress={() => router.push(`/my-elders/[elderId]?id=${item.id}`)}
+          onPress={() => router.push(`/my-elders/${item.id}`)}
+          hitSlop={10}
         >
           <Feather name="edit-2" size={18} color="#0a7ea4" />
         </Pressable>
@@ -65,6 +75,7 @@ export default function MyEldersScreen() {
         <Pressable
           style={styles.removeBtn}
           onPress={() => removeElder(item.id)}
+          hitSlop={10}
         >
           <Feather name="trash-2" size={16} color="#ef4444" />
           <Text style={styles.removeText}>Remove</Text>
@@ -72,6 +83,26 @@ export default function MyEldersScreen() {
       </View>
     </View>
   );
+
+  if (loading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#0a7ea4" />
+      </View>
+    );
+  }
+
+  if (error) {
+    console.log(error)
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={{ color: "red" }}>Error loading profiles.</Text>
+        <Pressable onPress={() => refetch()} style={{ marginTop: 10 }}>
+          <Text style={{ color: "#0a7ea4" }}>Tap to Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -92,6 +123,8 @@ export default function MyEldersScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderElder}
           contentContainerStyle={{ paddingBottom: 120 }}
+          onRefresh={refetch}
+          refreshing={loading}
         />
       )}
 
@@ -105,93 +138,19 @@ export default function MyEldersScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-    paddingHorizontal: 16,
-  },
 
-  header: {
-    paddingVertical: 20,
-  },
+// --- Helpers ---
 
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-
-  subText: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-
-  actions: {
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-
-  removeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  removeText: {
-    color: "#ef4444",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#0a7ea4",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-});
-
+function calculateAge(dateString: Date | string): number {
+  const today = new Date();
+  const birthDate = new Date(dateString);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 function formatMobility(level: string) {
   switch (level) {
@@ -202,7 +161,7 @@ function formatMobility(level: string) {
     case "wheelchair":
       return "Wheelchair";
     default:
-      return "—";
+      return level; // Fallback to raw string if enum changes
   }
 }
 
@@ -234,3 +193,84 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+    paddingHorizontal: 16,
+  },
+  center: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    paddingVertical: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  subText: {
+    fontSize: 13,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  actions: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  removeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 4, // Added touch area
+  },
+  removeText: {
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#0a7ea4",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+});

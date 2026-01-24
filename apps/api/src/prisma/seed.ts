@@ -16,52 +16,52 @@ async function main() {
   const familyUser = await prisma.user.create({
     data: {
       email: "hamidebadi1996@yahoo.com",
-      first_name: "Hamid",
-      last_name: "Aebadi",
-      password_hash: familyPassword,
+      firstName: "Hamid",
+      lastName: "Aebadi",
+      passwordHash: familyPassword,
       role: UserRole.FAMILY,
-      is_verified: true,
-      familymemberprofile: {
+      isVerified: true,
+      familyMemberProfile: {
         create: {
-          phone_number: "+358401234567",
+          phoneNumber: "+358401234567",
           gender: Gender.MALE,
           city: "Helsinki",
         },
       },
     },
-    include: { familymemberprofile: true },
+    include: { familyMemberProfile: true },
   });
 
   const caregiverUser = await prisma.user.create({
     data: {
       email: "marko.laine@snaptuki.com",
-      password_hash: caregiverPassword,
-      first_name: "Marko",
-      last_name: "Laine",
+      passwordHash: caregiverPassword,
+      firstName: "Marko",
+      lastName: "Laine",
       role: UserRole.CAREGIVER,
-      is_verified: true,
-      caregiverprofile: {
+      isVerified: true,
+      caregiverProfile: {
         create: {
-          phone_number: "+358409876543",
+          phoneNumber: "+358409876543",
           gender: Gender.MALE,
-          availability_status: Availability.online,
-          hourly_rate: 25,
+          availabilityStatus: Availability.online,
+          hourlyRate: 25,
           verified: true,
         },
       },
     },
-    include: { caregiverprofile: true },
+    include: { caregiverProfile: true },
   });
 
   /* ---------------- ELDER ---------------- */
 
   const elder = await prisma.elderProfile.create({
     data: {
-      first_name: "Matti",
-      last_name: "Korhonen",
-      date_of_birth: new Date("1945-05-10"),
-      mobility_level: MobilityLevel.needs_assistant,
-      medical_notes: "Diabetes, mild memory loss",
+      firstName: "Matti",
+      lastName: "Korhonen",
+      dateOfBirth: new Date("1945-05-10"),
+      mobilityLevel: MobilityLevel.needs_assistant,
+      medicalNotes: "Diabetes, mild memory loss",
       
     },
   });
@@ -74,12 +74,12 @@ async function main() {
   for (const category of careServices.service_categories) {
     await prisma.serviceCategory.create({
       data: {
-        category_name: category.name,
+        categoryName: category.name,
         //description: category.description,
-        servicetasks: {
+        serviceTasks: {
           createMany: {
             data: category.services.map((task: any) => ({
-              service_name: task,
+              serviceName: task,
             })),
           },
         },
@@ -89,14 +89,14 @@ async function main() {
 
   const medicalCare = await prisma.serviceCategory.create({
     data: {
-      category_name: "Medical Care",
+      categoryName: "Medical Care",
       description: "Medical-related home care",
-      servicetasks: {
+      serviceTasks: {
         createMany: {
           data: [
-            { service_name: "Medication reminder" },
-            { service_name: "Blood pressure monitoring" },
-            { service_name: "Insulin injection support" },
+            { serviceName: "Medication reminder" },
+            { serviceName: "Blood pressure monitoring" },
+            { serviceName: "Insulin injection support" },
           ],
         },
       },
@@ -105,14 +105,14 @@ async function main() {
 
   const householdHelp = await prisma.serviceCategory.create({
     data: {
-      category_name: "Household Help",
+      categoryName: "Household Help",
       description: "Help with daily household tasks",
-      servicetasks: {
+      serviceTasks: {
         createMany: {
           data: [
-            { service_name: "Meal preparation" },
-            { service_name: "Light cleaning" },
-            { service_name: "Laundry assistance" },
+            { serviceName: "Meal preparation" },
+            { serviceName: "Light cleaning" },
+            { serviceName: "Laundry assistance" },
           ],
         },
       },

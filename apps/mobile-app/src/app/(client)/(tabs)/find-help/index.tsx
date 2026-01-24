@@ -7,31 +7,12 @@ import {
   ScrollView, 
   TextInput, 
   SafeAreaView, 
-  Dimensions,
   Platform,
   StatusBar
 } from 'react-native';
 import { 
   Search, 
-  ChevronLeft, 
-  Check, 
-  ShowerHead, 
-  Shirt, 
-  Utensils, 
-  Activity, 
-  Accessibility, 
-  ChefHat, 
-  Home, 
-  Pill, 
-  Car, 
-  ShoppingBag, 
-  CreditCard, 
-  HeartPulse, 
-  Smile, 
-  CalendarHeart, 
-  Heart, 
-  ShieldAlert, 
-  PhoneCall,
+  Check,
   UserPlus,
   ArrowRight
 } from 'lucide-react-native';
@@ -49,8 +30,7 @@ export default function FindHelpScreen() {
   const {loading, error, data} = useQuery(GET_ALL_CARE_SERVICES);
 
   let serviceCategories = data?.getAllServiceCategories ?? [];
-
-  console.log(serviceCategories);
+  console.log(serviceCategories)
   const toggleTask = (taskId: string) => {
     setSelectedTasks(prev => 
       prev.includes(taskId) 
@@ -63,8 +43,8 @@ export default function FindHelpScreen() {
 
   const filteredCategories = serviceCategories.map(cat => ({
     ...cat,
-    tasks: cat.servicetasks.filter(t => 
-      t.service_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    tasks: cat.serviceTasks.filter(t => 
+      t.serviceName.toLowerCase().includes(searchQuery.toLowerCase()))
   })).filter(cat => cat.tasks.length > 0);
 
   return (
@@ -101,15 +81,15 @@ export default function FindHelpScreen() {
         showsVerticalScrollIndicator={false}
       >
         {filteredCategories?.map((category) => (
-          <View key={category.category_id} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>{category.category_name.toUpperCase()}</Text>
+          <View key={category.categoryId} style={styles.categoryBlock}>
+            <Text style={styles.categoryTitle}>{category.categoryName.toUpperCase()}</Text>
             {category.tasks.map((task) => {
-              const isSelected = selectedTasks.includes(task.id);
+              const isSelected = selectedTasks.includes(task.serviceId);
               return (
                 <TouchableOpacity
-                  key={task.id}
+                  key={task.serviceId}
                   activeOpacity={0.8}
-                  onPress={() => toggleTask(task.id)}
+                  onPress={() => toggleTask(task.serviceId)}
                   style={[
                     styles.taskCard,
                     isSelected && styles.taskCardSelected
@@ -127,7 +107,7 @@ export default function FindHelpScreen() {
                         styles.taskLabel,
                         isSelected && styles.taskLabelSelected
                       ]}>
-                        {task.service_name}
+                        {task.serviceName}
                       </Text>
                       {isSelected && (
                         <View style={styles.checkBadge}>

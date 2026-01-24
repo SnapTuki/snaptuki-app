@@ -17,7 +17,7 @@ export class CareTaskBookService {
     const booking = await this.db.booking.findUnique({
       where: { id: bookingId },
       include: {
-        care_service: true,
+        careService: true,
       },
     });
 
@@ -30,7 +30,7 @@ export class CareTaskBookService {
     }
 
     const existingTaskBook = await this.db.careTaskBook.findUnique({
-      where: { booking_id: bookingId },
+      where: { bookingId: bookingId },
     });
 
     if (existingTaskBook) {
@@ -40,15 +40,15 @@ export class CareTaskBookService {
     // Create task book
     const taskBook = await this.db.careTaskBook.create({
       data: {
-        booking_id: booking.id,
-        caregiver_id: booking.caregiver_id,
-        elder_id: booking.elder_id,
+        bookingId: booking.id,
+        caregiverId: booking.caregiverId,
+        elderId: booking.elderId,
         status: CareTaskBookStatus.ACTIVE,
       },
     });
 
     // Generate default tasks (can be template-based later)
-    await this.createDefaultTasks(taskBook.id, booking.care_service.service_name);
+    await this.createDefaultTasks(taskBook.id, booking.careService.serviceName);
 
     return taskBook;
   }
@@ -68,10 +68,10 @@ export class CareTaskBookService {
 
     await this.db.careTask.createMany({
       data: defaultTasks.map(task => ({
-        task_book_id: taskBookId,
+        taskBookId: taskBookId,
         title: `${serviceName}: ${task.title}`,
         status: CareTaskStatus.PENDING,
-        task_order: task.taskOrder
+        taskOrder: task.taskOrder
       })),
     });
   }
@@ -82,7 +82,7 @@ export class CareTaskBookService {
 
   async getTaskBookByBooking(bookingId: number) {
     return this.db.careTaskBook.findUnique({
-      where: { booking_id: bookingId },
+      where: { bookingId: bookingId },
       include: {
         tasks: true,
       },
@@ -111,7 +111,7 @@ export class CareTaskBookService {
     const task = await this.db.careTask.findUnique({
       where: { id: taskId },
       include: {
-        taskbook: true,
+        taskBook: true,
       },
     });
 
@@ -119,11 +119,11 @@ export class CareTaskBookService {
       throw new Error("Task not found");
     }
 
-    if (task.taskbook.caregiver_id !== caregiverId) {
+    if (task.taskBook.caregiverId !== caregiverId) {
       throw new Error("Not authorized to update this task");
     }
 
-    if (task.taskbook.status !== CareTaskBookStatus.ACTIVE) {
+    if (task.taskBook.status !== CareTaskBookStatus.ACTIVE) {
       throw new Error("Task book is not active");
     }
 
@@ -131,8 +131,8 @@ export class CareTaskBookService {
       where: { id: taskId },
       data: {
         status,
-        caregiver_notes: notes,
-        completed_at:
+        caregiverNotes: notes,
+        completedAt:
           status === CareTaskStatus.DONE ? new Date() : null,
       },
     });

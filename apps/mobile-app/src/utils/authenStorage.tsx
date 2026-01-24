@@ -6,16 +6,18 @@ class AuthStorage {
         this.namespace = namespace;
     }
 
-    getAccessToken() {
+    async getAccessToken() {
         // Get the access token for the storage
-        const token = AsyncStorage.getItem(`${this.namespace}:token`);
+        const token = await AsyncStorage.getItem(`${this.namespace}:token`);
         return token;
     }
 
-    setAccessToken(accessToken: string) {AsyncStorage.setItem(`${this.namespace}:token`, accessToken)};
+    async setAccessToken(accessToken: string) {
+        await AsyncStorage.setItem(`${this.namespace}:token`, accessToken)
+    };
 
-    removeAccessToken() {
-       AsyncStorage.removeItem(`${this.namespace}:token`);
+    async removeAccessToken() {
+        await AsyncStorage.removeItem(`${this.namespace}:token`);
     }
 }
 

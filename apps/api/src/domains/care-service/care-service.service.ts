@@ -12,12 +12,12 @@ export class CareServiceService {
    * ---------------------------- */
 
   async createServiceCategory(data: {
-    category_name: string;
+    categoryName: string;
     description?: string;
   }) {
     return this.dbClient.serviceCategory.create({
       data: {
-        category_name: data.category_name,
+        category_name: data.categoryName,
         description: data.description,
       },
     });
@@ -46,7 +46,7 @@ export class CareServiceService {
   async getAllServiceCategories() {
     return await this.dbClient.serviceCategory.findMany({
         include: {
-            servicetasks: true
+            serviceTasks: true
         }
     });
   }
@@ -65,14 +65,14 @@ export class CareServiceService {
    * ---------------------------- */
 
   async createServiceTask(data: {
-    category_id: number;
-    service_name: string;
+    categoryId: number;
+    serviceName: string;
     description?: string;
   }) {
     return this.dbClient.serviceTask.create({
       data: {
-        category_id: data.category_id,
-        service_name: data.service_name,
+        category_id: data.categoryId,
+        service_name: data.serviceName,
         description: data.description,
       },
     });

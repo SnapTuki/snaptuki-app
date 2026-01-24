@@ -10,20 +10,22 @@ import { GraphQLError } from "graphql";
 @Resolver()
 export class AuthResolver {
 
-    @Query(() => User, { nullable: true })
-    me(@Ctx() ctx: GraphQLContext): User | null {
-        if (!ctx.user) throw new AuthenticationError("User is not logged in");
-
-        return ctx.user;
-
+    @Query(() => User)
+    async me(
+        @Ctx() ctx: GraphQLContext
+    ): Promise<User> {
+       
+        const user = await ctx.services.authService.getMe(ctx.user.id)
+        return user;
     }
+
 
 
     @Mutation(() => Boolean)
     async verifyEmail(
         @Arg('data', () => VerifyEmailInput) data: VerifyEmailInput,
         @Ctx() ctx: GraphQLContext
-    ){
+    ) {
         return ctx.services.authService.verifyEmail(data);
     }
 

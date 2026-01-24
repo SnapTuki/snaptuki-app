@@ -90,9 +90,9 @@ export class AuthService {
             data: {
                 role: data.role,
                 email: data.email,
-                first_name: data.firstName,
-                last_name: data.lastName,
-                password_hash: passwordHash,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                passwordHash: passwordHash,
             }
         });
 
@@ -101,9 +101,9 @@ export class AuthService {
         const token = this.generateToken(newUser);
         const createdUser: UserWithToken = {
             user: {
-                id: newUser.user_id,
-                firstName: newUser.first_name,
-                lastName: newUser.last_name,
+                id: newUser.userId,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
                 email: newUser.email,
                 role: newUser.role
             },
@@ -127,14 +127,14 @@ export class AuthService {
         if (!user) throw new InvalidCredentialsError("Email does not exists");
 
         // check passowrd
-        const isPassValid = await bcrypt.compare(credentials.password, user.password_hash);
+        const isPassValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isPassValid) throw new InvalidCredentialsError("Password is not correct");
 
 
         const typedUser: User = {
-            id: user.user_id,
-            firstName: user.first_name,
-            lastName: user.last_name,
+            id: user.userId,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.email,
             role: user.role
         }
@@ -147,20 +147,21 @@ export class AuthService {
         return authPayload;
     }
 
-    public async getMe(user_id: string): Promise<User> {
-        const me = this.dbClient.findUnique({
-            where: { user_id }
+    public async getMe(userId: number): Promise<User> {
+        const me = this.dbClient.user.findUnique({
+            where: { userId: userId},
+            select: {
+                userId: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                role: true
+            }
         });
 
         if (!me) throw new AuthenticationError("User Not Found");
 
-        return {
-            id: me.user_id,
-            firstName: me.first_name,
-            lastName: me.last_name,
-            role: me.role,
-            email: me.email
-        }
+        return me;
     }
 
     private generateToken(user: User): string {

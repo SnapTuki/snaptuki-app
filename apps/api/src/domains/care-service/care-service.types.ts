@@ -6,22 +6,16 @@ import { Field, ID, ObjectType } from "type-graphql";
 @ObjectType()
 export class ServiceTask {
   @Field(() => ID)
-  id!: number;
+  serviceId!: number;
 
   @Field(() => String)
-  service_name!: string;
+  serviceName!: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   description?: string;
 
   @Field(() => Boolean)
-  is_active!: boolean;
-
-  @Field(() => Date)
-  created_at!: Date;
-
-  @Field(() => Date)
-  updated_at!: Date;
+  isActive!: boolean;
 }
 
 /* -------------------------------
@@ -30,20 +24,15 @@ export class ServiceTask {
 @ObjectType()
 export class ServiceCategory {
   @Field(() => ID)
-  category_id!: number;
+  categoryId!: number;
 
   @Field(() => String)
-  category_name!: string;
+  categoryName!: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   description?: string;
 
-  @Field(() => Boolean)
-  is_active!: boolean;
-
-  @Field(() => Date)
-  created_at!: Date;
 
   @Field(() => [ServiceTask])
-  servicetasks!: ServiceTask[];
+  serviceTasks!: ServiceTask[];
 }

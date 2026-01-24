@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
+import { GraphQLDateTime } from "graphql-scalars";
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { buildSchema } from "type-graphql";
@@ -25,9 +26,9 @@ import { CareServiceService } from "./domains/care-service/care-service.service"
 import { CareTaskBookResolver } from "./domains/care-task-book/ctb.resolvers";
 import { CareServiceResolver } from "./domains/care-service/care-service.resolvers";
 export interface DecodedUserToken {
-  id: string;
-  email: string;
-  role: UserRole; // Used for fast authorization checks
+    id: string;
+    email: string;
+    role: UserRole; // Used for fast authorization checks
 }
 
 
@@ -45,12 +46,17 @@ async function startApolloServer() {
 
     const schema = await buildSchema({
         resolvers: [
-            AuthResolver, 
-            BookingResolver, 
-            FamilyProfileResolver, 
-            ElderProfileResolver, 
-            CareTaskBookResolver, 
-            CareServiceResolver]
+            AuthResolver,
+            BookingResolver,
+            FamilyProfileResolver,
+            ElderProfileResolver,
+            CareTaskBookResolver,
+            CareServiceResolver
+        ],
+
+        scalarsMap: [
+            { type: Date, scalar: GraphQLDateTime }
+        ],
     });
 
 
@@ -73,6 +79,7 @@ async function startApolloServer() {
                     user = payload
                 } catch (error) {
                     // token invalid → user stays undefined
+                    console.log("User undefnied")
                     user = null;
                 }
             }

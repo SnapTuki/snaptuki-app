@@ -1,10 +1,10 @@
 import { createContext } from 'react';
-import { LoginCredentials, UserWithToken } from '../types/__generated__/graphql';
+import { LoginCredentials, User,  } from '../types/__generated__/graphql';
 
 interface AuthenticationContext {
     signIn: (credentials: LoginCredentials) => void;
     signOut: () => void;
-    user: UserWithToken | null;
+    user: User | null;
     session?: String | null | undefined;
     isLoading: boolean;
 }

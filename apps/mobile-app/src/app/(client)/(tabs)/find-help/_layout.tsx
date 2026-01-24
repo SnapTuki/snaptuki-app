@@ -1,7 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import GlobalHeader from '@/src/components/GlobalHeader';
-
+import { ChevronLeft } from 'lucide-react-native';
 export default function HomeStackLayout() {
   return (
     <Stack
@@ -34,8 +33,8 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="[caregiverId]"
         options={{ 
-          title: "Caregiver Details",
-          header: () => <GlobalHeader />,
+          title: "Details",
+          headerBackVisible: true,
          }}
       />
 

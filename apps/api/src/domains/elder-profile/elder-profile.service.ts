@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { MobilityLevel } from "../../generated/prisma";
+import {
+  CreateElderProfileInput,
+  UpdateElderProfileInput,
+} from "./elder-profile.inputs";
 
 export class ElderProfileService {
   private dbClient: PrismaClient;
@@ -8,45 +11,77 @@ export class ElderProfileService {
     this.dbClient = db;
   }
 
+  /* ---------------- CREATE ---------------- */
+
+  async createElderProfile(input: CreateElderProfileInput) {
+    return this.dbClient.elderProfile.create({
+      data: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        dateOfBirth: input.dateOfBirth,
+        address: input.address,
+        phone: input.phone,
+        medicalNotes: input.medicalNotes,
+        mobilityLevel: input.mobilityLevel,
+        familyMembers: {
+          create: {
+            relationship: input.relationship ?? "family",
+            family: {
+              connect: {
+                id: input.familyMemberId
+              }
+            }
+          }
+        }
+      },
+    });
+  }
+
   /* ---------------- READ ---------------- */
 
   async getElderById(elderId: number) {
     return this.dbClient.elderProfile.findUnique({
       where: { id: elderId },
-      include: {
-        bookings: true,
-      },
     });
   }
 
   async listEldersForFamilyMember(familyMemberId: number) {
-    return this.dbClient.elderProfile.findMany({
+    console.log("Elderprofile service called");
+    const result = await this.dbClient.elderProfile.findMany({
       where: {
-        familyelderlink: {
+        familyMembers: {
           some: {
-            family_member_id: familyMemberId,
+            family: {
+              userId: familyMemberId
+            }
           },
         },
       },
     });
+
+    console.log(result)
+    return result
   }
 
-  /* ---------------- UPDATE (HEALTH DATA) ---------------- */
+  /* ---------------- UPDATE ---------------- */
 
   async updateElderProfile(
     elderId: number,
-    data: {
-      address?: string;
-      phone?: string;
-      medical_notes?: string;
-      mobility_level?: MobilityLevel;
-      notes?: string;
-    }
+    input: UpdateElderProfileInput
   ) {
     return this.dbClient.elderProfile.update({
       where: { id: elderId },
-      data,
+      data: input,
     });
+  }
+
+  /* ---------------- DELETE ---------------- */
+
+  async deleteElderProfile(elderId: number) {
+    await this.dbClient.elderProfile.delete({
+      where: { id: elderId },
+    });
+    return true;
   }
 
   /* ---------------- BOOKING SUPPORT ---------------- */
