@@ -11,10 +11,8 @@ import { GraphQLError } from "graphql";
 export class AuthResolver {
 
     @Query(() => User)
-    async me(
-        @Ctx() ctx: GraphQLContext
-    ): Promise<User> {
-       
+    async me(@Ctx() ctx: GraphQLContext): Promise<User> {
+        console.log(`User from resolver called`, ctx.user.id)
         const user = await ctx.services.authService.getMe(ctx.user.id)
         return user;
     }

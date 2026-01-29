@@ -5,6 +5,7 @@ import { ElderProfileService } from "./domains/elder-profile/elder-profile.servi
 import { CareTaskBookService } from "./domains/care-task-book/ctb.service"
 import { CareServiceService } from "./domains/care-service/care-service.service"
 import { User } from "./domains/auth/auth.types"
+import { CaregiverProfileService } from "./domains/caregiver-profile/cg.service"
 
 export interface GraphQLContext {
     services: {
@@ -14,6 +15,7 @@ export interface GraphQLContext {
         elderProfileService: ElderProfileService,
         careTaskBookService: CareTaskBookService,
         careServiceService: CareServiceService,
+        caregiverProfileService: CaregiverProfileService
     },
     user: User | null
 }

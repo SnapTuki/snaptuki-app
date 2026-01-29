@@ -4,19 +4,16 @@ import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_ELDERS } from "../../../graphql/queries"; // Adjust path based on your folder structure
 import { REMOVE_ELDER_PROFILE } from "../../../graphql/mutations"; // Adjust path based on your folder structure
-import { useSession } from "@/src/hooks/useSession";
 import { ElderProfileCard } from "@/src/types/__generated__/graphql";
 
 
 export default function MyEldersScreen() {
   const router = useRouter();
-  const {user} = useSession();
   // 1. Fetch Data
   const { data, loading, error, refetch } = useQuery(GET_MY_ELDERS, {
     fetchPolicy: "cache-and-network" // Ensures list is fresh on navigation
   });
 
-  console.log(`User loaded : ${user}`);
 
   // 2. Setup Delete Mutation
   const [removeElderMutation] = useMutation(REMOVE_ELDER_PROFILE, {

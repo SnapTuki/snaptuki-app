@@ -1,3 +1,4 @@
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,40 +7,64 @@ import {
   TextInput,
   Image,
   ScrollView,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useMemo, useState } from "react";
+import { useQuery } from "@apollo/client/react";
+import { GET_CAREGIVER_PROFILE, GET_MY_ELDERS } from "../../../graphql/queries";
+import { CaregiverProfile } from "@/src/types/__generated__/graphql";
+import { useSelectedServices } from "@/src/hooks/useSelectedservices";
+const PAYMENT_METHODS = [
+  { id: "card", label: "Card Payment", icon: "card-outline" },
+  { id: "cash", label: "Cash on Arrival", icon: "cash-outline" },
+  { id: "invoice", label: "Invoice (Email)", icon: "document-text-outline" },
+];
 
 export default function BookingRequestModal() {
   const { caregiverId } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  
+  // Use Booking Context
+  const { 
+    selectedServiceIds, 
+    addService, 
+    removeService 
+  } = useSelectedServices();
 
-  /* ---------------- Mock Data (replace later) ---------------- */
+  const parsedId = parseInt(Array.isArray(caregiverId) ? caregiverId[0] : caregiverId, 10);
 
-  const service = {
-    name: "Personal Elder Care",
-    description: "Daily assistance, companionship, medication reminders",
-  };
+  // --- Data Fetching ---
+  const { data: caregiverData, loading: loadingCaregiver } = useQuery(GET_CAREGIVER_PROFILE, {
+    variables: { profileId: parsedId },
+    skip: !parsedId,
+  });
 
-  const elder = {
-    name: "Maria Ahmed",
-    avatar: "https://i.pravatar.cc/300?img=12",
-  };
+  const { data: eldersData, loading: loadingElders } = useQuery(GET_MY_ELDERS);
 
-  const hourlyRate = 18;
-
-  /* ---------------- State ---------------- */
-
+  // --- Local State ---
+  const [selectedElderId, setSelectedElderId] = useState<number | null>(null);
   const [arrivalTime, setArrivalTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(
-    new Date(new Date().getTime() + 2 * 60 * 60 * 1000)
-  );
+  const [endTime, setEndTime] = useState(new Date(new Date().getTime() + 2 * 60 * 60 * 1000));
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [notes, setNotes] = useState("");
 
-  /* ---------------- Calculations ---------------- */
+  const caregiver = caregiverData?.getCaregiver as CaregiverProfile;
+  const elders = eldersData?.listMyElders || [];
+
+  // --- Helpers ---
+  const toggleServiceInModal = (id: number) => {
+    if (selectedServiceIds.includes(id)) {
+      removeService(id);
+    } else {
+      addService(id);
+    }
+  };
 
   const durationHours = useMemo(() => {
     const diffMs = endTime.getTime() - arrivalTime.getTime();
@@ -47,264 +72,594 @@ export default function BookingRequestModal() {
     return Math.max(0, Number(hours.toFixed(1)));
   }, [arrivalTime, endTime]);
 
-  const totalPrice = useMemo(
-    () => Math.round(durationHours * hourlyRate),
-    [durationHours]
-  );
+  const totalPrice = useMemo(() => {
+    if (!caregiver?.hourlyRate) return 0;
+    return Math.round(durationHours * caregiver.hourlyRate);
+  }, [durationHours, caregiver]);
 
-  /* ---------------- UI ---------------- */
+  const handleBook = () => {
+    if (!selectedElderId) {
+      Alert.alert("Missing Information", "Please select an elder receiving care.");
+      return;
+    }
+    if (selectedServiceIds.length === 0) {
+      Alert.alert("Missing Information", "Please select at least one service.");
+      return;
+    }
+
+    
+    
+    Alert.alert("Booking Sent", "Your request has been sent to the caregiver!");
+    router.back();
+  };
+
+  if (loadingCaregiver || loadingElders) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (!caregiver) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Caregiver not found.</Text>
+        <Pressable onPress={() => router.back()}><Text style={{color: 'blue'}}>Go Back</Text></Pressable>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom, paddingTop: insets.top + 8 }]}>
-      {/* Header */}
+    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 20 : 0 }]}>
+      
+      {/* --- Header --- */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Request Booking</Text>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#0f172a" />
-        </Pressable>
+        <Text style={styles.headerTitle}>New Booking Request</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+          <Ionicons name="close" size={24} color="#334155" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Service Summary */}
-        <Card>
-          <Text style={styles.sectionTitle}>Requested Service</Text>
-          <Text style={styles.serviceName}>{service.name}</Text>
-          <Text style={styles.serviceDesc}>{service.description}</Text>
-        </Card>
-
-        {/* Elder Profile */}
-        <Card>
-          <Text style={styles.sectionTitle}>Service Recipient</Text>
-          <View style={styles.elderRow}>
-            <Image source={{ uri: elder.avatar }} style={styles.elderAvatar} />
-            <Text style={styles.elderName}>{elder.name}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* 1. Caregiver Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Caregiver</Text>
+          <View style={styles.caregiverCard}>
+            <Image 
+              source={{ uri: caregiver.profilePhotoUrl || 'https://via.placeholder.com/100' }} 
+              style={styles.caregiverAvatar} 
+            />
+            <View>
+              <Text style={styles.caregiverName}>{caregiver.firstName} {caregiver.lastName}</Text>
+              <Text style={styles.caregiverRole}>{caregiver.city || "Available Provider"}</Text>
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={14} color="#F59E0B" />
+                <Text style={styles.ratingText}>{caregiver.rating?.toFixed(1) || "New"}</Text>
+              </View>
+            </View>
+            <View style={styles.priceTag}>
+              <Text style={styles.priceTagText}>€{caregiver.hourlyRate}/hr</Text>
+            </View>
           </View>
-        </Card>
+        </View>
 
-        {/* Date & Time */}
-        <Card>
-          <Text style={styles.sectionTitle}>Schedule</Text>
+        {/* 2. Elder Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Select Recipient</Text>
+          {elders.length === 0 ? (
+            <View style={styles.emptyElderCard}>
+              <Text style={styles.emptyElderText}>No profiles found</Text>
+              <Pressable onPress={() => router.push('/(client)/my-elders/add')} style={styles.addElderLink}>
+                <Text style={styles.addElderText}>+ Add New Profile</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.elderScroll}>
+              {elders.map((elder: any) => {
+                const isSelected = selectedElderId === parseInt(elder.id);
+                return (
+                  <Pressable
+                    key={elder.id}
+                    onPress={() => setSelectedElderId(parseInt(elder.id))}
+                    style={[styles.elderCard, isSelected && styles.elderCardSelected]}
+                  >
+                    <View style={[styles.elderAvatarPlaceholder, isSelected && { backgroundColor: '#dbeafe' }]}>
+                      <Text style={[styles.elderInitials, isSelected && { color: '#2563eb' }]}>
+                        {elder.firstName[0]}{elder.lastName[0]}
+                      </Text>
+                    </View>
+                    <Text style={[styles.elderName, isSelected && styles.elderNameSelected]} numberOfLines={1}>
+                      {elder.firstName}
+                    </Text>
+                    {isSelected && (
+                      <View style={styles.checkBadge}>
+                        <Ionicons name="checkmark" size={10} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
 
-          <Label text="Arrival Time" />
-          <DateTimePicker
-            value={arrivalTime}
-            mode="datetime"
-            display="compact"
-            onChange={(_, date) => date && setArrivalTime(date)}
-          />
-
-          <Label text="Ending Time" />
-          <DateTimePicker
-            value={endTime}
-            mode="datetime"
-            display="compact"
-            minimumDate={arrivalTime}
-            onChange={(_, date) => date && setEndTime(date)}
-          />
-        </Card>
-
-        {/* Payment */}
-        <Card>
-          <Text style={styles.sectionTitle}>Payment</Text>
-          <View style={styles.paymentRow}>
-            <Ionicons name="cash-outline" size={20} color="#2563eb" />
-            <Text style={styles.paymentText}>Cash (default)</Text>
+        {/* 3. Services Selection (Toggleable List) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>Select Services</Text>
+            <Text style={styles.sectionSubLabel}>{selectedServiceIds.length} selected</Text>
           </View>
-        </Card>
+          
+          <View style={styles.servicesContainer}>
+            {caregiver.offeredServices?.length ? (
+              caregiver.offeredServices.map((service) => {
+                // Ensure IDs are numbers
+                const serviceId = parseInt(service.serviceId as any);
+                const isSelected = selectedServiceIds.includes(serviceId);
+                
+                return (
+                  <Pressable
+                    key={service.serviceId}
+                    onPress={() => toggleServiceInModal(serviceId)}
+                    style={[styles.serviceRow, isSelected && styles.serviceRowSelected]}
+                  >
+                    <View style={styles.serviceInfo}>
+                      <Text style={[styles.serviceName, isSelected && styles.serviceNameSelected]}>
+                        {service.serviceName}
+                      </Text>
+                    </View>
+                    
+                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </Pressable>
+                );
+              })
+            ) : (
+              <Text style={styles.emptyText}>No specific services listed.</Text>
+            )}
+          </View>
+        </View>
 
-        {/* Notes */}
-        <Card>
-          <Text style={styles.sectionTitle}>Extra Notes</Text>
+        {/* 4. Schedule */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Schedule</Text>
+          <View style={styles.scheduleCard}>
+            <View style={styles.dateRow}>
+              <View>
+                <Text style={styles.dateLabel}>Start Time</Text>
+                <DateTimePicker
+                  value={arrivalTime}
+                  mode="datetime"
+                  display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                  onChange={(_, d) => d && setArrivalTime(d)}
+                  style={{ alignSelf: 'flex-start' }}
+                />
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.dateRow}>
+              <View>
+                <Text style={styles.dateLabel}>End Time</Text>
+                <DateTimePicker
+                  value={endTime}
+                  mode="datetime"
+                  display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                  minimumDate={arrivalTime}
+                  onChange={(_, d) => d && setEndTime(d)}
+                  style={{ alignSelf: 'flex-start' }}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* 5. Payment Method */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Payment Method</Text>
+          <View style={styles.paymentContainer}>
+            {PAYMENT_METHODS.map((method) => {
+              const isSelected = paymentMethod === method.id;
+              return (
+                <Pressable
+                  key={method.id}
+                  onPress={() => setPaymentMethod(method.id)}
+                  style={[styles.paymentOption, isSelected && styles.paymentOptionSelected]}
+                >
+                  <Ionicons 
+                    name={method.icon as any} 
+                    size={20} 
+                    color={isSelected ? "#2563eb" : "#64748b"} 
+                  />
+                  <Text style={[styles.paymentText, isSelected && styles.paymentTextSelected]}>
+                    {method.label}
+                  </Text>
+                  {isSelected && <Ionicons name="checkmark-circle" size={18} color="#2563eb" style={{ marginLeft: 'auto' }} />}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 6. Notes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Extra Notes</Text>
           <TextInput
-            placeholder="Any special instructions for the caregiver?"
+            style={styles.notesInput}
+            placeholder="Gate code, specific instructions, etc."
             multiline
+            numberOfLines={3}
             value={notes}
             onChangeText={setNotes}
-            style={styles.notesInput}
           />
-        </Card>
+        </View>
+
       </ScrollView>
 
-      {/* Footer */}
-      <View style={styles.footer}>
+      {/* --- Footer --- */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View>
-          <Text style={styles.totalLabel}>
-            Duration: {durationHours} hrs
-          </Text>
-          <Text style={styles.totalPrice}>${totalPrice}</Text>
+          <Text style={styles.totalLabel}>Estimated Total</Text>
+          <Text style={styles.totalPrice}>€{totalPrice}</Text>
+          <Text style={styles.durationText}>{durationHours} hrs</Text>
         </View>
-
-        <View style={styles.footerButtons}>
-          <Pressable
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.button, styles.confirmButton]}
-            disabled={durationHours <= 0}
-            onPress={() => {
-              // submit booking request
-              router.replace("/(client)/(tabs)/bookings");
-            }}
-          >
-            <Text style={styles.confirmText}>Request Booking</Text>
-          </Pressable>
-        </View>
+        
+        <Pressable 
+          style={[styles.bookBtn, (!selectedElderId || selectedServiceIds.length === 0) && styles.bookBtnDisabled]}
+          onPress={handleBook}
+        >
+          <Text style={styles.bookBtnText}>Confirm Booking</Text>
+          <Feather name="arrow-right" size={18} color="#fff" />
+        </Pressable>
       </View>
     </View>
   );
 }
 
-/* ---------------- Reusable Components ---------------- */
-
-function Card({ children }: { children: React.ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
-}
-
-function Label({ text }: { text: string }) {
-  return <Text style={styles.label}>{text}</Text>;
-}
-
-/* ---------------- Styles ---------------- */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#F8FAFC",
   },
-
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#fff",
+    justifyContent: "center",
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E2E8F0",
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#0f172a",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
   },
-
-  content: {
-    padding: 16,
+  closeBtn: {
+    position: "absolute",
+    right: 16,
+    padding: 4,
+  },
+  scrollContent: {
     paddingBottom: 140,
   },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
-
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
-    color: "#0f172a",
   },
-
-  serviceName: {
-    fontSize: 16,
-    fontWeight: "600",
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  serviceDesc: {
-    marginTop: 4,
-    color: "#64748b",
-    lineHeight: 20,
+  sectionSubLabel: {
+    fontSize: 12,
+    color: '#64748b',
   },
-
-  elderRow: {
+  
+  // Caregiver Card
+  caregiverCard: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
-  elderAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  caregiverAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     marginRight: 12,
+    backgroundColor: "#F1F5F9",
+  },
+  caregiverName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  caregiverRole: {
+    fontSize: 13,
+    color: "#64748B",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#B45309",
+  },
+  priceTag: {
+    marginLeft: "auto",
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  priceTagText: {
+    color: "#059669",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+
+  // Elder Selection
+  elderScroll: {
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+  },
+  elderCard: {
+    width: 100,
+    height: 110,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    padding: 8,
+  },
+  elderCardSelected: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
+  },
+  elderAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  elderInitials: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#64748B",
   },
   elderName: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#475569",
+    textAlign: "center",
   },
-
-  label: {
-    color: "#64748b",
-    marginBottom: 6,
-    marginTop: 10,
+  elderNameSelected: {
+    color: "#2563EB",
   },
-
-  paymentRow: {
-    flexDirection: "row",
+  checkBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "#2563EB",
+    borderRadius: 8,
+    padding: 2,
+  },
+  emptyElderCard: {
+    padding: 20,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#CBD5E1",
+    borderRadius: 12,
     alignItems: "center",
   },
-  paymentText: {
-    marginLeft: 8,
+  emptyElderText: {
+    color: "#64748B",
+    marginBottom: 8,
+  },
+  addElderLink: {
+    padding: 8,
+  },
+  addElderText: {
+    color: "#2563EB",
+    fontWeight: "600",
+  },
+
+  // Services
+  servicesContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    overflow: "hidden",
+  },
+  serviceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  serviceRowSelected: {
+    backgroundColor: "#F0F9FF", // Very light blue
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 14,
+    color: "#334155",
     fontWeight: "500",
   },
-
-  notesInput: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 10,
-    padding: 12,
-    minHeight: 90,
-    textAlignVertical: "top",
+  serviceNameSelected: {
+    color: "#1E40AF",
+    fontWeight: "700",
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  checkboxSelected: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
+  },
+  emptyText: {
+    padding: 16,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 
+  // Schedule
+  scheduleCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 16,
+  },
+  dateRow: {
+    paddingVertical: 8,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#F1F5F9",
+    marginVertical: 4,
+  },
+
+  // Payment
+  paymentContainer: {
+    gap: 10,
+  },
+  paymentOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    gap: 12,
+  },
+  paymentOptionSelected: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
+  },
+  paymentText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  paymentTextSelected: {
+    color: "#1E3A8A",
+  },
+
+  // Notes
+  notesInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: 12,
+    height: 100,
+    textAlignVertical: "top",
+    fontSize: 14,
+    color: "#0F172A",
+  },
+
+  // Footer
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#E2E8F0",
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
   },
-
   totalLabel: {
-    color: "#64748b",
+    fontSize: 11,
+    color: "#64748B",
+    textTransform: "uppercase",
+    fontWeight: "700",
   },
   totalPrice: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
-    marginBottom: 12,
+    color: "#0F172A",
   },
-
-  footerButtons: {
-    flexDirection: "row",
+  durationText: {
+    fontSize: 12,
+    color: "#64748B",
   },
-
-  button: {
-    flex: 1,
+  bookBtn: {
+    backgroundColor: "#2563EB",
     paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 4,
+    gap: 8,
   },
-  cancelButton: {
-    backgroundColor: "#f1f5f9",
+  bookBtnDisabled: {
+    backgroundColor: "#94A3B8",
+    opacity: 0.7,
   },
-  confirmButton: {
-    backgroundColor: "#2563eb",
-  },
-  cancelText: {
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  confirmText: {
-    fontWeight: "600",
+  bookBtnText: {
     color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });

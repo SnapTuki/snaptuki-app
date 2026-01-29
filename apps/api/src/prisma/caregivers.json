@@ -1,0 +1,471 @@
+[
+  {
+    "user": {
+      "firstName": "Liisa",
+      "lastName": "Virtanen",
+      "email": "liisa.virtanen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358401234567",
+      "dateOfBirth": "1982-03-15T00:00:00.000Z",
+      "gender": "FEMALE",
+      "address": "Mannerheimintie 14 B 5",
+      "city": "Helsinki",
+      "country": "Finland",
+      "languages": ["Finnish", "English", "Swedish"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Liisa",
+      "bio": "Registered nurse with broad experience. I can help with medical needs, but I'm also happy to help with daily chores and shopping.",
+      "hourlyRate": 38.50,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "150382-123A",
+      "internalNotes": "Top-rated verified professional.",
+      "rating": 4.9,
+      "completedJobsCount": 45,
+      "education": [
+        { "degree": "Bachelor of Health Care (Nursing)", "institution": "Metropolia", "graduationYear": 2005 }
+      ],
+      "experience": [
+        { "role": "Senior Nurse", "organization": "Helsinki City Hospital", "startYear": 2010, "endYear": null, "description": "Managing daily care." }
+      ],
+      "skills": ["Dementia Care", "Wound Care", "Cooking", "Cleaning"],
+      "offeredServices": [
+        "Lääkkeiden ottamisen muistuttaminen",
+        "Henkilökohtainen hygienia",
+        "Vuodepotilaan avustaminen",
+        "Sairastumisen aikainen apu",
+        "Yöaikainen avustus",
+        "Kaupassa käynti",
+        "Ruoanlaitto",
+        "Kevyt siivous",
+        "Pyykinpesu ja vaatehuolto",
+        "Saattaminen kävellen",
+        "Seurana oleminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Juha",
+      "lastName": "Korhonen",
+      "email": "juha.korhonen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358509876543",
+      "dateOfBirth": "1990-07-22T00:00:00.000Z",
+      "gender": "MALE",
+      "address": "Hämeenkatu 20",
+      "city": "Tampere",
+      "country": "Finland",
+      "languages": ["Finnish", "English"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Juha",
+      "bio": "Physiotherapist who loves active days. I help with rehabilitation exercises but also enjoy taking clients out for walks, shopping, or events.",
+      "hourlyRate": 45.00,
+      "availabilityStatus": "busy",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "220790-456B",
+      "internalNotes": "Physio background.",
+      "rating": 5.0,
+      "completedJobsCount": 32,
+      "education": [
+        { "degree": "Bachelor of Physiotherapy", "institution": "TAMK", "graduationYear": 2014 }
+      ],
+      "experience": [
+        { "role": "Rehabilitation Specialist", "organization": "FysioTampere", "startYear": 2015, "endYear": null, "description": "Rehabilitation planning." }
+      ],
+      "skills": ["Physiotherapy", "Mobility Assistance", "Driving"],
+      "offeredServices": [
+        "Asennon vaihtaminen ja ergonominen tuki",
+        "Apuvälineiden käytön avustus",
+        "Saattaminen kävellen",
+        "Kuntosali tai jumppa",
+        "Toipilasapu leikkauksen jälkeen",
+        "Ulkoiluapu",
+        "Kaupassa käynti",
+        "Taksisaattaminen",
+        "Yhdessä ulkoilu",
+        "Liikuntaharrastukset"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Aino",
+      "lastName": "Mäkinen",
+      "email": "aino.makinen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358451122334",
+      "dateOfBirth": "1998-11-05T00:00:00.000Z",
+      "gender": "FEMALE",
+      "address": "Yliopistonkatu 5",
+      "city": "Turku",
+      "country": "Finland",
+      "languages": ["Finnish", "English", "Spanish"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Aino",
+      "bio": "Medical student. I am great with tech, love cooking, and can help with personal care tasks as part of my training.",
+      "hourlyRate": 22.00,
+      "availabilityStatus": "online",
+      "verified": false,
+      "backgroundCheckStatus": "pending",
+      "ssn": "051198-789C",
+      "internalNotes": "Student.",
+      "rating": 4.5,
+      "completedJobsCount": 12,
+      "education": [
+        { "degree": "Bachelor of Medicine (Ongoing)", "institution": "University of Turku", "graduationYear": 2024 }
+      ],
+      "experience": [
+        { "role": "Volunteer", "organization": "Red Cross", "startYear": 2018, "endYear": 2020, "description": "Friend visitor." }
+      ],
+      "skills": ["Tech Support", "Cooking", "Basic Medical Care"],
+      "offeredServices": [
+        "Seurana oleminen",
+        "Kaupassa käynti",
+        "Kevyt siivous",
+        "Ruoanlaitto",
+        "Yhdessä ulkoilu",
+        "Keskustelu ja kuuntelu",
+        "Puhelimen käyttöapu",
+        "Tietokoneen käyttö",
+        "Henkilökohtainen hygienia",
+        "Lääkkeiden ottamisen muistuttaminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Elias",
+      "lastName": "Nieminen",
+      "email": "elias.nieminen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358443322110",
+      "dateOfBirth": "1985-05-18T00:00:00.000Z",
+      "gender": "MALE",
+      "address": "Leppävaarankatu 9",
+      "city": "Espoo",
+      "country": "Finland",
+      "languages": ["Finnish", "Swedish"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Elias",
+      "bio": "Practical nurse. Strong and reliable. I handle heavy lifting, cleaning, personal hygiene, and technical setups.",
+      "hourlyRate": 30.00,
+      "availabilityStatus": "offline",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "180585-234D",
+      "internalNotes": "Strong physique.",
+      "rating": 4.8,
+      "completedJobsCount": 150,
+      "education": [
+        { "degree": "Practical Nurse", "institution": "Omnia", "graduationYear": 2007 }
+      ],
+      "experience": [
+        { "role": "Practical Nurse", "organization": "Espoo Home Care", "startYear": 2008, "endYear": null, "description": "Home care visits." }
+      ],
+      "skills": ["Lifting", "Wound Care", "Cleaning", "IT Skills"],
+      "offeredServices": [
+        "Peseytymisessä avustaminen",
+        "Henkilökohtainen hygienia",
+        "Lääkkeiden ottamisen muistuttaminen",
+        "Pyörätuolissa avustaminen",
+        "Asennon vaihtaminen ja ergonominen tuki",
+        "Kevyt siivous",
+        "Roskien vienti",
+        "Kodinjärjestely",
+        "TV- ja älylaitteiden käyttö",
+        "Ulkoiluapu"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Sofia",
+      "lastName": "Laine",
+      "email": "sofia.laine@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358505566778",
+      "dateOfBirth": "1979-01-30T00:00:00.000Z",
+      "gender": "FEMALE",
+      "address": "Tikkurilantie 2",
+      "city": "Vantaa",
+      "country": "Finland",
+      "languages": ["Finnish", "English", "Russian"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sofia",
+      "bio": "Empathetic care professional. I focus on emotional support, but I am fully qualified for medical tasks and household management.",
+      "hourlyRate": 40.00,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "300179-888E",
+      "internalNotes": null,
+      "rating": 5.0,
+      "completedJobsCount": 89,
+      "education": [
+        { "degree": "Specialist Nurse", "institution": "Laurea", "graduationYear": 2003 }
+      ],
+      "experience": [
+        { "role": "Hospice Nurse", "organization": "Terhokoti", "startYear": 2010, "endYear": null, "description": "Palliative care." }
+      ],
+      "skills": ["Palliative Care", "Counseling", "Cleaning", "Medical Care"],
+      "offeredServices": [
+        "Kriisitilanteen tuki",
+        "Yöaikainen avustus",
+        "Keskustelu ja kuuntelu",
+        "Lääkkeiden ottamisen muistuttaminen",
+        "Vuodepotilaan avustaminen",
+        "Aterioiden lämmitys",
+        "Pyykinpesu ja vaatehuolto",
+        "Saattaminen kävellen",
+        "Apteekkiasiointi"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Matti",
+      "lastName": "Heikkinen",
+      "email": "matti.heikkinen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358407788990",
+      "dateOfBirth": "1992-09-14T00:00:00.000Z",
+      "gender": "MALE",
+      "address": "Isokatu 22",
+      "city": "Oulu",
+      "country": "Finland",
+      "languages": ["Finnish", "English"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Matti",
+      "bio": "General assistant. I'm great with physical tasks, shopping, cleaning, and tech support. I have a car and can drive you anywhere.",
+      "hourlyRate": 25.00,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "140992-567F",
+      "internalNotes": "Own car.",
+      "rating": 4.7,
+      "completedJobsCount": 20,
+      "education": [
+        { "degree": "Logistics", "institution": "Oulu Vocational College", "graduationYear": 2012 }
+      ],
+      "experience": [
+        { "role": "Personal Assistant", "organization": "Private", "startYear": 2018, "endYear": null, "description": "Assisting with transport and errands." }
+      ],
+      "skills": ["Driving", "Cleaning", "Shopping", "IT Help"],
+      "offeredServices": [
+        "Kaupassa käynti",
+        "Taksisaattaminen",
+        "Roskien vienti",
+        "Kevyt siivous",
+        "Lääkärikäynnille saattaminen",
+        "Apteekkiasiointi",
+        "Puhelimen käyttöapu",
+        "Tietokoneen käyttö",
+        "Postiasiat",
+        "Asiointi ja ulkopuolinen liikkuminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Olivia",
+      "lastName": "Järvinen",
+      "email": "olivia.jarvinen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358461122334",
+      "dateOfBirth": "1988-12-10T00:00:00.000Z",
+      "gender": "FEMALE",
+      "address": "Runeberginkatu 40",
+      "city": "Helsinki",
+      "country": "Finland",
+      "languages": ["Finnish", "English", "French"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Olivia",
+      "bio": "Occupational Therapist. I help with home safety, memory support, and paperwork. I also enjoy baking and light housework.",
+      "hourlyRate": 55.00,
+      "availabilityStatus": "busy",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "101288-901G",
+      "internalNotes": "Expert in safety.",
+      "rating": 5.0,
+      "completedJobsCount": 40,
+      "education": [
+        { "degree": "Bachelor of Health Care", "institution": "Arcada", "graduationYear": 2011 }
+      ],
+      "experience": [
+        { "role": "Occupational Therapist", "organization": "Helsinki City", "startYear": 2012, "endYear": null, "description": "Home safety visits." }
+      ],
+      "skills": ["Occupational Therapy", "Paperwork", "Cooking"],
+      "offeredServices": [
+        "Apuvälineiden käytön avustus",
+        "Kodinjärjestely",
+        "Muistamisen ja hahmottamisen tuki",
+        "Kela- ja Omakanta-palveluiden käyttö",
+        "Lomakkeiden täyttö yhdessä",
+        "Ruoanlaitto",
+        "Kevyt siivous",
+        "Viestien lukeminen",
+        "Lääkkeiden ottamisen muistuttaminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Leo",
+      "lastName": "Lehtonen",
+      "email": "leo.lehtonen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358502233445",
+      "dateOfBirth": "1995-04-04T00:00:00.000Z",
+      "gender": "MALE",
+      "address": "Aleksanterinkatu 10",
+      "city": "Lahti",
+      "country": "Finland",
+      "languages": ["Finnish", "English"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo",
+      "bio": "Sports instructor. I can help with exercise, heavy cleaning, shopping trips, and general companionship.",
+      "hourlyRate": 28.00,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "040495-345H",
+      "internalNotes": "Active.",
+      "rating": 4.6,
+      "completedJobsCount": 18,
+      "education": [
+        { "degree": "Sports Instructor", "institution": "Pajulahti", "graduationYear": 2016 }
+      ],
+      "experience": [
+        { "role": "Fitness Instructor", "organization": "Senior Gym", "startYear": 2017, "endYear": null, "description": "Senior classes." }
+      ],
+      "skills": ["Exercise", "Lifting", "Shopping"],
+      "offeredServices": [
+        "Kuntosali tai jumppa",
+        "Kävelylenkit",
+        "Ulkoiluapu",
+        "Saattaminen kävellen",
+        "Uinti",
+        "Liikuntaharrastukset",
+        "Kaupassa käynti",
+        "Roskien vienti",
+        "Kevyt siivous",
+        "Asiointi ja ulkopuolinen liikkuminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Emilia",
+      "lastName": "Koskinen",
+      "email": "emilia.koskinen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358449988776",
+      "dateOfBirth": "1993-02-14T00:00:00.000Z",
+      "gender": "FEMALE",
+      "address": "Kauppakatu 15",
+      "city": "Jyväskylä",
+      "country": "Finland",
+      "languages": ["Finnish", "English", "German"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Emilia",
+      "bio": "Nurse. Experienced in wound care and post-op recovery. I also love cleaning and organizing to keep the patient's environment safe.",
+      "hourlyRate": 32.00,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "140293-678I",
+      "internalNotes": null,
+      "rating": 4.9,
+      "completedJobsCount": 55,
+      "education": [
+        { "degree": "Bachelor of Health Care", "institution": "JAMK", "graduationYear": 2015 }
+      ],
+      "experience": [
+        { "role": "Staff Nurse", "organization": "Central Hospital", "startYear": 2016, "endYear": 2021, "description": "Surgical ward." }
+      ],
+      "skills": ["Nursing", "Cleaning", "Hygiene"],
+      "offeredServices": [
+        "Toipilasapu leikkauksen jälkeen",
+        "Sairastumisen aikainen apu",
+        "Lääkkeiden ottamisen muistuttaminen",
+        "Henkilökohtainen hygienia",
+        "Lyhytaikainen avuntarve",
+        "Kevyt siivous",
+        "Kodinjärjestely",
+        "Petivaatteiden vaihto",
+        "Pyykinpesu ja vaatehuolto",
+        "Peseytymisessä avustaminen"
+      ]
+    }
+  },
+  {
+    "user": {
+      "firstName": "Onni",
+      "lastName": "Turunen",
+      "email": "onni.turunen@care.fi",
+      "password": "Password123!",
+      "role": "CAREGIVER"
+    },
+    "profile": {
+      "phoneNumber": "+358401122999",
+      "dateOfBirth": "1968-08-20T00:00:00.000Z",
+      "gender": "MALE",
+      "address": "Puijonkatu 30",
+      "city": "Kuopio",
+      "country": "Finland",
+      "languages": ["Finnish"],
+      "profilePhotoUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Onni",
+      "bio": "Retired teacher. I offer companionship, tech support, and help with official documents. I can also help with grocery shopping and cooking.",
+      "hourlyRate": 20.00,
+      "availabilityStatus": "online",
+      "verified": true,
+      "backgroundCheckStatus": "approved",
+      "ssn": "200868-112J",
+      "internalNotes": "Intellectual.",
+      "rating": 4.8,
+      "completedJobsCount": 10,
+      "education": [
+        { "degree": "Master of Arts", "institution": "UEF", "graduationYear": 1992 }
+      ],
+      "experience": [
+        { "role": "Teacher", "organization": "Kuopio City", "startYear": 1993, "endYear": 2020, "description": "Primary school." }
+      ],
+      "skills": ["Teaching", "Tech Support", "Cooking"],
+      "offeredServices": [
+        "Musiikki ja lukeminen",
+        "Keskustelu ja kuuntelu",
+        "Viestien lukeminen",
+        "Puhelimen käyttöapu",
+        "Tietokoneen käyttö",
+        "Yksinäisyyden lievittäminen",
+        "Kaupassa käynti",
+        "Ruoanlaitto",
+        "Lomakkeiden täyttö yhdessä",
+        "Pankkiasiointi"
+      ]
+    }
+  }
+]

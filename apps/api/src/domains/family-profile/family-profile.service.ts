@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { CreateFamilyProfileInput } from "./family-profile.inputs";
+import { 
+  CreateFamilyProfileInput, 
+  UpdateFamilyMemberProfileInput 
+} from "./family-profile.inputs";
 
 export class FamilyProfileService {
   private dbClient: PrismaClient;
@@ -24,13 +27,26 @@ export class FamilyProfileService {
 
   async getMyFamilyProfile(userId: number) {
     return this.dbClient.familymemberProfile.findUnique({
-      where: { user_id: userId },
+      where: { userId: userId },
       include: {
         managed_elders: {
           include: {
             elderprofile: true,
           },
         },
+      },
+    });
+  }
+
+  // --- Added Update Method ---
+  async updateFamilyProfile(
+    userId: number,
+    data: UpdateFamilyMemberProfileInput
+  ) {
+    return this.dbClient.familymemberProfile.update({
+      where: { userId: userId },
+      data: {
+        ...data
       },
     });
   }

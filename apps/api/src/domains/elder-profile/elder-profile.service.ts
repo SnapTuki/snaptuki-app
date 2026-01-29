@@ -59,7 +59,6 @@ export class ElderProfileService {
       },
     });
 
-    console.log(result)
     return result
   }
 

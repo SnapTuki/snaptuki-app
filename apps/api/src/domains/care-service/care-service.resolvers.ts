@@ -26,9 +26,7 @@ export class CareServiceResolver {
   async getAllServiceCategories(
     @Ctx() ctx: GraphQLContext
   ): Promise<ServiceCategory[]> {
-    const src = await ctx.services.careServiceService.getAllServiceCategories();
-    console.log(src)
-    return src;
+    return await ctx.services.careServiceService.getAllServiceCategories();
   }
 
   @Query(() => ServiceCategory, { nullable: true })

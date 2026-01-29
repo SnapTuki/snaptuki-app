@@ -10,28 +10,77 @@ export class BookingService {
         this.dbClient = db;
     }
 
-
+    /**
+     * Get all bookings for a user (Family or Caregiver).
+     * Includes relations needed for the 'BookingCard' UI.
+     */
     public async getAllBookings(userId: number, filter?: BookingStatus) {
         return this.dbClient.booking.findMany({
             where: {
                 OR: [
-                    { family_member_id: Number(userId) },
-                    { caregiver_id: Number(userId) },
+                    { familyMemberId: Number(userId) },
+                    { caregiverId: Number(userId) },
                 ],
                 ...(filter ? { status: filter } : {}),
             },
+            include: {
+                caregiver: {
+                    include: {
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true
+                            }
+                        }
+                    }
+                },
+                elder: true,
+                careService: true,
+            },
             orderBy: {
-                created_at: "desc",
+                createdAt: "desc",
             },
         });
     }
 
+    /**
+     * Get a single booking by ID.
+     * Includes ALL relations for the detailed 'Booking' view.
+     */
     public async getBooking(bookingId: number) {
-        return this.dbClient.booking.findUnique({
+        const booking = await this.dbClient.booking.findUnique({
             where: {
                 id: Number(bookingId),
+            },
+            include: {
+                caregiver: {
+                    include: {
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                                phoneNumber: true,
+                            }
+                        },
+                        reviews: true // Optional: if you show reviews in booking details
+                    }
+                },
+                elder: true,
+                careService: true,
+                careTaskBook: {
+                    include: {
+                        tasks: true
+                    }
+                }
             }
         });
+
+        if (!booking) {
+            throw new Error(`Booking with ID ${bookingId} not found`);
+        }
+
+        return booking;
     }
 
     public async createBooking(bookingRecord: NewBookingInput) {
@@ -39,15 +88,20 @@ export class BookingService {
             throw new Error("Start time must be before end time");
         }
 
+        // Optional: Calculate total price here or in a separate method
+        // const caregiver = await this.dbClient.caregiverProfile.findUnique(...)
+        // const price = ...
+
         return this.dbClient.booking.create({
             data: {
-                family_member_id: bookingRecord.familyMemberId,
-                elder_id: bookingRecord.elderId,
-                care_service_id: bookingRecord.serviceId,
-                start_time: bookingRecord.startTime,
-                end_time: bookingRecord.endTime,
+                familyMemberId: bookingRecord.familyMemberId,
+                elderId: bookingRecord.elderId,
+                careServiceId: bookingRecord.serviceId,
+                startTime: bookingRecord.startTime,
+                endTime: bookingRecord.endTime,
                 notes: bookingRecord.notes,
                 status: BookingStatus.PENDING,
+                totalPrice: 0, // Placeholder, should be calculated
             },
         });
     }
@@ -86,8 +140,8 @@ export class BookingService {
                 id: Number(bookingId),
             },
             data: {
-                start_time: newScheduel.startTime,
-                end_time: newScheduel.endTime,
+                startTime: newScheduel.startTime,
+                endTime: newScheduel.endTime,
                 status: BookingStatus.PENDING,
             },
         });
@@ -104,7 +158,4 @@ export class BookingService {
             },
         });
     }
-
-
-
 }

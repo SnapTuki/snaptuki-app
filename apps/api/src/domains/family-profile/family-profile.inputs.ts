@@ -50,6 +50,28 @@ export class CreateFamilyProfileInput {
   country: string
 }
 
+// --- Added Update Input ---
+@InputType()
+export class UpdateFamilyMemberProfileInput {
+  @Field(() => String, { nullable: true })
+  phoneNumber?: string;
+
+  @Field(() => Date, { nullable: true })
+  dateOfBirth?: Date;
+
+  @Field(() => String, { nullable: true })
+  address?: string;
+
+  @Field(() => String, { nullable: true })
+  postalCode?: string;
+
+  @Field(() => String, { nullable: true })
+  city?: string;
+
+  @Field(() => String, { nullable: true })
+  country?: string;
+}
+
 @InputType()
 export class ElderProfileData {
 

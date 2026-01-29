@@ -6,7 +6,7 @@ import createApolloClient from '@/src/utils/apolloClient';
 import AuthStorage from '../utils/authenStorage';
 import { SessionProvider } from '../utils/SessionProvider';
 import { useSession } from '../hooks/useSession';
-
+import { CareServiceProvier } from '../utils/CareServiceProvider';
 const authStorage = new AuthStorage();
 const apolloClient = createApolloClient(authStorage);
 
@@ -51,7 +51,9 @@ export default function RootLayout() {
   return (
     <ApolloProvider client={apolloClient}>
       <SessionProvider>
-        <NavigationContent />
+        <CareServiceProvier>
+          <NavigationContent />
+        </CareServiceProvier>
       </SessionProvider>
     </ApolloProvider>
   );

@@ -15,26 +15,47 @@ datasource db {
 model CaregiverProfile {
   id                    Int       @id @default(autoincrement())
 
+  // --- Basic Info ---
   phoneNumber           String?   @unique @map("phone_number") @db.VarChar(30)
   dateOfBirth           DateTime? @map("date_of_birth") @db.Date
   gender                Gender?
   address               String?
   city                  String?   @db.VarChar(100)
   country               String?   @default("Finland") @db.VarChar(100)
-
-  bio                   String?
-  availabilityStatus    Availability          @map("availability_status") @default(offline)
-  hourlyRate            Decimal?              @map("hourly_rate") @db.Decimal(10, 2)
-  verified              Boolean?              @default(false)
-  backgroundCheckStatus BackgroundCheckStatus @map("background_check_status") @default(pending)
+  languages             String[]  @map("languages") // Postgres Array
+  profilePhotoUrl       String?   @map("profile_photo_url")
   
-  createdAt             DateTime?             @map("created_at") @default(now()) @db.Timestamp(6)
-  updatedAt             DateTime?             @map("updated_at") @default(now()) @db.Timestamp(6)
+  // --- Professional Info ---
+  bio                   String?
+  hourlyRate            Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  availabilityStatus    Availability @map("availability_status") @default(offline)
+  
+  // --- Services & Skills (Relations) ---
+  offeredServices       ServiceTask[] // Caregiver selects specific tasks
+  skills                Skill[]       // Linked skills
 
-  // Relations
+  // --- Background & Verification ---
+  verified              Boolean?      @default(false)
+  backgroundCheckStatus BackgroundCheckStatus @map("background_check_status") @default(pending)
+  ssn                   String?       @map("ssn") // Sensitive
+  internalNotes         String?       @map("internal_notes") // Admin only
+  
+  // --- Metrics ---
+  rating                Decimal?      @default(0) @map("rating") @db.Decimal(3, 2)
+  completedJobsCount    Int           @default(0) @map("completed_jobs_count")
+
+  createdAt             DateTime?     @map("created_at") @default(now()) @db.Timestamp(6)
+  updatedAt             DateTime?     @map("updated_at") @default(now()) @db.Timestamp(6)
+
+  // --- Relations ---
   user                  User                  @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction)
   userId                Int                   @unique(map: "caregiver_user_id") @map("user_id")
   
+  education             CaregiverEducation[]
+  experience            CaregiverExperience[]
+  certificates          CaregiverCertificate[] // Uploaded PDFs/Images
+  documents             CaregiverDocument[]    // ID verifications/contracts
+  reviews               Review[]
   bookings              Booking[]
   careTaskBooks         CareTaskBook[]
 
@@ -87,6 +108,92 @@ model FamilymemberProfile {
 }
 
 // ---------------------------------------------------------
+// CAREGIVER DETAILS (NEW MODELS)
+// ---------------------------------------------------------
+
+model CaregiverEducation {
+  id            Int               @id @default(autoincrement())
+  caregiverId   Int               @map("caregiver_id")
+  
+  degree        String            @db.VarChar(200)
+  institution   String            @db.VarChar(200)
+  graduationYear Int              @map("graduation_year")
+  
+  caregiver     CaregiverProfile  @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("caregiver_education")
+}
+
+model CaregiverExperience {
+  id            Int               @id @default(autoincrement())
+  caregiverId   Int               @map("caregiver_id")
+  
+  role          String            @db.VarChar(100)
+  organization  String?           @db.VarChar(100) // "Private" if null
+  startYear     Int               @map("start_year")
+  endYear       Int?              @map("end_year") // Null if current
+  description   String?
+  
+  caregiver     CaregiverProfile  @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("caregiver_experience")
+}
+
+model Skill {
+  id            Int               @id @default(autoincrement())
+  title         String            @unique @db.VarChar(100)
+  description   String?
+  
+  // Implicit Many-to-Many
+  caregivers    CaregiverProfile[]
+
+  @@map("skills")
+}
+
+model CaregiverCertificate {
+  id            Int               @id @default(autoincrement())
+  caregiverId   Int               @map("caregiver_id")
+  
+  name          String            @db.VarChar(200)
+  fileUrl       String            @map("file_url")
+  issuedAt      DateTime?         @map("issued_at")
+  
+  caregiver     CaregiverProfile  @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("caregiver_certificates")
+}
+
+model CaregiverDocument {
+  id            Int               @id @default(autoincrement())
+  caregiverId   Int               @map("caregiver_id")
+  
+  title         String            @map("title") // e.g., "ID Card", "Contract"
+  fileUrl       String            @map("file_url")
+  uploadedAt    DateTime          @default(now()) @map("uploaded_at")
+  
+  caregiver     CaregiverProfile  @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("caregiver_documents")
+}
+
+model Review {
+  id            Int               @id @default(autoincrement())
+  caregiverId   Int               @map("caregiver_id")
+  reviewerId    Int               @map("reviewer_id") // Maps to User.id
+  bookingId     Int?              @map("booking_id")
+  
+  rating        Int               // 1-5
+  comment       String?
+  createdAt     DateTime          @default(now()) @map("created_at")
+  
+  caregiver     CaregiverProfile  @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  reviewer      User              @relation(fields: [reviewerId], references: [userId], onDelete: Cascade)
+  booking       Booking?          @relation(fields: [bookingId], references: [id])
+
+  @@map("reviews")
+}
+
+// ---------------------------------------------------------
 // USER & AUTH
 // ---------------------------------------------------------
 
@@ -107,6 +214,7 @@ model User {
   // Relations
   caregiverProfile    CaregiverProfile?
   familyMemberProfile FamilymemberProfile?
+  reviewsWritten      Review[]
 
   @@map("users")
 }
@@ -157,6 +265,7 @@ model ServiceCategory {
 
 model ServiceTask {
   serviceId         Int             @id @map("id") @default(autoincrement())
+  
   categoryId        Int             @map("category_id")
   
   serviceName       String          @map("service_name") @db.VarChar(100)
@@ -168,6 +277,9 @@ model ServiceTask {
   
   serviceCategories ServiceCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction)
   bookings          Booking[]
+  
+  // Implicit Many-to-Many relation to Caregivers who offer this service
+  caregivers        CaregiverProfile[] 
 
   @@unique([categoryId, serviceName])
   @@map("servicetasks")
@@ -205,6 +317,7 @@ model Booking {
 
   // Taskbook
   careTaskBook      CareTaskBook?
+  reviews           Review[]
 
   // Audit
   createdAt         DateTime?           @map("created_at") @default(now()) @db.Timestamp(6)

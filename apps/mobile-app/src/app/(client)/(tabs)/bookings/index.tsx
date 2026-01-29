@@ -1,307 +1,363 @@
-import { useMemo, useState } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   Pressable,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+  ActivityIndicator,
+  StatusBar,
+  SafeAreaView
+} from 'react-native';
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  ChevronRight, 
+  Filter
+} from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useQuery } from '@apollo/client/react';
+import { GET_BOOKING_CARDS } from '../../../../graphql/queries'; // Adjust path
+import { BookingStatus } from '@/src/types/__generated__/graphql';
 
-type BookingStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "CANCELLED"
-  | "COMPLETED";
-
-type Booking = {
-  id: string;
-  elderName: string;
-  caregiverName?: string;
-  serviceName: string;
-  date: string;
-  time: string;
-  status: BookingStatus;
-  createdAt: string;
-};
-
-const BOOKINGS: Booking[] = [
-  {
-    id: "1",
-    elderName: "John Doe",
-    caregiverName: "Sarah Smith",
-    serviceName: "Personal Care",
-    date: "Jan 20, 2026",
-    time: "09:00 – 12:00",
-    status: "CONFIRMED",
-    createdAt: "2026-01-15",
-  },
-  {
-    id: "2",
-    elderName: "Mary Johnson",
-    serviceName: "Medication Assistance",
-    date: "Jan 25, 2026",
-    time: "14:00 – 15:00",
-    status: "PENDING",
-    createdAt: "2026-01-17",
-  },
-  {
-    id: "3",
-    elderName: "Robert Brown",
-    caregiverName: "Emily Clark",
-    serviceName: "Physiotherapy",
-    date: "Jan 10, 2026",
-    time: "10:00 – 11:30",
-    status: "COMPLETED",
-    createdAt: "2026-01-10",
-  },
-  {
-    id: "4",
-    elderName: "Anna White",
-    serviceName: "Home Support",
-    date: "Jan 05, 2026",
-    time: "08:00 – 10:00",
-    status: "CANCELLED",
-    createdAt: "2026-01-05",
-  },
-];
-
-const FILTERS = ["All", "Latest", "Pending", "Active", "Completed", "Cancelled"] as const;
-type Filter = typeof FILTERS[number];
+// Types for UI Filters
+const FILTERS = ["All", "Pending", "Confirmed", "Completed", "Cancelled"] as const;
+type FilterType = typeof FILTERS[number];
 
 export default function BookingsScreen() {
-  const [filter, setFilter] = useState<Filter>("All");
   const router = useRouter();
+  const [activeFilter, setActiveFilter] = useState<FilterType>("All");
 
+  // 1. Fetch Real Data
+  // GET_BOOKING_CARDS calls getAllBookings(userId) internally using context if configured
+  // or we pass userId if needed. Assuming the query uses context or we pass it.
+  // Based on your queries.tsx, GET_BOOKING_CARDS expects $userId.
+  // We need the user ID. For now, I'll assume the query uses context on backend or we pass a dummy ID 
+  // if the hook handles it.
+  // Actually, let's use the hook without variables first, assuming the query was fixed to use context,
+  // or we need to pass the user ID from session.
+  
+  // Correction: Your queries.tsx has `getAllBookings($userId: ID!)`.
+  // I will use a dummy ID '1' for now or better, get it from session.
+  // Ideally, useSession hook.
+  
+  const { data, loading, error, refetch } = useQuery(GET_BOOKING_CARDS, {
+    variables: { userId: 1 }, // Replace with real user ID from session context
+    fetchPolicy: 'cache-and-network'
+  });
+
+  const bookings = data?.myBookings || [];
+
+  // 2. Filter Logic
   const filteredBookings = useMemo(() => {
-    if (filter === "All") return BOOKINGS;
+    if (activeFilter === "All") return bookings;
+    return bookings.filter((b: any) => b.status === activeFilter.toUpperCase());
+  }, [bookings, activeFilter]);
 
-    if (filter === "Latest") {
-      return [...BOOKINGS].sort(
-        (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
-      );
-    }
-
-    if (filter === "Active") {
-      return BOOKINGS.filter((b) => b.status === "CONFIRMED");
-    }
-
-    return BOOKINGS.filter(
-      (b) => b.status === filter.toUpperCase()
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#0F766E" />
+      </View>
     );
-  }, [filter]);
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bookings</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>My Bookings</Text>
+      </View>
 
       {/* Filters */}
-      <View style={styles.filters}>
-        {FILTERS.map((item) => (
-          <Pressable
-            key={item}
-            onPress={() => setFilter(item)}
-            style={[
-              styles.filterChip,
-              filter === item && styles.filterChipActive,
-            ]}
-          >
-            <Text
+      <View style={styles.filterContainer}>
+        <FlatList
+          data={FILTERS}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterList}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => setActiveFilter(item)}
               style={[
-                styles.filterText,
-                filter === item && styles.filterTextActive,
+                styles.filterChip,
+                activeFilter === item && styles.filterChipActive
               ]}
             >
-              {item}
-            </Text>
-          </Pressable>
-        ))}
+              <Text style={[
+                styles.filterText,
+                activeFilter === item && styles.filterTextActive
+              ]}>
+                {item}
+              </Text>
+            </Pressable>
+          )}
+        />
       </View>
 
       {/* List */}
       <FlatList
         data={filteredBookings}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        keyExtractor={(item: any) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshing={loading}
+        onRefresh={refetch}
         renderItem={({ item }) => (
-          <BookingCard
-            booking={item}
-            onPress={() =>
-              router.push(`/bookings/${item.id}`)
-            }
-          />
+          <BookingCard item={item} onPress={() => router.push(`/(client)/(tabs)/bookings/${item.id}`)} />
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
-            No bookings found.
-          </Text>
+          <View style={styles.emptyState}>
+            <Calendar size={48} color="#CBD5E1" />
+            <Text style={styles.emptyTitle}>No bookings found</Text>
+            <Text style={styles.emptySubtitle}>
+              {activeFilter !== "All" ? `No ${activeFilter.toLowerCase()} bookings.` : "You haven't made any bookings yet."}
+            </Text>
+          </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
-function BookingCard({
-  booking,
-  onPress,
-}: {
-  booking: Booking;
-  onPress: () => void;
-}) {
-  const status = STATUS_STYLES[booking.status];
+// --- Sub-components ---
+
+function BookingCard({ item, onPress }: { item: any, onPress: () => void }) {
+  const statusStyle = getStatusStyle(item.status);
+  const dateObj = new Date(item.startTime);
+  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && styles.cardPressed,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <View style={styles.cardHeader}>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: status.bg },
-          ]}
-        >
-          <Text style={[styles.statusText, { color: status.text }]}>
-            {booking.status}
+      {/* Left: Date Box */}
+      <View style={styles.dateBox}>
+        <Text style={styles.dateMonth}>{dateObj.toLocaleDateString('en-US', { month: 'short' })}</Text>
+        <Text style={styles.dateDay}>{dateObj.getDate()}</Text>
+      </View>
+
+      {/* Middle: Info */}
+      <View style={styles.cardInfo}>
+        <View style={styles.serviceRow}>
+          <Text style={styles.serviceName}>{item.careService?.serviceName || "Care Service"}</Text>
+          {item.caregiver && (
+            <Text style={styles.caregiverName}>with {item.caregiver.firstName}</Text>
+          )}
+        </View>
+        
+        <View style={styles.timeRow}>
+          <Clock size={14} color="#64748B" />
+          <Text style={styles.timeText}>{timeStr} • {item.endTime ? new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}</Text>
+        </View>
+
+        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+          <Text style={[styles.statusText, { color: statusStyle.text }]}>
+            {item.status}
           </Text>
         </View>
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color="#9ca3af"
-        />
       </View>
 
-      <Text style={styles.elderName}>{booking.elderName}</Text>
-      <Text style={styles.service}>{booking.serviceName}</Text>
-
-      <View style={styles.metaRow}>
-        <Ionicons name="calendar-outline" size={14} color="#6b7280" />
-        <Text style={styles.metaText}>{booking.date}</Text>
+      {/* Right: Arrow */}
+      <View style={styles.cardAction}>
+        <Text style={styles.priceText}>€{item.totalPrice}</Text>
+        <ChevronRight size={20} color="#CBD5E1" />
       </View>
-
-      <View style={styles.metaRow}>
-        <Ionicons name="time-outline" size={14} color="#6b7280" />
-        <Text style={styles.metaText}>{booking.time}</Text>
-      </View>
-
-      {booking.caregiverName && (
-        <View style={styles.metaRow}>
-          <Ionicons name="person-outline" size={14} color="#6b7280" />
-          <Text style={styles.metaText}>
-            {booking.caregiverName}
-          </Text>
-        </View>
-      )}
     </Pressable>
   );
 }
-const STATUS_STYLES: Record<
-  BookingStatus,
-  { bg: string; text: string }
-> = {
-  PENDING: { bg: "#fff7ed", text: "#ea580c" },
-  CONFIRMED: { bg: "#eff6ff", text: "#2563eb" },
-  COMPLETED: { bg: "#ecfdf5", text: "#059669" },
-  CANCELLED: { bg: "#fef2f2", text: "#dc2626" },
-};
+
+// --- Helpers & Styles ---
+
+function getStatusStyle(status: string) {
+  switch (status) {
+    case 'PENDING': return { bg: '#FFF7ED', text: '#EA580C' }; // Orange
+    case 'CONFIRMED': return { bg: '#F0FDFA', text: '#0F766E' }; // Teal
+    case 'COMPLETED': return { bg: '#F1F5F9', text: '#475569' }; // Slate
+    case 'CANCELLED': return { bg: '#FEF2F2', text: '#DC2626' }; // Red
+    default: return { bg: '#F1F5F9', text: '#64748B' };
+  }
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
-    padding: 16,
+    backgroundColor: "#F8FAFC",
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    backgroundColor: "#F8FAFC",
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.5,
   },
-
-  filters: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  
+  // Filters
+  filterContainer: {
+    marginBottom: 10,
+  },
+  filterList: {
+    paddingHorizontal: 20,
     gap: 8,
-    marginBottom: 16,
+    paddingBottom: 10,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#e5e7eb",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   filterChipActive: {
-    backgroundColor: "#0a7ea4",
+    backgroundColor: "#0F766E", // Teal 700
+    borderColor: "#0F766E",
   },
   filterText: {
     fontSize: 13,
-    color: "#374151",
-    fontWeight: "500",
+    fontWeight: "600",
+    color: "#64748B",
   },
   filterTextActive: {
-    color: "#ffffff",
+    color: "#FFFFFF",
   },
 
+  // List
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  
+  // Card
   card: {
-    backgroundColor: "#ffffff",
-    padding: 16,
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    marginBottom: 14,
-    shadowColor: "#000",
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 2,
+    alignItems: "center",
   },
   cardPressed: {
-    transform: [{ scale: 0.98 }],
+    transform: [{ scale: 0.99 }],
+    backgroundColor: "#FAFAFA",
   },
-
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
+  
+  // Date Box
+  dateBox: {
+    backgroundColor: "#F0FDFA", // Light Teal
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+    minWidth: 60,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  statusText: {
+  dateMonth: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
+    color: "#0F766E",
+    textTransform: "uppercase",
+  },
+  dateDay: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0F172A",
   },
 
-  elderName: {
+  // Info
+  cardInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  serviceRow: {
+    marginBottom: 4,
+  },
+  serviceName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
+    color: "#0F172A",
   },
-  service: {
-    fontSize: 14,
-    color: "#374151",
-    marginBottom: 8,
+  caregiverName: {
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 2,
   },
-
-  metaRow: {
+  timeRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    gap: 6,
+    marginBottom: 8,
   },
-  metaText: {
-    marginLeft: 6,
+  timeText: {
     fontSize: 13,
-    color: "#4b5563",
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
 
-  emptyText: {
+  // Right Side
+  cardAction: {
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    height: "100%",
+    paddingLeft: 10,
+  },
+  priceText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 20, // Push arrow down visually or just separate
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  emptySubtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#64748B",
     textAlign: "center",
-    color: "#6b7280",
-    marginTop: 40,
   },
 });

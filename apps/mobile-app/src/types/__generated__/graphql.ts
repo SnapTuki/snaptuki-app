@@ -15,24 +15,53 @@ export type Scalars = {
   DateTime: { input: Date; output: Date; }
 };
 
+/** Current availability status of the caregiver */
+export enum Availability {
+  Busy = 'busy',
+  Offline = 'offline',
+  Online = 'online'
+}
+
+/** Status of the caregiver's background check */
+export enum BackgroundCheckStatus {
+  Approved = 'approved',
+  Pending = 'pending',
+  Rejected = 'rejected'
+}
+
 export type Booking = {
   __typename: 'Booking';
-  caregiverId: Maybe<Scalars['ID']['output']>;
+  careService: ServiceTask;
+  careServiceId: Scalars['Int']['output'];
+  careTaskBook: Maybe<CareTaskBookSummary>;
+  caregiver: CaregiverProfileCard;
+  caregiverId: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
-  elderId: Scalars['ID']['output'];
+  elder: ElderProfile;
+  elderId: Scalars['Int']['output'];
   endTime: Scalars['DateTime']['output'];
-  familyMemberId: Scalars['ID']['output'];
+  familyMemberId: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   notes: Maybe<Scalars['String']['output']>;
-  serviceId: Scalars['ID']['output'];
   startTime: Scalars['DateTime']['output'];
   status: BookingStatus;
-  totalPrice: Scalars['Float']['output'];
+  totalPrice: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type BookingCard = {
+  __typename: 'BookingCard';
+  careService: ServiceTask;
+  caregiver: CaregiverProfileCard;
+  endTime: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  startTime: Scalars['DateTime']['output'];
+  status: BookingStatus;
+  totalPrice: Scalars['Int']['output'];
 };
 
 export enum BookingStatus {
-  Accepted = 'ACCEPTED',
-  Cancled = 'CANCLED',
+  Cancelled = 'CANCELLED',
   Completed = 'COMPLETED',
   Confirmed = 'CONFIRMED',
   Pending = 'PENDING'
@@ -71,12 +100,91 @@ export enum CareTaskBookStatus {
   Completed = 'COMPLETED'
 }
 
+export type CareTaskBookSummary = {
+  __typename: 'CareTaskBookSummary';
+  id: Scalars['ID']['output'];
+  status: Scalars['String']['output'];
+  tasks: Array<CareTaskSummary>;
+};
+
 export enum CareTaskStatus {
   Completed = 'COMPLETED',
   InProgress = 'IN_PROGRESS',
   Pending = 'PENDING',
   Skipped = 'SKIPPED'
 }
+
+export type CareTaskSummary = {
+  __typename: 'CareTaskSummary';
+  id: Scalars['ID']['output'];
+  isMandatory: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type CaregiverEducation = {
+  __typename: 'CaregiverEducation';
+  degree: Scalars['String']['output'];
+  graduationYear: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  institution: Scalars['String']['output'];
+};
+
+export type CaregiverExperience = {
+  __typename: 'CaregiverExperience';
+  description: Maybe<Scalars['String']['output']>;
+  endYear: Maybe<Scalars['Int']['output']>;
+  id: Scalars['ID']['output'];
+  organization: Maybe<Scalars['String']['output']>;
+  role: Scalars['String']['output'];
+  startYear: Scalars['Int']['output'];
+};
+
+export type CaregiverProfile = {
+  __typename: 'CaregiverProfile';
+  address: Maybe<Scalars['String']['output']>;
+  availabilityStatus: Availability;
+  backgroundCheckStatus: BackgroundCheckStatus;
+  bio: Maybe<Scalars['String']['output']>;
+  city: Maybe<Scalars['String']['output']>;
+  completedJobsCount: Scalars['Int']['output'];
+  country: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  dateOfBirth: Maybe<Scalars['DateTime']['output']>;
+  education: Array<CaregiverEducation>;
+  experience: Array<CaregiverExperience>;
+  firstName: Scalars['String']['output'];
+  gender: Maybe<Gender>;
+  hourlyRate: Maybe<Scalars['Float']['output']>;
+  id: Scalars['ID']['output'];
+  languages: Maybe<Array<Scalars['String']['output']>>;
+  lastName: Scalars['String']['output'];
+  offeredServices: Array<ServiceTask>;
+  phoneNumber: Maybe<Scalars['String']['output']>;
+  profilePhotoUrl: Maybe<Scalars['String']['output']>;
+  rating: Scalars['Float']['output'];
+  reviews: Array<Review>;
+  skills: Array<Skill>;
+  userId: Scalars['Int']['output'];
+  verified: Scalars['Boolean']['output'];
+};
+
+export type CaregiverProfileCard = {
+  __typename: 'CaregiverProfileCard';
+  availabilityStatus: Availability;
+  bio: Maybe<Scalars['String']['output']>;
+  city: Maybe<Scalars['String']['output']>;
+  completedJobsCount: Scalars['Int']['output'];
+  firstName: Scalars['String']['output'];
+  hourlyRate: Maybe<Scalars['Float']['output']>;
+  id: Scalars['ID']['output'];
+  languages: Maybe<Array<Scalars['String']['output']>>;
+  lastName: Scalars['String']['output'];
+  profilePhotoUrl: Maybe<Scalars['String']['output']>;
+  rating: Scalars['Float']['output'];
+  userId: Scalars['Int']['output'];
+  verified: Scalars['Boolean']['output'];
+};
 
 export type CompleteRegisterationInput = {
   email: Scalars['String']['input'];
@@ -166,11 +274,25 @@ export type FamilyElderRelationship = {
 
 export type FamilyProfile = {
   __typename: 'FamilyProfile';
+  address: Maybe<Scalars['String']['output']>;
+  city: Maybe<Scalars['String']['output']>;
+  country: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  dateOfBirth: Maybe<Scalars['DateTime']['output']>;
   elders: Array<ManagedElder>;
   id: Scalars['ID']['output'];
+  phoneNumber: Maybe<Scalars['String']['output']>;
+  postalCode: Maybe<Scalars['String']['output']>;
   userId: Scalars['ID']['output'];
 };
+
+/** Gender of the caregiver */
+export enum Gender {
+  Female = 'FEMALE',
+  Male = 'MALE',
+  Other = 'OTHER',
+  Pnts = 'PNTS'
+}
 
 export type LoginCredentials = {
   email: Scalars['String']['input'];
@@ -197,15 +319,15 @@ export enum MobilityLevel {
 
 export type Mutation = {
   __typename: 'Mutation';
-  cancleBooking: Booking;
+  cancelBooking: Booking;
   completeBooking: Booking;
   completeCareTaskBook: CareTaskBook;
   completeRegisteration: UserWithToken;
   confirmBooking: Booking;
+  createBooking: Booking;
   createElderAndLink: ElderProfile;
   createElderProfile: ElderProfile;
   createFamilyProfile: FamilyProfile;
-  createNewBooking: Booking;
   createServiceCategory: ServiceCategory;
   createServiceTask: ServiceTask;
   deleteServiceCategory: Scalars['Boolean']['output'];
@@ -214,23 +336,24 @@ export type Mutation = {
   login: UserWithToken;
   removeElderProfile: Scalars['Boolean']['output'];
   requestRegisterationOtp: OtpRegisteration;
-  rescheduelBooking: Booking;
+  rescheduleBooking: Booking;
   unlinkElder: Scalars['Boolean']['output'];
   updateCareTaskStatus: CareTask;
   updateElderProfile: ElderProfile;
+  updateFamilyMemberProfile: FamilyProfile;
   updateServiceCategory: ServiceCategory;
   updateServiceTask: ServiceTask;
   verifyEmail: Scalars['Boolean']['output'];
 };
 
 
-export type MutationCancleBookingArgs = {
-  bookingId: Scalars['ID']['input'];
+export type MutationCancelBookingArgs = {
+  bookingId: Scalars['Int']['input'];
 };
 
 
 export type MutationCompleteBookingArgs = {
-  bookingId: Scalars['ID']['input'];
+  bookingId: Scalars['Int']['input'];
 };
 
 
@@ -245,7 +368,12 @@ export type MutationCompleteRegisterationArgs = {
 
 
 export type MutationConfirmBookingArgs = {
-  bookingId: Scalars['ID']['input'];
+  bookingId: Scalars['Int']['input'];
+};
+
+
+export type MutationCreateBookingArgs = {
+  input: NewBookingInput;
 };
 
 
@@ -261,11 +389,6 @@ export type MutationCreateElderProfileArgs = {
 
 export type MutationCreateFamilyProfileArgs = {
   data: CreateFamilyProfileInput;
-};
-
-
-export type MutationCreateNewBookingArgs = {
-  data: NewBookingInput;
 };
 
 
@@ -309,9 +432,9 @@ export type MutationRequestRegisterationOtpArgs = {
 };
 
 
-export type MutationRescheduelBookingArgs = {
-  bookingId: Scalars['ID']['input'];
-  data: UpdatedBookingScheduelInput;
+export type MutationRescheduleBookingArgs = {
+  bookingId: Scalars['Int']['input'];
+  input: UpdatedBookingScheduelInput;
 };
 
 
@@ -328,6 +451,11 @@ export type MutationUpdateCareTaskStatusArgs = {
 export type MutationUpdateElderProfileArgs = {
   elderId: Scalars['Int']['input'];
   input: UpdateElderProfileInput;
+};
+
+
+export type MutationUpdateFamilyMemberProfileArgs = {
+  input: UpdateFamilyMemberProfileInput;
 };
 
 
@@ -348,12 +476,12 @@ export type MutationVerifyEmailArgs = {
 };
 
 export type NewBookingInput = {
-  caregiverId: Scalars['ID']['input'];
-  elderId: Scalars['ID']['input'];
+  caregiverId: Scalars['Int']['input'];
+  elderId: Scalars['Int']['input'];
   endTime: Scalars['DateTime']['input'];
-  familyMemberId: Scalars['ID']['input'];
-  notes: Scalars['String']['input'];
-  serviceId: Scalars['ID']['input'];
+  familyMemberId?: InputMaybe<Scalars['Int']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  serviceId: Scalars['Int']['input'];
   startTime: Scalars['DateTime']['input'];
   totalPrice: Scalars['Float']['input'];
 };
@@ -368,28 +496,25 @@ export type OtpRegisteration = {
 
 export type Query = {
   __typename: 'Query';
-  getAllBookings: Array<Booking>;
   getAllServiceCategories: Array<ServiceCategory>;
-  getBookingDetails: Booking;
+  getBooking: Booking;
   getCareTaskBook: Maybe<CareTaskBook>;
   getCareTaskBookByBooking: Maybe<CareTaskBook>;
+  getCaregiver: Maybe<CaregiverProfile>;
   getElderProfile: Maybe<ElderProfile>;
   getServiceCategory: Maybe<ServiceCategory>;
   getServiceTasksByCategory: Array<ServiceTask>;
+  listCaregivers: Array<CaregiverProfileCard>;
   listMyElders: Array<ElderProfileCard>;
   me: User;
-  myFamilyProfile: FamilyProfile;
+  myBookings: Array<BookingCard>;
+  myFamilyProfile: Maybe<FamilyProfile>;
   myManagedElders: Array<ElderProfile>;
 };
 
 
-export type QueryGetAllBookingsArgs = {
-  userId: Scalars['ID']['input'];
-};
-
-
-export type QueryGetBookingDetailsArgs = {
-  bookingId: Scalars['ID']['input'];
+export type QueryGetBookingArgs = {
+  bookingId: Scalars['Int']['input'];
 };
 
 
@@ -400,6 +525,11 @@ export type QueryGetCareTaskBookArgs = {
 
 export type QueryGetCareTaskBookByBookingArgs = {
   bookingId: Scalars['Int']['input'];
+};
+
+
+export type QueryGetCaregiverArgs = {
+  profileId: Scalars['Int']['input'];
 };
 
 
@@ -415,6 +545,27 @@ export type QueryGetServiceCategoryArgs = {
 
 export type QueryGetServiceTasksByCategoryArgs = {
   categoryId: Scalars['ID']['input'];
+};
+
+
+export type QueryListCaregiversArgs = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  offeredServiceIds?: InputMaybe<Array<Scalars['Int']['input']>>;
+  verified?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryMyBookingsArgs = {
+  filter?: InputMaybe<BookingStatus>;
+};
+
+export type Review = {
+  __typename: 'Review';
+  comment: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  rating: Scalars['Int']['output'];
+  reviewerName: Maybe<Scalars['String']['output']>;
 };
 
 export type ServiceCategory = {
@@ -433,6 +584,13 @@ export type ServiceTask = {
   serviceName: Scalars['String']['output'];
 };
 
+export type Skill = {
+  __typename: 'Skill';
+  description: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  title: Scalars['String']['output'];
+};
+
 export type UpdateCareTaskStatusInput = {
   caregiverNotes?: InputMaybe<Scalars['String']['input']>;
   status: CareTaskStatus;
@@ -449,6 +607,15 @@ export type UpdateElderProfileInput = {
   phone: Scalars['String']['input'];
 };
 
+export type UpdateFamilyMemberProfileInput = {
+  address?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  dateOfBirth?: InputMaybe<Scalars['DateTime']['input']>;
+  phoneNumber?: InputMaybe<Scalars['String']['input']>;
+  postalCode?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateServiceCategoryInput = {
   categoryName?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -462,14 +629,15 @@ export type UpdateServiceTaskInput = {
 };
 
 export type UpdatedBookingScheduelInput = {
-  endTime: Scalars['DateTime']['input'];
-  startTime: Scalars['DateTime']['input'];
-  totalPrice: Scalars['Float']['input'];
+  endTime?: InputMaybe<Scalars['DateTime']['input']>;
+  startTime?: InputMaybe<Scalars['DateTime']['input']>;
+  totalPrice?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type User = {
   __typename: 'User';
   email: Scalars['String']['output'];
+  familyMemberProfile: FamilyProfile;
   firstName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   lastName: Scalars['String']['output'];
@@ -544,6 +712,28 @@ export type RemoveElderProfileMutationVariables = Exact<{
 
 export type RemoveElderProfileMutation = { removeElderProfile: boolean };
 
+export type UpdateFamilyMemberProfileMutationVariables = Exact<{
+  input: UpdateFamilyMemberProfileInput;
+}>;
+
+
+export type UpdateFamilyMemberProfileMutation = { updateFamilyMemberProfile: { __typename: 'FamilyProfile', id: string, phoneNumber: string | null, address: string | null, city: string | null, postalCode: string | null, country: string | null } };
+
+export type CreateBookingMutationVariables = Exact<{
+  input: NewBookingInput;
+}>;
+
+
+export type CreateBookingMutation = { createBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string }, careService: { __typename: 'ServiceTask', serviceName: string } } };
+
+export type RescheduleBookingMutationVariables = Exact<{
+  bookingId: Scalars['Int']['input'];
+  input: UpdatedBookingScheduelInput;
+}>;
+
+
+export type RescheduleBookingMutation = { rescheduleBooking: { __typename: 'Booking', id: string, status: BookingStatus } };
+
 export type WhoIsMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -572,3 +762,36 @@ export type GetElderProfileQueryVariables = Exact<{
 
 
 export type GetElderProfileQuery = { getElderProfile: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, dateOfBirth: Date | null, mobilityLevel: MobilityLevel, address: string | null, city: string | null, country: string | null, phone: string | null, medicalNotes: string | null } | null };
+
+export type ListCaregiversQueryVariables = Exact<{
+  city?: InputMaybe<Scalars['String']['input']>;
+  verified?: InputMaybe<Scalars['Boolean']['input']>;
+  offeredServiceIds?: InputMaybe<Array<Scalars['Int']['input']> | Scalars['Int']['input']>;
+}>;
+
+
+export type ListCaregiversQuery = { listCaregivers: Array<{ __typename: 'CaregiverProfileCard', id: string, userId: number, profilePhotoUrl: string | null, firstName: string, lastName: string, city: string | null, hourlyRate: number | null, rating: number, completedJobsCount: number, availabilityStatus: Availability, bio: string | null, languages: Array<string> | null, verified: boolean }> };
+
+export type GetCaregiverProfileQueryVariables = Exact<{
+  profileId: Scalars['Int']['input'];
+}>;
+
+
+export type GetCaregiverProfileQuery = { getCaregiver: { __typename: 'CaregiverProfile', id: string, userId: number, firstName: string, lastName: string, profilePhotoUrl: string | null, city: string | null, hourlyRate: number | null, rating: number, completedJobsCount: number, availabilityStatus: Availability, bio: string | null, languages: Array<string> | null, verified: boolean, phoneNumber: string | null, dateOfBirth: Date | null, gender: Gender | null, education: Array<{ __typename: 'CaregiverEducation', id: string, degree: string, institution: string, graduationYear: number }>, experience: Array<{ __typename: 'CaregiverExperience', id: string, role: string, organization: string | null, startYear: number, endYear: number | null, description: string | null }>, skills: Array<{ __typename: 'Skill', id: string, title: string }>, offeredServices: Array<{ __typename: 'ServiceTask', serviceId: string, serviceName: string }>, reviews: Array<{ __typename: 'Review', id: string, rating: number, comment: string | null, createdAt: Date, reviewerName: string | null }> } | null };
+
+export type GetMyProfileQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyProfileQuery = { me: { __typename: 'User', firstName: string, lastName: string, email: string, role: UserRole, familyMemberProfile: { __typename: 'FamilyProfile', id: string, dateOfBirth: Date | null, address: string | null, postalCode: string | null, city: string | null, country: string | null } } };
+
+export type GetMyBookingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyBookingsQuery = { myBookings: Array<{ __typename: 'BookingCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string, profilePhotoUrl: string | null }, careService: { __typename: 'ServiceTask', serviceName: string } }> };
+
+export type GetBookingDetailsQueryVariables = Exact<{
+  bookingId: Scalars['Int']['input'];
+}>;
+
+
+export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, address: string | null }, careService: { __typename: 'ServiceTask', serviceName: string, description: string }, careTaskBook: { __typename: 'CareTaskBookSummary', id: string, status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };

@@ -1,10 +1,10 @@
 import { gql, TypedDocumentNode } from "@apollo/client";
-import { 
-    Mutation, 
-    MutationCompleteRegisterationArgs, 
-    MutationLoginArgs, 
-    MutationRequestRegisterationOtpArgs, 
-    MutationVerifyEmailArgs, 
+import {
+    Mutation,
+    MutationCompleteRegisterationArgs,
+    MutationLoginArgs,
+    MutationRequestRegisterationOtpArgs,
+    MutationVerifyEmailArgs,
     VerifyEmailInput,
     // Imported Args for Elder Profile operations
     MutationCreateElderProfileArgs,
@@ -13,7 +13,7 @@ import {
 } from "../types/__generated__/graphql";
 
 
-export const LOGIN: TypedDocumentNode<{login: Mutation['login']}, MutationLoginArgs> = gql`
+export const LOGIN: TypedDocumentNode<{ login: Mutation['login'] }, MutationLoginArgs> = gql`
 mutation Login($credentials: LoginCredentials!){
     login(credentials: $credentials){
         user{
@@ -29,8 +29,8 @@ mutation Login($credentials: LoginCredentials!){
 
 `
 
-export const REQUEST_REGISTERATION_OTP: 
-TypedDocumentNode<{requestRegisterationOtp: Mutation['requestRegisterationOtp']}, MutationRequestRegisterationOtpArgs> = gql`
+export const REQUEST_REGISTERATION_OTP:
+    TypedDocumentNode<{ requestRegisterationOtp: Mutation['requestRegisterationOtp'] }, MutationRequestRegisterationOtpArgs> = gql`
 mutation RequestRegisterationOtp($email: String!){
     requestRegisterationOtp(email: $email){
         email
@@ -42,14 +42,15 @@ mutation RequestRegisterationOtp($email: String!){
 `
 
 
-export const VERIFY_EMAIL: TypedDocumentNode<{verifyEmail: Mutation['verifyEmail']}, MutationVerifyEmailArgs> = gql`
+export const VERIFY_EMAIL: TypedDocumentNode<{ verifyEmail: Mutation['verifyEmail'] }, MutationVerifyEmailArgs> = gql`
 mutation VerifyEmail($data: VerifyEmailInput!){
     verifyEmail(data: $data)
 }
 `
 
 export const COMPLETE_REGISTERATION: TypedDocumentNode<{
-    completeRegisteration: Mutation['completeRegisteration']}, MutationCompleteRegisterationArgs> = gql`
+    completeRegisteration: Mutation['completeRegisteration']
+}, MutationCompleteRegisterationArgs> = gql`
     mutation CompleteRegisteration($data: CompleteRegisterationInput!){
         completeRegisteration(data: $data){
             token
@@ -92,4 +93,48 @@ export const REMOVE_ELDER_PROFILE: TypedDocumentNode<Mutation, MutationRemoveEld
     mutation RemoveElderProfile($elderId: Int!) {
         removeElderProfile(elderId: $elderId)
     }
-` 
+`
+
+export const UPDATE_FAMILY_PROFILE: TypedDocumentNode<Mutation, any> = gql`
+    mutation UpdateFamilyMemberProfile($input: UpdateFamilyMemberProfileInput!) {
+        updateFamilyMemberProfile(input: $input) {
+            id
+            phoneNumber
+            address
+            city
+            postalCode
+            country
+        }
+    }
+`
+
+// --- Booking Mutations ---
+
+export const CREATE_BOOKING: TypedDocumentNode<Mutation, any> = gql`
+    mutation CreateBooking($input: NewBookingInput!) {
+        createBooking(input: $input) {
+            id
+            status
+            startTime
+            endTime
+            totalPrice
+            caregiver {
+                id
+                firstName
+                lastName
+            }
+            careService {
+                serviceName
+            }
+        }
+    }
+`
+
+export const RESCHEDULE_BOOKING: TypedDocumentNode<Mutation, any> = gql`
+    mutation RescheduleBooking($bookingId: Int!, $input: UpdatedBookingScheduelInput!) {
+        rescheduleBooking(bookingId: $bookingId, input: $input) {
+            id
+            status
+        }
+    }`
+

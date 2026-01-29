@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
-
+import { FamilyProfile } from "../family-profile/family-profile.types";
 export enum UserRole{
     FAMILY="FAMILY",
     CAREGIVER="CAREGIVER",
@@ -28,6 +28,9 @@ export class User{
 
     @Field(type => UserRole)
     role: UserRole;
+
+    @Field(type => FamilyProfile)
+    familyMemberProfile?: FamilyProfile
 }
 
 @ObjectType()

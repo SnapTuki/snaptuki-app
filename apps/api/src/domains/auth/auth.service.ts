@@ -122,7 +122,6 @@ export class AuthService {
             }
         });
 
-        console.log(user)
 
         if (!user) throw new InvalidCredentialsError("Email does not exists");
 
@@ -138,7 +137,7 @@ export class AuthService {
             email: user.email,
             role: user.role
         }
-        const token = this.generateToken(user);
+        const token = this.generateToken(typedUser);
 
         const authPayload: UserWithToken = {
             user: typedUser,
@@ -148,19 +147,15 @@ export class AuthService {
     }
 
     public async getMe(userId: number): Promise<User> {
-        const me = this.dbClient.user.findUnique({
-            where: { userId: userId},
-            select: {
-                userId: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                role: true
+        const me = await this.dbClient.user.findUnique({
+            where: { userId: userId },
+            include: {
+                familyMemberProfile: true, // Fetch relation
+                caregiverProfile: true     // Fetch relation
             }
         });
 
         if (!me) throw new AuthenticationError("User Not Found");
-
         return me;
     }
 

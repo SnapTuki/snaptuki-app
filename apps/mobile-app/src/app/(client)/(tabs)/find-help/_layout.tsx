@@ -33,8 +33,8 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="[caregiverId]"
         options={{ 
-          title: "Details",
-          headerBackVisible: true,
+          headerShown: false,
+          headerBackVisible: false,
          }}
       />
 

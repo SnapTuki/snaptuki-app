@@ -25,6 +25,8 @@ import { EmailService } from "./domains/email/email.service";
 import { CareServiceService } from "./domains/care-service/care-service.service";
 import { CareTaskBookResolver } from "./domains/care-task-book/ctb.resolvers";
 import { CareServiceResolver } from "./domains/care-service/care-service.resolvers";
+import { CaregiverProfileService } from "./domains/caregiver-profile/cg.service";
+import { CaregiverProfileResolver } from "./domains/caregiver-profile/cg.resolvers";
 export interface DecodedUserToken {
     id: string;
     email: string;
@@ -42,6 +44,7 @@ async function startApolloServer() {
     const elderProfileService = new ElderProfileService(prisma);
     const careTaskBookService = new CareTaskBookService(prisma);
     const careServiceService = new CareServiceService(prisma);
+    const caregiverProfileService = new CaregiverProfileService(prisma);
     // ... Build schema
 
     const schema = await buildSchema({
@@ -51,7 +54,8 @@ async function startApolloServer() {
             FamilyProfileResolver,
             ElderProfileResolver,
             CareTaskBookResolver,
-            CareServiceResolver
+            CareServiceResolver,
+            CaregiverProfileResolver
         ],
 
         scalarsMap: [
@@ -69,14 +73,21 @@ async function startApolloServer() {
             port: 4000
         },
         context: async ({ req }) => {
-            const auth = req.headers.authorization || "";
+            const token = req.headers.authorization || "";
             let user = null;
 
-            if (auth.startsWith("Bearer ")) {
-                const token = auth.split(" ")[1];
+            if (token) {
+                const actualToken = token.replace('Bearer ', '');
+                
                 try {
-                    const payload = jwt.verify(token, config.jwtSecret!) as DecodedUserToken;
-                    user = payload
+                    const payload = jwt.verify(actualToken, config.jwtSecret!);
+
+                    if (typeof payload === 'object' && payload !== null) {
+                        // Now TypeScript knows it's an object with an ID
+                        user = payload;
+                    }else{
+                        console.log("Something wrong!")
+                    }
                 } catch (error) {
                     // token invalid → user stays undefined
                     console.log("User undefnied")
@@ -90,7 +101,8 @@ async function startApolloServer() {
                     familyProfileService,
                     elderProfileService,
                     careTaskBookService,
-                    careServiceService
+                    careServiceService,
+                    caregiverProfileService
                 },
                 user
             }

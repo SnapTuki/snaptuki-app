@@ -1,20 +1,42 @@
 import { PrismaClient } from "../generated/prisma";
-import { UserRole, Gender, MobilityLevel, Availability } from "../generated/prisma";
+import { UserRole, Gender, MobilityLevel, Availability, BackgroundCheckStatus } from "../generated/prisma";
 import bcrypt from "bcrypt";
 import careServices from "./careservice.json";
+import caregiversData from "./caregivers.json"; // Ensure this file exists
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  /* ---------------- USERS ---------------- */
+  // 1. Seed Service Categories & Tasks FIRST
+  // We need these to exist so we can link caregivers to them
+  console.log("... Seeding Service Categories");
+  for (const category of careServices.service_categories) {
+    await prisma.serviceCategory.upsert({
+      where: { categoryName: category.name },
+      update: {}, // No update needed if exists
+      create: {
+        categoryName: category.name,
+        // Create tasks inline
+        serviceTasks: {
+          create: category.services.map((serviceName: string) => ({
+            serviceName: serviceName,
+          })),
+        },
+      },
+    });
+  }
 
+  // 2. Create Base Users (Family & Caregiver placeholders from original seed)
   const familyPassword = await bcrypt.hash("Awmpp19m461", 10);
-  const caregiverPassword = await bcrypt.hash("Awmpp19m461", 10);
+  const baseCaregiverPassword = await bcrypt.hash("Awmpp19m461", 10);
 
-  const familyUser = await prisma.user.create({
-    data: {
+  // Existing Family User
+  await prisma.user.upsert({
+    where: { email: "hamidebadi1996@yahoo.com" },
+    update: {},
+    create: {
       email: "hamidebadi1996@yahoo.com",
       firstName: "Hamid",
       lastName: "Aebadi",
@@ -29,13 +51,15 @@ async function main() {
         },
       },
     },
-    include: { familyMemberProfile: true },
   });
 
-  const caregiverUser = await prisma.user.create({
-    data: {
+  // Existing Caregiver User
+  await prisma.user.upsert({
+    where: { email: "marko.laine@snaptuki.com" },
+    update: {},
+    create: {
       email: "marko.laine@snaptuki.com",
-      passwordHash: caregiverPassword,
+      passwordHash: baseCaregiverPassword,
       firstName: "Marko",
       lastName: "Laine",
       role: UserRole.CAREGIVER,
@@ -50,74 +74,116 @@ async function main() {
         },
       },
     },
-    include: { caregiverProfile: true },
   });
 
-  /* ---------------- ELDER ---------------- */
-
-  const elder = await prisma.elderProfile.create({
+  // 3. Seed Elder (Placeholder)
+  await prisma.elderProfile.create({
     data: {
       firstName: "Matti",
       lastName: "Korhonen",
       dateOfBirth: new Date("1945-05-10"),
       mobilityLevel: MobilityLevel.needs_assistant,
       medicalNotes: "Diabetes, mild memory loss",
-      
     },
   });
 
-  /* ---------------- SERVICE CATEGORIES ---------------- */
+  // ---------------------------------------------------------
+  // 4. SEED CAREGIVERS FROM JSON
+  // ---------------------------------------------------------
+  console.log(`... Seeding ${caregiversData.length} Detailed Caregivers`);
 
+  for (const caregiver of caregiversData) {
+    // Hash password
+    const hashedPassword = await bcrypt.hash(caregiver.user.password, 10);
 
+    // Prepare Relation Data
+    
+    // Education
+    const educationData = caregiver.profile.education.map((edu: any) => ({
+      degree: edu.degree,
+      institution: edu.institution,
+      graduationYear: edu.graduationYear,
+    }));
 
+    // Experience
+    const experienceData = caregiver.profile.experience.map((exp: any) => ({
+      role: exp.role,
+      organization: exp.organization || "Private",
+      startYear: exp.startYear,
+      endYear: exp.endYear,
+      description: exp.description,
+    }));
 
-  for (const category of careServices.service_categories) {
-    await prisma.serviceCategory.create({
+    // Skills (Connect or Create)
+    const skillConnects = caregiver.profile.skills.map((skillName: string) => ({
+      where: { title: skillName },
+      create: { title: skillName },
+    }));
+
+    // Services (Connect only - they must exist from step 1)
+    // We need to find the ServiceTask IDs based on the names provided in JSON
+    // Since Prisma connect needs unique identifiers, we first fetch the tasks.
+    const serviceNames = caregiver.profile.offeredServices;
+    const servicesToConnect = await prisma.serviceTask.findMany({
+      where: {
+        serviceName: { in: serviceNames },
+      },
+      select: { serviceId: true }, // Select ID to connect
+    });
+
+    // Create User & Profile Transactionally
+    await prisma.user.create({
       data: {
-        categoryName: category.name,
-        //description: category.description,
-        serviceTasks: {
-          createMany: {
-            data: category.services.map((task: any) => ({
-              serviceName: task,
-            })),
+        email: caregiver.user.email,
+        firstName: caregiver.user.firstName,
+        lastName: caregiver.user.lastName,
+        passwordHash: hashedPassword,
+        role: UserRole.CAREGIVER,
+        isVerified: true,
+        
+        caregiverProfile: {
+          create: {
+            // Basic Info
+            phoneNumber: caregiver.profile.phoneNumber,
+            dateOfBirth: new Date(caregiver.profile.dateOfBirth),
+            gender: caregiver.profile.gender as Gender,
+            address: caregiver.profile.address,
+            city: caregiver.profile.city,
+            country: caregiver.profile.country,
+            languages: caregiver.profile.languages,
+            profilePhotoUrl: caregiver.profile.profilePhotoUrl,
+            
+            // Professional Info
+            bio: caregiver.profile.bio,
+            hourlyRate: caregiver.profile.hourlyRate,
+            availabilityStatus: caregiver.profile.availabilityStatus as Availability,
+            verified: caregiver.profile.verified,
+            backgroundCheckStatus: caregiver.profile.backgroundCheckStatus as BackgroundCheckStatus,
+            ssn: caregiver.profile.ssn,
+            internalNotes: caregiver.profile.internalNotes,
+            rating: caregiver.profile.rating,
+            completedJobsCount: caregiver.profile.completedJobsCount,
+
+            // Relations (Nested Creates)
+            education: {
+              create: educationData,
+            },
+            experience: {
+              create: experienceData,
+            },
+            
+            // Relations (Connects)
+            skills: {
+              connectOrCreate: skillConnects,
+            },
+            offeredServices: {
+              connect: servicesToConnect.map(s => ({ serviceId: s.serviceId })),
+            },
           },
         },
       },
     });
   }
-
-  const medicalCare = await prisma.serviceCategory.create({
-    data: {
-      categoryName: "Medical Care",
-      description: "Medical-related home care",
-      serviceTasks: {
-        createMany: {
-          data: [
-            { serviceName: "Medication reminder" },
-            { serviceName: "Blood pressure monitoring" },
-            { serviceName: "Insulin injection support" },
-          ],
-        },
-      },
-    },
-  });
-
-  const householdHelp = await prisma.serviceCategory.create({
-    data: {
-      categoryName: "Household Help",
-      description: "Help with daily household tasks",
-      serviceTasks: {
-        createMany: {
-          data: [
-            { serviceName: "Meal preparation" },
-            { serviceName: "Light cleaning" },
-            { serviceName: "Laundry assistance" },
-          ],
-        },
-      },
-    },
-  });
 
   console.log("✅ Seeding completed successfully");
 }

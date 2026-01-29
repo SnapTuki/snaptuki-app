@@ -8,139 +8,202 @@ import {
   TextInput, 
   SafeAreaView, 
   Platform,
-  StatusBar
+  StatusBar,
+  ActivityIndicator,
+  LayoutAnimation,
+  UIManager
 } from 'react-native';
 import { 
   Search, 
-  Check,
-  UserPlus,
-  ArrowRight
+  CheckCircle2, 
+  ArrowRight,
+  HeartHandshake,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@apollo/client/react';
 import { GET_ALL_CARE_SERVICES } from '@/src/graphql/queries';
+import { useSelectedServices } from '@/src/hooks/useSelectedservices';
 
-// Data structure containing all required tasks
-
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function FindHelpScreen() {
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  // Use Context instead of local state
+  const { selectedServiceIds, addService, removeService } = useSelectedServices();
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
 
-  const {loading, error, data} = useQuery(GET_ALL_CARE_SERVICES);
+  const { loading, error, data } = useQuery(GET_ALL_CARE_SERVICES);
 
   let serviceCategories = data?.getAllServiceCategories ?? [];
-  console.log(serviceCategories)
-  const toggleTask = (taskId: string) => {
-    setSelectedTasks(prev => 
-      prev.includes(taskId) 
-        ? prev.filter(id => id !== taskId) 
-        : [...prev, taskId]
+
+  const toggleTask = (taskId: number) => {
+    if (selectedServiceIds.includes(taskId)) {
+      removeService(taskId);
+    } else {
+      addService(taskId);
+    }
+  };
+
+  const toggleCategory = (categoryId: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId) 
+        : [...prev, categoryId]
     );
   };
 
-  if(error){console.log(error)}
+  const clearSelection = () => {
+    selectedServiceIds.forEach(id => removeService(id));
+  };
 
-  const filteredCategories = serviceCategories.map(cat => ({
+  // Filter categories and tasks based on search
+  const filteredCategories = serviceCategories.map((cat: any) => ({
     ...cat,
-    tasks: cat.serviceTasks.filter(t => 
+    tasks: cat.serviceTasks.filter((t: any) => 
       t.serviceName.toLowerCase().includes(searchQuery.toLowerCase()))
-  })).filter(cat => cat.tasks.length > 0);
+  })).filter((cat: any) => cat.tasks.length > 0);
+
+  // Auto-expand categories if searching
+  React.useEffect(() => {
+    if (searchQuery.length > 0) {
+      setExpandedCategories(filteredCategories.map((c: any) => parseInt(c.categoryId)));
+    }
+  }, [searchQuery]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#0d9488" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
-      {/* Search Header */}
+      {/* --- Elegant Header --- */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Help</Text>
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#94A3B8" style={styles.searchIcon} />
+        <View style={styles.titleRow}>
+          <Text style={styles.headerTitle}>Find Care Services</Text>
+          {selectedServiceIds.length > 0 && (
+            <TouchableOpacity onPress={clearSelection} style={styles.clearBtn}>
+              <Text style={styles.clearText}>Clear ({selectedServiceIds.length})</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        <View style={styles.searchWrapper}>
+          <Search size={20} color="#64748B" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search services..."
+            placeholder="Search for care (e.g., 'Nursing')..."
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
-
-        <View style={styles.subHeader}>
-          <Text style={styles.subHeaderText}>Choose tasks for care</Text>
-          {selectedTasks.length > 0 && (
-            <TouchableOpacity onPress={() => setSelectedTasks([])}>
-              <Text style={styles.clearText}>Clear all ({selectedTasks.length})</Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
-      {/* Categories List */}
+      {/* --- Service Content --- */}
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredCategories?.map((category) => (
-          <View key={category.categoryId} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>{category.categoryName.toUpperCase()}</Text>
-            {category.tasks.map((task) => {
-              const isSelected = selectedTasks.includes(task.serviceId);
-              return (
-                <TouchableOpacity
-                  key={task.serviceId}
-                  activeOpacity={0.8}
-                  onPress={() => toggleTask(task.serviceId)}
-                  style={[
-                    styles.taskCard,
-                    isSelected && styles.taskCardSelected
-                  ]}
-                >
-                  <View style={[
-                    styles.iconContainer,
-                    isSelected ? styles.iconContainerSelected : styles.iconContainerDefault
-                  ]}>
+        {filteredCategories?.map((category: any) => {
+          const catId = parseInt(category.categoryId);
+          const isExpanded = expandedCategories.includes(catId);
+          // Check if any task in this category is selected to highlight the header
+          const hasSelectedTasks = category.tasks.some((t: any) => selectedServiceIds.includes(parseInt(t.serviceId)));
+
+          return (
+            <View key={category.categoryId} style={styles.categoryCard}>
+              {/* Expandable Header */}
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => toggleCategory(catId)}
+                style={[
+                  styles.categoryHeader, 
+                  isExpanded && styles.categoryHeaderExpanded,
+                  hasSelectedTasks && styles.categoryHeaderActive
+                ]}
+              >
+                <View style={styles.categoryTitleRow}>
+                  <View style={[styles.iconBox, hasSelectedTasks && styles.iconBoxActive]}>
+                    <HeartHandshake size={20} color={hasSelectedTasks ? "#fff" : "#0d9488"} />
                   </View>
-                  
-                  <View style={styles.taskInfo}>
-                    <View style={styles.taskHeaderRow}>
-                      <Text style={[
-                        styles.taskLabel,
-                        isSelected && styles.taskLabelSelected
-                      ]}>
-                        {task.serviceName}
-                      </Text>
-                      {isSelected && (
-                        <View style={styles.checkBadge}>
-                          <Check size={12} color="#FFFFFF" strokeWidth={4} />
+                  <Text style={[styles.categoryTitle, hasSelectedTasks && styles.categoryTitleActive]}>
+                    {category.categoryName}
+                  </Text>
+                </View>
+                {isExpanded ? (
+                  <ChevronUp size={20} color={hasSelectedTasks ? "#0f766e" : "#94a3b8"} />
+                ) : (
+                  <ChevronDown size={20} color={hasSelectedTasks ? "#0f766e" : "#94a3b8"} />
+                )}
+              </TouchableOpacity>
+              
+              {/* Tasks List (Conditional Render) */}
+              {isExpanded && (
+                <View style={styles.tasksContainer}>
+                  {category.tasks.map((task: any) => {
+                    const taskId = parseInt(task.serviceId);
+                    const isSelected = selectedServiceIds.includes(taskId);
+                    
+                    return (
+                      <TouchableOpacity
+                        key={task.serviceId}
+                        activeOpacity={0.7}
+                        onPress={() => toggleTask(taskId)}
+                        style={[
+                          styles.taskRow,
+                          isSelected && styles.taskRowSelected
+                        ]}
+                      >
+                        <Text style={[
+                          styles.taskLabel,
+                          isSelected && styles.taskLabelSelected
+                        ]}>
+                          {task.serviceName}
+                        </Text>
+
+                        <View style={[
+                          styles.checkbox,
+                          isSelected ? styles.checkboxSelected : styles.checkboxDefault
+                        ]}>
+                          {isSelected && <CheckCircle2 size={18} color="#fff" />}
                         </View>
-                      )}
-                    </View>
-                    <Text style={[
-                      styles.taskDesc,
-                      isSelected && styles.taskDescSelected
-                    ]}>
-                      No description yet
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          );
+        })}
         
-        {/* Buffer for floating button */}
-        <View style={{ height: 120 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Fixed Action Button */}
-      {selectedTasks.length > 0 && (
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.mainButton} onPress={() => router.push('/(client)/(tabs)/find-help/caregivers')}>
-            <UserPlus size={20} color="#FFFFFF" />
-            <Text style={styles.mainButtonText}>
-              Find Caregivers ({selectedTasks.length})
-            </Text>
-            <ArrowRight size={18} color="#FFFFFF" />
+      {/* --- Floating Action Button --- */}
+      {selectedServiceIds.length > 0 && (
+        <View style={styles.fabContainer}>
+          <TouchableOpacity 
+            style={styles.fab} 
+            activeOpacity={0.9}
+            onPress={() => router.push('/(client)/(tabs)/find-help/caregivers')}
+          >
+            <View style={styles.fabBadge}>
+              <Text style={styles.fabBadgeText}>{selectedServiceIds.length}</Text>
+            </View>
+            <Text style={styles.fabText}>See Available Caregivers</Text>
+            <ArrowRight size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       )}
@@ -149,164 +212,227 @@ export default function FindHelpScreen() {
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F0FDFA', // Very light teal background
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 20 : 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
+  center: {
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 16,
-    paddingHorizontal: 15,
-    marginBottom: 16,
   },
-  searchIcon: {
-    marginRight: 10,
+  
+  // Header
+  header: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 10,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#0F766E', // Teal shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 4,
+    zIndex: 10,
   },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#1E293B',
-  },
-  subHeader: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 15,
+    marginBottom: 16,
   },
-  subHeaderText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '600',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#134E4A', // Deep Teal
+    letterSpacing: -0.5,
+  },
+  clearBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
   },
   clearText: {
-    fontSize: 14,
-    color: '#4F46E5',
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
   },
+  searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#0F172A',
+    fontWeight: '500',
+  },
+
+  // Content
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  categoryBlock: {
-    marginBottom: 32,
+  
+  // Category Card (Large Item)
+  categoryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#fff',
+
+  },
+  categoryHeaderExpanded: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  categoryHeaderActive: {
+    backgroundColor: '#F0FDFA', // Subtle tint if items selected inside
+  },
+  categoryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1, // Allow row to expand
+    marginRight: 10, // Avoid overlapping arrow
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#F0FDFA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    flexShrink: 0, // Prevent icon from shrinking
+  },
+  iconBoxActive: {
+    backgroundColor: '#0d9488', // Solid teal when active
   },
   categoryTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 1.2,
-    marginBottom: 12,
-    paddingLeft: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#334155',
+    flex: 1, // Allow text to wrap
+    flexWrap: 'wrap', // Enable wrapping
   },
-  taskCard: {
+  categoryTitleActive: {
+    color: '#0f766e',
+  },
+
+  // Tasks List inside Category
+  tasksContainer: {
+    backgroundColor: '#FAFAFA', // Slightly darker inside
+  },
+  taskRow: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  taskCardSelected: {
-    borderColor: '#4F46E5',
-    backgroundColor: '#EEF2FF',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconContainerDefault: {
-    backgroundColor: '#F8FAFC',
-  },
-  iconContainerSelected: {
-    backgroundColor: '#4F46E5',
-  },
-  taskInfo: {
-    flex: 1,
-    marginLeft: 16,
-    justifyContent: 'center',
-  },
-  taskHeaderRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    backgroundColor: '#fff',
+  },
+  taskRowSelected: {
+    backgroundColor: '#F0FDFA',
   },
   taskLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#475569',
+    flex: 1,
+    marginRight: 10,
+    flexWrap: 'wrap', // Enable wrapping for task items too
   },
   taskLabelSelected: {
-    color: '#4F46E5',
+    color: '#0f766e',
+    fontWeight: '600',
   },
-  taskDesc: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-    lineHeight: 18,
+  
+  // Checkbox Style
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0, // Prevent checkbox from shrinking
   },
-  taskDescSelected: {
-    color: '#6366F1',
-    opacity: 0.8,
+  checkboxDefault: {
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#fff',
   },
-  checkBadge: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 12,
-    padding: 3,
+  checkboxSelected: {
+    backgroundColor: '#0D9488', // Solid Teal
+    borderColor: '#0D9488',
   },
-  footer: {
+
+  // Floating Action Button
+  fabContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    bottom: 120, // Adjusted to sit above tab bar
+    left: 20,
+    right: 20,
+    alignItems: 'center',
   },
-  mainButton: {
-    backgroundColor: '#4F46E5',
+  fab: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#0F172A', // Dark Slate
     paddingVertical: 18,
-    borderRadius: 24,
-    gap: 12,
-    marginBottom: 80,
-    shadowColor: '#4F46E5',
+    paddingHorizontal: 28,
+    borderRadius: 32,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+    width: '100%',
   },
-  mainButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+  fabBadge: {
+    backgroundColor: '#2DD4BF', // Teal 400
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 12,
+  },
+  fabBadgeText: {
+    color: '#0F172A',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  fabText: {
+    color: '#fff',
+    fontSize: 17,
     fontWeight: '700',
+    marginRight: 8,
   },
 });
