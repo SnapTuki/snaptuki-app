@@ -17,7 +17,7 @@ export class CareTaskBookService {
     const booking = await this.db.booking.findUnique({
       where: { id: bookingId },
       include: {
-        careService: true,
+        careTaskBook: true,
       },
     });
 
@@ -41,14 +41,10 @@ export class CareTaskBookService {
     const taskBook = await this.db.careTaskBook.create({
       data: {
         bookingId: booking.id,
-        caregiverId: booking.caregiverId,
-        elderId: booking.elderId,
         status: CareTaskBookStatus.ACTIVE,
       },
     });
 
-    // Generate default tasks (can be template-based later)
-    await this.createDefaultTasks(taskBook.id, booking.careService.serviceName);
 
     return taskBook;
   }
@@ -119,9 +115,6 @@ export class CareTaskBookService {
       throw new Error("Task not found");
     }
 
-    if (task.taskBook.caregiverId !== caregiverId) {
-      throw new Error("Not authorized to update this task");
-    }
 
     if (task.taskBook.status !== CareTaskBookStatus.ACTIVE) {
       throw new Error("Task book is not active");

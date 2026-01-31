@@ -1,10 +1,16 @@
 import { createContext } from "react";
 
+
+export interface CARE_SERVICE {
+    id: number;
+    title: string;
+}
+
 export interface CareServiceType {
 
-    selectedServiceIds: number[];
+    selectedServices: CARE_SERVICE[];
     //Actions
-    addService: (serviceId: number) => void;
+    addService: (serviceObj: CARE_SERVICE) => void;
     removeService: (serviceId: number) => void;
 }
 

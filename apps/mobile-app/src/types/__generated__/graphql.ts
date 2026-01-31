@@ -31,10 +31,9 @@ export enum BackgroundCheckStatus {
 
 export type Booking = {
   __typename: 'Booking';
-  careService: ServiceTask;
   careServiceId: Scalars['Int']['output'];
   careTaskBook: Maybe<CareTaskBookSummary>;
-  caregiver: CaregiverProfileCard;
+  caregiver: CaregiverProfile;
   caregiverId: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
   elder: ElderProfile;
@@ -71,12 +70,11 @@ export type CareTask = {
   __typename: 'CareTask';
   caregiverNotes: Maybe<Scalars['String']['output']>;
   completedAt: Maybe<Scalars['DateTime']['output']>;
-  createdAt: Scalars['DateTime']['output'];
   description: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  isMandatory: Scalars['Boolean']['output'];
   status: CareTaskStatus;
   title: Scalars['String']['output'];
-  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type CareTaskBook = {
@@ -105,6 +103,14 @@ export type CareTaskBookSummary = {
   id: Scalars['ID']['output'];
   status: Scalars['String']['output'];
   tasks: Array<CareTaskSummary>;
+};
+
+export type CareTaskInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  isMandatory?: Scalars['Boolean']['input'];
+  status: CareTaskStatus;
+  taskOrder?: InputMaybe<Scalars['Int']['input']>;
+  title: Scalars['String']['input'];
 };
 
 export enum CareTaskStatus {
@@ -479,10 +485,10 @@ export type NewBookingInput = {
   caregiverId: Scalars['Int']['input'];
   elderId: Scalars['Int']['input'];
   endTime: Scalars['DateTime']['input'];
-  familyMemberId?: InputMaybe<Scalars['Int']['input']>;
+  familyMemberId: Scalars['Int']['input'];
   notes?: InputMaybe<Scalars['String']['input']>;
-  serviceId: Scalars['Int']['input'];
   startTime: Scalars['DateTime']['input'];
+  tasks: Array<CareTaskInput>;
   totalPrice: Scalars['Float']['input'];
 };
 
@@ -724,7 +730,7 @@ export type CreateBookingMutationVariables = Exact<{
 }>;
 
 
-export type CreateBookingMutation = { createBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string }, careService: { __typename: 'ServiceTask', serviceName: string } } };
+export type CreateBookingMutation = { createBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number } };
 
 export type RescheduleBookingMutationVariables = Exact<{
   bookingId: Scalars['Int']['input'];
@@ -784,14 +790,16 @@ export type GetMyProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetMyProfileQuery = { me: { __typename: 'User', firstName: string, lastName: string, email: string, role: UserRole, familyMemberProfile: { __typename: 'FamilyProfile', id: string, dateOfBirth: Date | null, address: string | null, postalCode: string | null, city: string | null, country: string | null } } };
 
-export type GetMyBookingsQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetMyBookingsQueryVariables = Exact<{
+  filter?: InputMaybe<BookingStatus>;
+}>;
 
 
-export type GetMyBookingsQuery = { myBookings: Array<{ __typename: 'BookingCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string, profilePhotoUrl: string | null }, careService: { __typename: 'ServiceTask', serviceName: string } }> };
+export type GetMyBookingsQuery = { myBookings: Array<{ __typename: 'BookingCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number }> };
 
 export type GetBookingDetailsQueryVariables = Exact<{
   bookingId: Scalars['Int']['input'];
 }>;
 
 
-export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfileCard', id: string, firstName: string, lastName: string, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, address: string | null }, careService: { __typename: 'ServiceTask', serviceName: string, description: string }, careTaskBook: { __typename: 'CareTaskBookSummary', id: string, status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };
+export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfile', userId: number, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };

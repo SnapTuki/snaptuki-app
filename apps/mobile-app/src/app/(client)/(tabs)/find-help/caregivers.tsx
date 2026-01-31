@@ -108,12 +108,12 @@ export default function CaregiverDirectory() {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Get selected services from context
-  const { selectedServiceIds } = useSelectedServices();
+  const { selectedServices } = useSelectedServices();
 
   // Use the local query that fetches services
   const { data, loading, error, refetch } = useQuery(GET_CAREGIVER_CARDS, {
     fetchPolicy: 'cache-and-network',
-    variables: {offeredServiceIds: selectedServiceIds}
+    variables: {offeredServiceIds: selectedServices.map(obj => obj.id)}
   });
 
   const caregivers = data?.listCaregivers || [];
@@ -136,16 +136,16 @@ export default function CaregiverDirectory() {
       // Logic: Show caregivers who match *all* selected services for better relevance? 
       // Or *any*? Usually "Find Help" implies "I need someone who can do X AND Y".
       // Let's go with: Caregiver must have ALL selected services.
-      let matchesServices = true;
+      /* let matchesServices = true;
       if (selectedServiceIds.length > 0 && c.offeredServices) {
         const caregiverServiceIds = c.offeredServices.map((s: any) => parseInt(s.serviceId));
         // Check if every selected ID is present in caregiver's services
         matchesServices = selectedServiceIds.every((id) => caregiverServiceIds.includes(id));
-      }
+      } */
 
-      return matchesSearch && matchesCat && matchesServices;
+      return matchesSearch && matchesCat //matchesServices;
     });
-  }, [search, selectedCategory, caregivers, selectedServiceIds]);
+  }, [search, selectedCategory, caregivers]); //selectedServiceIds]);
 
   if (loading && !data) {
     return (
@@ -182,10 +182,10 @@ export default function CaregiverDirectory() {
             <Text style={styles.pageTitle}>Find Caregivers</Text>
             
             {/* Context Awareness: Show active filters */}
-            {selectedServiceIds.length > 0 && (
+            {selectedServices.length > 0 && (
               <View style={styles.activeFiltersRow}>
                 <Text style={styles.activeFilterText}>
-                  Matching {selectedServiceIds.length} selected service{selectedServiceIds.length > 1 ? 's' : ''}
+                  Matching {selectedServices.length} selected service{selectedServices.length > 1 ? 's' : ''}
                 </Text>
               </View>
             )}

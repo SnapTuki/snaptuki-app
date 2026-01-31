@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@apollo/client/react';
 import { GET_BOOKING_CARDS } from '../../../../graphql/queries'; // Adjust path
 import { BookingStatus } from '@/src/types/__generated__/graphql';
+import { useSession } from '@/src/hooks/useSession';
 
 // Types for UI Filters
 const FILTERS = ["All", "Pending", "Confirmed", "Completed", "Cancelled"] as const;
@@ -28,7 +29,6 @@ type FilterType = typeof FILTERS[number];
 export default function BookingsScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-
   // 1. Fetch Real Data
   // GET_BOOKING_CARDS calls getAllBookings(userId) internally using context if configured
   // or we pass userId if needed. Assuming the query uses context or we pass it.
@@ -43,7 +43,6 @@ export default function BookingsScreen() {
   // Ideally, useSession hook.
   
   const { data, loading, error, refetch } = useQuery(GET_BOOKING_CARDS, {
-    variables: { userId: 1 }, // Replace with real user ID from session context
     fetchPolicy: 'cache-and-network'
   });
 

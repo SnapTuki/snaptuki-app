@@ -1,23 +1,24 @@
 import { InputType, Field, Int, Float } from "type-graphql";
-
+import { GraphQLDateTime } from "graphql-scalars";
+import { CareTaskStatus } from "../care-task-book/ctb-types";
 @InputType()
 export class NewBookingInput {
     @Field(() => Int)
     elderId: number;
 
-    @Field(() => Int, { nullable: true })
-    familyMemberId?: number;
+    @Field(() => Int)
+    familyMemberId: number;
 
     @Field(() => Int)
     caregiverId: number;
 
-    @Field(() => Int)
-    serviceId: number;
+    @Field(() => [CareTaskInput])
+    tasks: CareTaskInput[];
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     startTime: Date;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     endTime: Date;
 
     @Field(() => Float)
@@ -30,12 +31,31 @@ export class NewBookingInput {
 
 @InputType()
 export class UpdatedBookingScheduelInput {
-    @Field(() => Date, { nullable: true })
+    @Field(() => GraphQLDateTime, { nullable: true })
     startTime?: Date;
 
-    @Field(() => Date, { nullable: true })
+    @Field(() => GraphQLDateTime, { nullable: true })
     endTime?: Date;
 
     @Field(() => Float, { nullable: true })
     totalPrice?: number;
+}
+
+
+@InputType()
+export class CareTaskInput {
+    @Field(() => String)
+    title: string;
+
+    @Field(() => String, { nullable: true })
+    description?: string;
+
+    @Field(() => Int, {nullable: true})
+    taskOrder?: number;
+
+    @Field(() => CareTaskStatus)
+    status: CareTaskStatus
+
+    @Field(() => Boolean, { defaultValue: true })
+    isMandatory: boolean;
 }

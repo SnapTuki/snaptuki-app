@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
-  TextInput, 
-  SafeAreaView, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  SafeAreaView,
   Platform,
   StatusBar,
   ActivityIndicator,
   LayoutAnimation,
   UIManager
 } from 'react-native';
-import { 
-  Search, 
-  CheckCircle2, 
+import {
+  Search,
+  CheckCircle2,
   ArrowRight,
   HeartHandshake,
   ChevronDown,
@@ -33,7 +33,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function FindHelpScreen() {
   // Use Context instead of local state
-  const { selectedServiceIds, addService, removeService } = useSelectedServices();
+  const { selectedServices, addService, removeService } = useSelectedServices();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
 
@@ -41,31 +41,33 @@ export default function FindHelpScreen() {
 
   let serviceCategories = data?.getAllServiceCategories ?? [];
 
-  const toggleTask = (taskId: number) => {
-    if (selectedServiceIds.includes(taskId)) {
-      removeService(taskId);
+  const toggleTask = (service: { id: number, title: string }) => {
+    const isSelected = selectedServices.some((s) => s.id === service.id);
+
+    if (isSelected) {
+      removeService(service.id);
     } else {
-      addService(taskId);
+      addService(service);
     }
   };
 
   const toggleCategory = (categoryId: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId) 
+    setExpandedCategories(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     );
   };
 
   const clearSelection = () => {
-    selectedServiceIds.forEach(id => removeService(id));
+    selectedServices.forEach(obj => removeService(obj.id));
   };
 
   // Filter categories and tasks based on search
   const filteredCategories = serviceCategories.map((cat: any) => ({
     ...cat,
-    tasks: cat.serviceTasks.filter((t: any) => 
+    tasks: cat.serviceTasks.filter((t: any) =>
       t.serviceName.toLowerCase().includes(searchQuery.toLowerCase()))
   })).filter((cat: any) => cat.tasks.length > 0);
 
@@ -87,18 +89,18 @@ export default function FindHelpScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
+
       {/* --- Elegant Header --- */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.headerTitle}>Find Care Services</Text>
-          {selectedServiceIds.length > 0 && (
+          {selectedServices.length > 0 && (
             <TouchableOpacity onPress={clearSelection} style={styles.clearBtn}>
-              <Text style={styles.clearText}>Clear ({selectedServiceIds.length})</Text>
+              <Text style={styles.clearText}>Clear ({selectedServices.length})</Text>
             </TouchableOpacity>
           )}
         </View>
-        
+
         <View style={styles.searchWrapper}>
           <Search size={20} color="#64748B" style={styles.searchIcon} />
           <TextInput
@@ -112,24 +114,25 @@ export default function FindHelpScreen() {
       </View>
 
       {/* --- Service Content --- */}
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {filteredCategories?.map((category: any) => {
           const catId = parseInt(category.categoryId);
           const isExpanded = expandedCategories.includes(catId);
-          // Check if any task in this category is selected to highlight the header
-          const hasSelectedTasks = category.tasks.some((t: any) => selectedServiceIds.includes(parseInt(t.serviceId)));
+          const hasSelectedTasks = category.tasks.some((t: any) =>
+            selectedServices.some(s => s.id === parseInt(t.serviceId))
+          );
 
           return (
             <View key={category.categoryId} style={styles.categoryCard}>
               {/* Expandable Header */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => toggleCategory(catId)}
                 style={[
-                  styles.categoryHeader, 
+                  styles.categoryHeader,
                   isExpanded && styles.categoryHeaderExpanded,
                   hasSelectedTasks && styles.categoryHeaderActive
                 ]}
@@ -148,19 +151,18 @@ export default function FindHelpScreen() {
                   <ChevronDown size={20} color={hasSelectedTasks ? "#0f766e" : "#94a3b8"} />
                 )}
               </TouchableOpacity>
-              
+
               {/* Tasks List (Conditional Render) */}
               {isExpanded && (
                 <View style={styles.tasksContainer}>
                   {category.tasks.map((task: any) => {
                     const taskId = parseInt(task.serviceId);
-                    const isSelected = selectedServiceIds.includes(taskId);
-                    
+                    const isSelected = selectedServices.some((s) => s.id === taskId);
                     return (
                       <TouchableOpacity
                         key={task.serviceId}
                         activeOpacity={0.7}
-                        onPress={() => toggleTask(taskId)}
+                        onPress={() => toggleTask({ id: taskId, title: task.serviceName })}
                         style={[
                           styles.taskRow,
                           isSelected && styles.taskRowSelected
@@ -187,20 +189,20 @@ export default function FindHelpScreen() {
             </View>
           );
         })}
-        
+
         <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* --- Floating Action Button --- */}
-      {selectedServiceIds.length > 0 && (
+      {selectedServices.length > 0 && (
         <View style={styles.fabContainer}>
-          <TouchableOpacity 
-            style={styles.fab} 
+          <TouchableOpacity
+            style={styles.fab}
             activeOpacity={0.9}
             onPress={() => router.push('/(client)/(tabs)/find-help/caregivers')}
           >
             <View style={styles.fabBadge}>
-              <Text style={styles.fabBadgeText}>{selectedServiceIds.length}</Text>
+              <Text style={styles.fabBadgeText}>{selectedServices.length}</Text>
             </View>
             <Text style={styles.fabText}>See Available Caregivers</Text>
             <ArrowRight size={20} color="#fff" />
@@ -220,7 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   // Header
   header: {
     backgroundColor: '#fff',
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-  
+
   // Category Card (Large Item)
   categoryCard: {
     backgroundColor: '#FFFFFF',
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    
+
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
     color: '#0f766e',
     fontWeight: '600',
   },
-  
+
   // Checkbox Style
   checkbox: {
     width: 22,

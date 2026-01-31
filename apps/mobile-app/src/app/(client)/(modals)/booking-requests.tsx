@@ -16,10 +16,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useQuery } from "@apollo/client/react";
-import { GET_CAREGIVER_PROFILE, GET_MY_ELDERS } from "../../../graphql/queries";
-import { CaregiverProfile } from "@/src/types/__generated__/graphql";
+import { useQuery, useMutation } from "@apollo/client/react"; // Updated import
+import { GET_CAREGIVER_PROFILE, GET_MY_ELDERS, GET_BOOKING_CARDS, GET_MY_PROFILE } from "../../../graphql/queries"; // Added GET_BOOKING_CARDS for refetch
+import { CREATE_BOOKING } from "../../../graphql/mutations"; // Import mutation
+import { CaregiverProfile, CareTaskStatus } from "@/src/types/__generated__/graphql";
 import { useSelectedServices } from "@/src/hooks/useSelectedservices";
+
 const PAYMENT_METHODS = [
   { id: "card", label: "Card Payment", icon: "card-outline" },
   { id: "cash", label: "Cash on Arrival", icon: "cash-outline" },
@@ -29,12 +31,12 @@ const PAYMENT_METHODS = [
 export default function BookingRequestModal() {
   const { caregiverId } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  
+
   // Use Booking Context
-  const { 
-    selectedServiceIds, 
-    addService, 
-    removeService 
+  const {
+    selectedServices,
+    addService,
+    removeService
   } = useSelectedServices();
 
   const parsedId = parseInt(Array.isArray(caregiverId) ? caregiverId[0] : caregiverId, 10);
@@ -47,6 +49,26 @@ export default function BookingRequestModal() {
 
   const { data: eldersData, loading: loadingElders } = useQuery(GET_MY_ELDERS);
 
+  // Fetch current user profile to get familyMemberId
+  const { data: profileData } = useQuery(GET_MY_PROFILE);
+  const familyMemberId = profileData?.me?.familyMemberProfile?.id
+    ? parseInt(profileData.me.familyMemberProfile.id, 10)
+    : 0;
+
+  // --- Mutation Setup ---
+  const [createBooking, { loading: creating }] = useMutation(CREATE_BOOKING, {
+    refetchQueries: [{ query: GET_BOOKING_CARDS }], // Refresh bookings list after creation
+    onCompleted: () => {
+      Alert.alert("Success", "Your booking request has been sent!", [
+        { text: "OK", onPress: () => router.back() }
+      ]);
+    },
+    onError: (err) => {
+      console.error("Booking Error:", err);
+      Alert.alert("Booking Failed", err.message || "Something went wrong. Please try again.");
+    }
+  });
+
   // --- Local State ---
   const [selectedElderId, setSelectedElderId] = useState<number | null>(null);
   const [arrivalTime, setArrivalTime] = useState(new Date());
@@ -58,11 +80,12 @@ export default function BookingRequestModal() {
   const elders = eldersData?.listMyElders || [];
 
   // --- Helpers ---
-  const toggleServiceInModal = (id: number) => {
-    if (selectedServiceIds.includes(id)) {
-      removeService(id);
+  const toggleServiceInModal = (service: { id: number, title: string }) => {
+    const isSelected = selectedServices.some((s) => s.id === service.id);
+    if (isSelected) {
+      removeService(service.id);
     } else {
-      addService(id);
+      addService(service);
     }
   };
 
@@ -77,20 +100,44 @@ export default function BookingRequestModal() {
     return Math.round(durationHours * caregiver.hourlyRate);
   }, [durationHours, caregiver]);
 
-  const handleBook = () => {
+  const handleBook = async () => {
+    // 1. Validation
     if (!selectedElderId) {
       Alert.alert("Missing Information", "Please select an elder receiving care.");
       return;
     }
-    if (selectedServiceIds.length === 0) {
+    if (selectedServices.length === 0) {
       Alert.alert("Missing Information", "Please select at least one service.");
       return;
     }
 
-    
-    
-    Alert.alert("Booking Sent", "Your request has been sent to the caregiver!");
-    router.back();
+    // 2. Prepare Variables
+
+    const careTasks = selectedServices.map((service) => ({
+      title: service.title,          
+      //description: service.description || "", 
+      isMandatory: true,                   
+      status: CareTaskStatus.Pending
+    }));
+
+    try {
+      await createBooking({
+        variables: {
+          input: {
+            caregiverId: parsedId,
+            elderId: selectedElderId,
+            familyMemberId: familyMemberId,
+            startTime: arrivalTime,
+            endTime: endTime,
+            tasks:careTasks,
+            totalPrice: totalPrice,
+            notes: notes
+          }
+        }
+      });
+    } catch (e) {
+      // Error handled by onError callback
+    }
   };
 
   if (loadingCaregiver || loadingElders) {
@@ -105,14 +152,14 @@ export default function BookingRequestModal() {
     return (
       <View style={styles.loadingContainer}>
         <Text>Caregiver not found.</Text>
-        <Pressable onPress={() => router.back()}><Text style={{color: 'blue'}}>Go Back</Text></Pressable>
+        <Pressable onPress={() => router.back()}><Text style={{ color: 'blue' }}>Go Back</Text></Pressable>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 20 : 0 }]}>
-      
+
       {/* --- Header --- */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>New Booking Request</Text>
@@ -122,14 +169,14 @@ export default function BookingRequestModal() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* 1. Caregiver Info */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Caregiver</Text>
           <View style={styles.caregiverCard}>
-            <Image 
-              source={{ uri: caregiver.profilePhotoUrl || 'https://via.placeholder.com/100' }} 
-              style={styles.caregiverAvatar} 
+            <Image
+              source={{ uri: caregiver.profilePhotoUrl || 'https://via.placeholder.com/100' }}
+              style={styles.caregiverAvatar}
             />
             <View>
               <Text style={styles.caregiverName}>{caregiver.firstName} {caregiver.lastName}</Text>
@@ -189,20 +236,20 @@ export default function BookingRequestModal() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>Select Services</Text>
-            <Text style={styles.sectionSubLabel}>{selectedServiceIds.length} selected</Text>
+            <Text style={styles.sectionSubLabel}>{selectedServices.length} selected</Text>
           </View>
-          
+
           <View style={styles.servicesContainer}>
             {caregiver.offeredServices?.length ? (
               caregiver.offeredServices.map((service) => {
                 // Ensure IDs are numbers
                 const serviceId = parseInt(service.serviceId as any);
-                const isSelected = selectedServiceIds.includes(serviceId);
-                
+                const isSelected = selectedServices.some((s) => s.id === serviceId);
+
                 return (
                   <Pressable
                     key={service.serviceId}
-                    onPress={() => toggleServiceInModal(serviceId)}
+                    onPress={() => toggleServiceInModal({id: Number(service.serviceId), title: service.serviceName})}
                     style={[styles.serviceRow, isSelected && styles.serviceRowSelected]}
                   >
                     <View style={styles.serviceInfo}>
@@ -210,7 +257,7 @@ export default function BookingRequestModal() {
                         {service.serviceName}
                       </Text>
                     </View>
-                    
+
                     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                       {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
                     </View>
@@ -268,10 +315,10 @@ export default function BookingRequestModal() {
                   onPress={() => setPaymentMethod(method.id)}
                   style={[styles.paymentOption, isSelected && styles.paymentOptionSelected]}
                 >
-                  <Ionicons 
-                    name={method.icon as any} 
-                    size={20} 
-                    color={isSelected ? "#2563eb" : "#64748b"} 
+                  <Ionicons
+                    name={method.icon as any}
+                    size={20}
+                    color={isSelected ? "#2563eb" : "#64748b"}
                   />
                   <Text style={[styles.paymentText, isSelected && styles.paymentTextSelected]}>
                     {method.label}
@@ -305,13 +352,20 @@ export default function BookingRequestModal() {
           <Text style={styles.totalPrice}>€{totalPrice}</Text>
           <Text style={styles.durationText}>{durationHours} hrs</Text>
         </View>
-        
-        <Pressable 
-          style={[styles.bookBtn, (!selectedElderId || selectedServiceIds.length === 0) && styles.bookBtnDisabled]}
+
+        <Pressable
+          style={[styles.bookBtn, (!selectedElderId || selectedServices.length === 0 || creating) && styles.bookBtnDisabled]}
           onPress={handleBook}
+          disabled={creating || !selectedElderId || selectedServices.length === 0}
         >
-          <Text style={styles.bookBtnText}>Confirm Booking</Text>
-          <Feather name="arrow-right" size={18} color="#fff" />
+          {creating ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Text style={styles.bookBtnText}>Confirm Booking</Text>
+              <Feather name="arrow-right" size={18} color="#fff" />
+            </>
+          )}
         </Pressable>
       </View>
     </View>
@@ -372,7 +426,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
   },
-  
+
   // Caregiver Card
   caregiverCard: {
     flexDirection: "row",

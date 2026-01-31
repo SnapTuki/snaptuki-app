@@ -1,10 +1,9 @@
 import { registerEnumType } from "type-graphql";
 import { Field, ID, ObjectType, Int, Float } from "type-graphql";
-import { CaregiverProfileCard } from "../caregiver-profile/cg.types";
+import { CaregiverProfile, CaregiverProfileCard } from "../caregiver-profile/cg.types";
 import { ElderProfile } from "../elder-profile/elder-profile.types";
 import { ServiceTask } from "../care-service/care-service.types"; // Reusing ServiceTask type
 import { GraphQLDateTime } from "graphql-scalars";
-
 export enum BookingStatus {
     PENDING = "PENDING",
     CONFIRMED = "CONFIRMED",
@@ -12,9 +11,11 @@ export enum BookingStatus {
     COMPLETED = "COMPLETED",
 }
 
+
 registerEnumType(BookingStatus, {
     name: "BookingStatus"
 });
+
 
 // --- Nested Types for Booking Details ---
 
@@ -98,10 +99,10 @@ export class Booking {
     @Field(() => BookingStatus)
     status: BookingStatus;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     startTime: Date;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     endTime: Date;
 
     @Field(() => String, { nullable: true })
@@ -110,10 +111,10 @@ export class Booking {
     @Field(() => Int)
     totalPrice: number;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     createdAt: Date;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     updatedAt: Date;
 
     // --- Expanded Relations for Details View ---
@@ -123,9 +124,6 @@ export class Booking {
 
     @Field(() => ElderProfile)
     elder: ElderProfile;
-
-    @Field(() => ServiceTask)
-    careService: ServiceTask;
 
     @Field(() => CareTaskBookSummary, { nullable: true })
     careTaskBook?: CareTaskBookSummary;

@@ -74,7 +74,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
         // 1. Save to persistent storage
 
         await authStorage?.setAccessToken(loginPayload.token);
-        client.resetStore();
 
         setSession(loginPayload.token);
         setUser(loginPayload.user);

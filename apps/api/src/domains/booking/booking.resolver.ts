@@ -19,7 +19,7 @@ export class BookingResolver {
         @Arg("filter", () => BookingStatus, { nullable: true }) filter?: BookingStatus
     ) {
         if (!ctx.user) throw new Error("Not authenticated");
-        return ctx.services.bookingService.getAllBookings(Number(ctx.user.id), filter);
+        return await ctx.services.bookingService.getAllBookings(Number(ctx.user.id), filter);
     }
 
     /**
@@ -31,7 +31,9 @@ export class BookingResolver {
         @Ctx() ctx: GraphQLContext
     ) {
         // Optional: Add logic to check if ctx.user owns this booking
-        return ctx.services.bookingService.getBooking(bookingId);
+        const booking = await ctx.services.bookingService.getBooking(bookingId);
+        console.log('Booking Details', booking);
+        return booking;
     }
 
     /* ---------------- MUTATIONS ---------------- */
@@ -47,12 +49,15 @@ export class BookingResolver {
         // Note: This assumes ctx.user.id maps to FamilyMemberProfile.id or similar logic exists in service
         // Ideally, service handles finding the profile ID from User ID.
         // For now, passing input as is, but best practice is to override familyMemberId from context.
-        
-        return ctx.services.bookingService.createBooking({
+
+        const booking =  await ctx.services.bookingService.createBooking({
             ...input,
             // Security: Ensure the booking is made by the logged-in user
             // This might require fetching the family profile ID first if it differs from User ID
         });
+
+        console.log(booking);
+        return booking;
     }
 
     @Mutation(() => Booking)

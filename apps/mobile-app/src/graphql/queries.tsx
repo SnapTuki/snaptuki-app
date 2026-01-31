@@ -1,5 +1,5 @@
 import { gql, TypedDocumentNode } from "@apollo/client";
-import { Query } from "../types/__generated__/graphql";
+import { BookingStatus, Query } from "../types/__generated__/graphql";
 export const WHO_IS_ME: TypedDocumentNode<Query> = gql`
 query WhoIsMe {
     me {
@@ -198,23 +198,14 @@ export const GET_MY_PROFILE: TypedDocumentNode<Query> = gql`
 
 // --- Booking Queries ---
 
-export const GET_BOOKING_CARDS: TypedDocumentNode<Query> = gql`
-  query GetMyBookings {
-    myBookings {
+export const GET_BOOKING_CARDS: TypedDocumentNode<Query, {filter?: BookingStatus}> = gql`
+  query GetMyBookings($filter: BookingStatus) {
+    myBookings(filter: $filter) {
       id
       status
       startTime
       endTime
       totalPrice
-      caregiver {
-        id
-        firstName
-        lastName
-        profilePhotoUrl
-      }
-      careService {
-        serviceName
-      }
     }
   }
 `;
@@ -232,23 +223,15 @@ export const GET_BOOKING_DETAILS: TypedDocumentNode<
       totalPrice
       notes
       caregiver {
-        id
         firstName
-        lastName
         profilePhotoUrl
       }
       elder {
-        id
         firstName
         lastName
         address
       }
-      careService {
-        serviceName
-        description
-      }
       careTaskBook {
-        id
         status
         tasks {
           id

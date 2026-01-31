@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { BookingStatus } from "../../generated/prisma";
 import { NewBookingInput, UpdatedBookingScheduelInput } from "./booking.inputs";
+import { connect } from "http2";
 
 export class BookingService {
 
@@ -15,7 +16,7 @@ export class BookingService {
      * Includes relations needed for the 'BookingCard' UI.
      */
     public async getAllBookings(userId: number, filter?: BookingStatus) {
-        return this.dbClient.booking.findMany({
+        return await this.dbClient.booking.findMany({
             where: {
                 OR: [
                     { familyMemberId: Number(userId) },
@@ -35,7 +36,6 @@ export class BookingService {
                     }
                 },
                 elder: true,
-                careService: true,
             },
             orderBy: {
                 createdAt: "desc",
@@ -60,14 +60,11 @@ export class BookingService {
                                 firstName: true,
                                 lastName: true,
                                 email: true,
-                                phoneNumber: true,
                             }
                         },
-                        reviews: true // Optional: if you show reviews in booking details
                     }
                 },
                 elder: true,
-                careService: true,
                 careTaskBook: {
                     include: {
                         tasks: true
@@ -88,23 +85,42 @@ export class BookingService {
             throw new Error("Start time must be before end time");
         }
 
-        // Optional: Calculate total price here or in a separate method
-        // const caregiver = await this.dbClient.caregiverProfile.findUnique(...)
-        // const price = ...
-
-        return this.dbClient.booking.create({
+        return await this.dbClient.booking.create({
             data: {
-                familyMemberId: bookingRecord.familyMemberId,
-                elderId: bookingRecord.elderId,
-                careServiceId: bookingRecord.serviceId,
                 startTime: bookingRecord.startTime,
                 endTime: bookingRecord.endTime,
                 notes: bookingRecord.notes,
                 status: BookingStatus.PENDING,
-                totalPrice: 0, // Placeholder, should be calculated
+                totalPrice: bookingRecord.totalPrice,
+
+                // ✅ REQUIRED nested relations
+                familyMember: {
+                    connect: { id: bookingRecord.familyMemberId },
+                },
+                elder: {
+                    connect: { id: bookingRecord.elderId },
+                },
+
+                caregiver: {
+                    connect: {id: bookingRecord.caregiverId}
+                },
+
+                careTaskBook: {
+                    create: {
+                        status: 'ACTIVE',
+                        tasks: {
+                            create: bookingRecord.tasks.map(t => ({
+                                title: t.title,
+                                //description: t.description,
+                                isMandatory: t.isMandatory
+                            }))
+                        }
+                    }
+                }
             },
         });
     }
+
 
     public async cancelBooking(bookingId: number) {
         return this.dbClient.booking.update({

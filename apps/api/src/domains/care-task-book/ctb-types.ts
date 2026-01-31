@@ -1,3 +1,4 @@
+import { GraphQLDateTime } from "graphql-scalars";
 import { Field, ID, Int, ObjectType, registerEnumType } from "type-graphql";
 
 /* =========================
@@ -40,20 +41,17 @@ export class CareTask {
     @Field(() => String, { nullable: true })
     description?: string;
 
+    @Field(() => Boolean)
+    isMandatory: Boolean;
+
     @Field(() => CareTaskStatus)
     status: CareTaskStatus;
 
     @Field(() => String, { nullable: true })
     caregiverNotes?: string;
 
-    @Field(() => Date, { nullable: true })
+    @Field(() => GraphQLDateTime, { nullable: true })
     completedAt?: Date;
-
-    @Field(() => Date)
-    createdAt: Date;
-
-    @Field(() => Date)
-    updatedAt: Date;
 }
 
 /* =========================
@@ -97,10 +95,10 @@ export class CareTaskBook {
 
     /* Audit */
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     createdAt: Date;
 
-    @Field(() => Date)
+    @Field(() => GraphQLDateTime)
     updatedAt: Date;
 }
 

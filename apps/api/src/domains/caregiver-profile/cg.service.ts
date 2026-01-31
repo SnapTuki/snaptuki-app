@@ -92,7 +92,7 @@ export class CaregiverProfileService {
       delete whereClause.AND;
     }
 
-    const caregivers = await this.dbClient.caregiverProfile.findMany({
+    return await this.dbClient.caregiverProfile.findMany({
       where: whereClause,
       select: {
         id: true,
@@ -120,12 +120,5 @@ export class CaregiverProfileService {
       },
       take: 50 
     });
-
-    // MAPPING: Ensure firstName/lastName are never null by flattening the relation
-    return caregivers.map((cg: any) => ({
-      ...cg,
-      firstName: cg.user?.firstName || "Unknown", 
-      lastName: cg.user?.lastName || "Caregiver", 
-    }));
   }
 }

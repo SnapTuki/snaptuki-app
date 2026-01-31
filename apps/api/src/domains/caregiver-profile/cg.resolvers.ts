@@ -1,8 +1,8 @@
-import { Arg, Ctx, Int, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Int, Query, Resolver, FieldResolver, Root } from "type-graphql";
 import { CaregiverProfile, CaregiverProfileCard } from "./cg.types";
 import { GraphQLContext } from "../../context";
 
-@Resolver()
+@Resolver(() => CaregiverProfileCard)
 export class CaregiverProfileResolver {
   
   /* ---------------- READ OPERATIONS ---------------- */
@@ -41,5 +41,24 @@ export class CaregiverProfileResolver {
       verified,
       offeredServiceIds,
     });
+  }
+
+
+  @FieldResolver(() => String)
+  async firstName(@Root() profile: any) {
+    // Priority 1: Check if Service already flattened it (current behavior)
+    if (profile.firstName) return profile.firstName;
+
+    // Priority 2: Check nested Prisma User relation (future-proof)
+    if (profile.user?.firstName) return profile.user.firstName;
+
+    return "Unknown";
+  }
+
+  @FieldResolver(() => String)
+  async lastName(@Root() profile: any) {
+    if (profile.lastName) return profile.lastName;
+    if (profile.user?.lastName) return profile.user.lastName;
+    return "Caregiver";
   }
 }

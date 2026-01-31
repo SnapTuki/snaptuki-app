@@ -118,14 +118,6 @@ export const CREATE_BOOKING: TypedDocumentNode<Mutation, any> = gql`
             startTime
             endTime
             totalPrice
-            caregiver {
-                id
-                firstName
-                lastName
-            }
-            careService {
-                serviceName
-            }
         }
     }
 `
@@ -138,3 +130,13 @@ export const RESCHEDULE_BOOKING: TypedDocumentNode<Mutation, any> = gql`
         }
     }`
 
+
+export const CANCEL_BOOKING = gql`
+  mutation CancelBooking($bookingId: Int!) {
+    cancelBooking(bookingId: $bookingId) {
+      id
+      status
+      updatedAt
+    }
+  }
+`;

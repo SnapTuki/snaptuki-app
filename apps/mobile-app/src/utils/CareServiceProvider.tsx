@@ -1,22 +1,23 @@
 import { PropsWithChildren, useState } from "react";
 import CareServiceContext from "../contexts/careServiceContext";
+import { CARE_SERVICE } from "../contexts/careServiceContext";
 
 export const CareServiceProvier = ({ children }: PropsWithChildren) => {
-    const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+    const [selectedServices, setSelectedServices] = useState<CARE_SERVICE[]>([]);
 
-    const addService = (serviceId: number) => {
-        setSelectedServiceIds((prev) => {
-            if (prev.includes(serviceId)) return prev;
-            return [...prev, serviceId];
+    const addService = (serviceObj: CARE_SERVICE) => {
+        setSelectedServices((prev) => {
+            if (prev?.includes(serviceObj)) return prev;
+            return [...prev, serviceObj];
         });
     };
 
     const removeService = (serviceId: number) => {
-        setSelectedServiceIds((prev) => prev.filter((id) => id !== serviceId));
+        setSelectedServices((prev) => prev?.filter((serviceObj) => serviceObj.id !== serviceId));
     };
 
     return (
-        <CareServiceContext.Provider value={{selectedServiceIds, addService, removeService}}>
+        <CareServiceContext.Provider value={{selectedServices, addService, removeService}}>
             {children}
         </CareServiceContext.Provider>
     )
