@@ -7,6 +7,7 @@ import AuthStorage from '../utils/authenStorage';
 import { SessionProvider } from '../utils/SessionProvider';
 import { useSession } from '../hooks/useSession';
 import { CareServiceProvier } from '../utils/CareServiceProvider';
+import { UserRole } from '../types/__generated__/graphql';
 const authStorage = new AuthStorage();
 const apolloClient = createApolloClient(authStorage);
 
@@ -24,9 +25,10 @@ function LoadingScreen() {
 }
 
 function NavigationContent() {
-  const { session, isLoading } = useSession();
+  const { session, user, isLoading } = useSession();
   console.log("Isloading value: " + isLoading);
-
+  console.log("Session is ", session);
+  console.log("Role is ", user?.role);
   // Show the loading screen while checking storage/auth state
   if (isLoading) {
     return <LoadingScreen />;
@@ -34,14 +36,27 @@ function NavigationContent() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {session ? (
-        // Main App Experience
-        <Stack.Screen name="(client)" />
+      {!session ? (
+        // Unauthenticated: Only the Auth group is accessible
+        <Stack.Screen 
+          name="(auth)" 
+          options={{ animation: 'fade' }} 
+        />
+      ) : user?.role === UserRole.Family ? (
+        // Family Role: Redirect to Client group
+        <Stack.Screen 
+          name="(client)" 
+          options={{ animation: 'slide_from_right' }} 
+        />
+      ) : user?.role === UserRole.Caregiver ? (
+        // Caregiver Role: Redirect to Caregiver group
+        <Stack.Screen 
+          name="(caregiver)" 
+          options={{ animation: 'slide_from_right' }} 
+        />
       ) : (
-        // Authentication Flow
-        <>
-          <Stack.Screen name="(auth)" />
-        </>
+        // Fallback/Error state (e.g., user exists but role is undefined)
+        <Stack.Screen name="onboarding-error" />
       )}
     </Stack>
   );

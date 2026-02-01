@@ -43,12 +43,6 @@ export default function LandingPage() {
           <Text style={buttonStyles.secondaryText}>Sign Up as Family Member</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={buttonStyles.secondary}
-          onPress={() => router.push("/")}
-        >
-          <Text style={buttonStyles.secondaryText}>Sign Up as Caregiver</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Footer */}
