@@ -33,7 +33,7 @@ export type Booking = {
   __typename: 'Booking';
   careServiceId: Scalars['Int']['output'];
   careTaskBook: Maybe<CareTaskBookSummary>;
-  caregiver: CaregiverProfile;
+  caregiver: CaregiverProfileCard;
   caregiverId: Scalars['Int']['output'];
   createdAt: Scalars['DateTime']['output'];
   elder: ElderProfile;
@@ -278,6 +278,12 @@ export type FamilyElderRelationship = {
   relationship: Maybe<Scalars['String']['output']>;
 };
 
+export type FamilyMemberSummary = {
+  __typename: 'FamilyMemberSummary';
+  firstName: Scalars['String']['output'];
+  lastName: Scalars['String']['output'];
+};
+
 export type FamilyProfile = {
   __typename: 'FamilyProfile';
   address: Maybe<Scalars['String']['output']>;
@@ -500,6 +506,19 @@ export type OtpRegisteration = {
   success: Scalars['Boolean']['output'];
 };
 
+export type PendingRequestCard = {
+  __typename: 'PendingRequestCard';
+  careTaskBook: Maybe<CareTaskBookSummary>;
+  createdAt: Scalars['DateTime']['output'];
+  elder: ElderProfile;
+  endTime: Scalars['DateTime']['output'];
+  familyMember: FamilyMemberSummary;
+  id: Scalars['ID']['output'];
+  startTime: Scalars['DateTime']['output'];
+  status: BookingStatus;
+  totalPrice: Scalars['Int']['output'];
+};
+
 export type Query = {
   __typename: 'Query';
   getAllServiceCategories: Array<ServiceCategory>;
@@ -516,6 +535,7 @@ export type Query = {
   myBookings: Array<BookingCard>;
   myFamilyProfile: Maybe<FamilyProfile>;
   myManagedElders: Array<ElderProfile>;
+  pendingBookings: Array<PendingRequestCard>;
 };
 
 
@@ -668,6 +688,11 @@ export type VerifyEmailInput = {
   otpCode: Scalars['String']['input'];
 };
 
+export type GetPendingCaregiverBookingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetPendingCaregiverBookingsQuery = { pendingBookings: Array<{ __typename: 'PendingRequestCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, createdAt: Date, familyMember: { __typename: 'FamilyMemberSummary', firstName: string, lastName: string }, elder: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, isMandatory: string }> } | null }> };
+
 export type LoginMutationVariables = Exact<{
   credentials: LoginCredentials;
 }>;
@@ -740,6 +765,13 @@ export type RescheduleBookingMutationVariables = Exact<{
 
 export type RescheduleBookingMutation = { rescheduleBooking: { __typename: 'Booking', id: string, status: BookingStatus } };
 
+export type CancelBookingMutationVariables = Exact<{
+  bookingId: Scalars['Int']['input'];
+}>;
+
+
+export type CancelBookingMutation = { cancelBooking: { __typename: 'Booking', id: string, status: BookingStatus, updatedAt: Date } };
+
 export type WhoIsMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -802,4 +834,4 @@ export type GetBookingDetailsQueryVariables = Exact<{
 }>;
 
 
-export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfile', userId: number, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };
+export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfileCard', firstName: string, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };

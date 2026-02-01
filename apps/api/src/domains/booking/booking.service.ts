@@ -80,6 +80,45 @@ export class BookingService {
         return booking;
     }
 
+
+    public async getPendingBookings(userId: number) {
+    const requests = await this.dbClient.booking.findMany({
+        where: {
+            caregiver: {
+                userId: userId
+            },
+            status: BookingStatus.PENDING,
+        },
+        include: {
+            // Includes the family member who initiated the request
+            familyMember: {
+                include: {
+                    user: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                        }
+                    }
+                }
+            },
+            // Includes the elder receiving care and their location
+            elder: true,
+            // Includes the task list so the caregiver knows the job requirements
+            careTaskBook: {
+                include: {
+                    tasks: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+
+    });
+
+    return requests;
+}
+
     public async createBooking(bookingRecord: NewBookingInput) {
         if (bookingRecord.startTime >= bookingRecord.endTime) {
             throw new Error("Start time must be before end time");

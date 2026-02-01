@@ -74,6 +74,7 @@ export class BookingCard {
 
     @Field(() => ServiceTask)
     careService: ServiceTask;
+
 }
 
 /**
@@ -121,6 +122,50 @@ export class Booking {
 
     @Field(() => CaregiverProfileCard)
     caregiver: CaregiverProfileCard; // Or full CaregiverProfile if needed
+
+    @Field(() => ElderProfile)
+    elder: ElderProfile;
+
+    @Field(() => CareTaskBookSummary, { nullable: true })
+    careTaskBook?: CareTaskBookSummary;
+}
+
+
+@ObjectType()
+export class FamilyMemberSummary {
+    @Field(() => String)
+    firstName: string;
+
+    @Field(() => String)
+    lastName: string;
+}
+
+/**
+ * Lightweight type for the "Pending Requests" list view.
+ * Matches the fields requested in your requests/index.tsx query.
+ */
+@ObjectType()
+export class PendingRequestCard {
+    @Field(() => ID)
+    id: number;
+
+    @Field(() => BookingStatus)
+    status: BookingStatus;
+
+    @Field(() => GraphQLDateTime)
+    startTime: Date;
+
+    @Field(() => GraphQLDateTime)
+    endTime: Date;
+
+    @Field(() => Int)
+    totalPrice: number;
+
+    @Field(() => GraphQLDateTime)
+    createdAt: Date;
+
+    @Field(() => FamilyMemberSummary)
+    familyMember: FamilyMemberSummary;
 
     @Field(() => ElderProfile)
     elder: ElderProfile;

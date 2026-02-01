@@ -1,8 +1,9 @@
-import { Arg, Mutation, Query, Resolver, Ctx, Int } from "type-graphql";
-import { Booking, BookingCard } from "./booking.types";
+import { Arg, Mutation, Query, Resolver, Ctx, Int, FieldResolver, Root } from "type-graphql";
+import { Booking, BookingCard, PendingRequestCard } from "./booking.types";
 import { NewBookingInput, UpdatedBookingScheduelInput } from "./booking.inputs";
 import { GraphQLContext } from '../../context'
 import { BookingStatus } from "./booking.types";
+import { FamilyMemberSummary } from "./booking.types";
 
 @Resolver()
 export class BookingResolver {
@@ -36,6 +37,15 @@ export class BookingResolver {
         return booking;
     }
 
+
+    @Query(() => [PendingRequestCard])
+    async pendingBookings(@Ctx() ctx: GraphQLContext) {
+        if (!ctx.user) throw new Error("Not authenticated");
+        const reqs = await ctx.services.bookingService.getPendingBookings(Number(ctx.user.id));
+        console.log("reqs: ", reqs);
+        return reqs;
+    }
+
     /* ---------------- MUTATIONS ---------------- */
 
     @Mutation(() => Booking)
@@ -50,7 +60,7 @@ export class BookingResolver {
         // Ideally, service handles finding the profile ID from User ID.
         // For now, passing input as is, but best practice is to override familyMemberId from context.
 
-        const booking =  await ctx.services.bookingService.createBooking({
+        const booking = await ctx.services.bookingService.createBooking({
             ...input,
             // Security: Ensure the booking is made by the logged-in user
             // This might require fetching the family profile ID first if it differs from User ID
@@ -94,5 +104,23 @@ export class BookingResolver {
         @Ctx() ctx: GraphQLContext
     ) {
         return ctx.services.bookingService.completeBooking(bookingId);
+    }
+}
+
+
+@Resolver(() => FamilyMemberSummary)
+export class FamilyMemberSummaryResolver {
+    
+    // Resolves the firstName from the nested user object
+    @FieldResolver(() => String)
+    firstName(@Root() familyMember: any): string {
+        // Accessing the nested 'user' fetched by Prisma in the service layer
+        return familyMember.user?.firstName || "";
+    }
+
+    // Resolves the lastName from the nested user object
+    @FieldResolver(() => String)
+    lastName(@Root() familyMember: any): string {
+        return familyMember.user?.lastName || "";
     }
 }

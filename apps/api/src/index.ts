@@ -16,7 +16,7 @@ import { config } from "./config";
 import { UserRole } from "./domains/auth/auth.types";
 import { BookingService } from "./domains/booking/booking.service";
 import { FamilyProfileService } from "./domains/family-profile/family-profile.service";
-import { BookingResolver } from "./domains/booking/booking.resolver";
+import { BookingResolver, FamilyMemberSummaryResolver } from "./domains/booking/booking.resolver";
 import { FamilyProfileResolver } from "./domains/family-profile/family-profile.resolvers";
 import { ElderProfileResolver } from "./domains/elder-profile/elder-profile.resolvers";
 import { ElderProfileService } from "./domains/elder-profile/elder-profile.service";
@@ -55,7 +55,8 @@ async function startApolloServer() {
             ElderProfileResolver,
             CareTaskBookResolver,
             CareServiceResolver,
-            CaregiverProfileResolver
+            CaregiverProfileResolver,
+            FamilyMemberSummaryResolver
         ],
 
         scalarsMap: [
