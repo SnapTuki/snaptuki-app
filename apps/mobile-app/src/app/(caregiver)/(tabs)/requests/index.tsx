@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Activ
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@apollo/client/react';
 import { GET_PENDING_BOOKINGS } from '@/src/graphql/caregiverQueries';
+import { useRouter } from 'expo-router'; // Import router for navigation
 
 const COLORS = {
-  primary: '#005FB8',   // Deep Trust Blue
-  secondary: '#00A79D', // Vitality Teal
+  primary: '#005FB8',   
+  secondary: '#00A79D', 
   background: '#F4F7F9',
   white: '#FFFFFF',
   textMain: '#1A1C1E',
@@ -17,14 +18,29 @@ const COLORS = {
 };
 
 export default function RequestsScreen() {
-  const { data, loading, error, refetch } = useQuery(GET_PENDING_BOOKINGS);
+  const router = useRouter(); // Initialize router
+  const { data, loading, error, refetch } = useQuery(GET_PENDING_BOOKINGS, {
+    fetchPolicy: 'cache-and-network'
+  });
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
-  console.log(error);
-  if (error) return <View style={styles.center}><Text>Error loading requests</Text></View>;
+  
+  if (error) return (
+    <View style={styles.center}>
+      <Text style={styles.errorText}>Error loading requests</Text>
+      <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
+        <Text style={styles.retryText}>Retry</Text>
+        <Text>{error.message}</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderRequest = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      activeOpacity={0.7}
+      onPress={() => router.push(`/(caregiver)/(tabs)/requests/${item.id}`)} // Navigate with ID param
+    >
       <View style={styles.cardHeader}>
         <View style={styles.headerInfo}>
           <Text style={styles.serviceTitle}>{item.careTaskBook?.tasks[0]?.title || 'General Care'}</Text>
@@ -56,21 +72,19 @@ export default function RequestsScreen() {
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity style={[styles.button, styles.declineBtn]}>
-          <Text style={styles.declineText}>Decline</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.acceptBtn]}>
-          <Text style={styles.acceptText}>Accept Booking</Text>
-        </TouchableOpacity>
+        
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topHeader}>
-        <Text style={styles.title}>New Requests</Text>
-        <TouchableOpacity onPress={() => refetch()}>
+        <View>
+          <Text style={styles.title}>New Requests</Text>
+          <Text style={styles.subtitle}>{data?.pendingBookings?.length || 0} pending opportunities</Text>
+        </View>
+        <TouchableOpacity style={styles.refreshCircle} onPress={() => refetch()}>
           <Ionicons name="refresh" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
@@ -80,7 +94,12 @@ export default function RequestsScreen() {
         renderItem={renderRequest}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>No pending requests at this time.</Text>}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No pending requests at this time.</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );

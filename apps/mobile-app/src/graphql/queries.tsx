@@ -230,6 +230,7 @@ export const GET_BOOKING_DETAILS: TypedDocumentNode<
         firstName
         lastName
         address
+        dateOfBirth
       }
       careTaskBook {
         status
@@ -243,3 +244,4 @@ export const GET_BOOKING_DETAILS: TypedDocumentNode<
     }
   }
 `;
+

@@ -37,3 +37,23 @@ export const GET_PENDING_BOOKINGS: TypedDocumentNode<Query> = gql`
   }
 }
 `;
+
+export const GET_CONFIRMED_VISITS: TypedDocumentNode<Query> = gql `
+query GetConfirmedVisits {
+  confirmedVisits {
+    id
+    status
+    startTime
+    endTime
+    totalPrice
+    
+    # Required for the 'My Visits' list view
+    elder {
+      id
+      firstName
+      lastName
+      address
+    }
+  }
+}
+`

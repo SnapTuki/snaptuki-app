@@ -49,6 +49,32 @@ export class CareTaskSummary {
 // --- Main Types ---
 
 /**
+ * Specialized type for the 'My Visits' schedule view.
+ * Provides quick-access details for confirmed appointments.
+ */
+@ObjectType()
+export class ConfirmedVisitCard {
+    @Field(() => ID)
+    id: number;
+
+    @Field(() => BookingStatus)
+    status: BookingStatus;
+
+    @Field(() => GraphQLDateTime)
+    startTime: Date;
+
+    @Field(() => GraphQLDateTime)
+    endTime: Date;
+
+    @Field(() => Int)
+    totalPrice: number;
+
+    // Expanded Elder details for the visit list (Name, Address)
+    @Field(() => ElderProfile)
+    elder: ElderProfile;
+
+}
+/**
  * Lightweight type for list views (My Bookings screen)
  */
 @ObjectType()

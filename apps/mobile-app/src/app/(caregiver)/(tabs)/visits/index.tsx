@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
+import { useQuery } from '@apollo/client/react';
+import { GET_CONFIRMED_VISITS } from '@/src/graphql/caregiverQueries';
 
 const COLORS = {
   primary: '#005FB8',
@@ -20,27 +22,73 @@ export default function VisitsScreen() {
   const [activeView, setActiveView] = useState<ViewType>('Daily');
   const [selectedDate, setSelectedDate] = useState('2026-02-01');
 
-  // Professional Calendar Marking
-  const markedDates = useMemo(() => ({
-    '2026-02-02': { marked: true, dotColor: COLORS.primary },
-    '2026-02-05': { marked: true, dotColor: COLORS.secondary },
-    [selectedDate]: { selected: true, disableTouchEvent: true, selectedColor: COLORS.primary }
-  }), [selectedDate]);
 
-  return (
+  // Fetch confirmed bookings from backend
+  const { data, loading, error, refetch } = useQuery(GET_CONFIRMED_VISITS, {
+    fetchPolicy: 'cache-and-network'
+  });
+
+  console.log(data)
+
+  // Filter bookings based on the selected date for Daily/Weekly views
+  const filteredVisits = useMemo(() => {
+    if (!data?.confirmedVisits) return [];
+    return data.confirmedVisits.filter((booking: any) => {
+      const bookingDate = new Date(booking.startTime).toISOString().split('T')[0];
+      return bookingDate === selectedDate;
+    });
+  }, [data, selectedDate]);
+
+
+  // Mark dates on calendar for Monthly view
+  const markedDates = useMemo(() => {
+    const marks: any = {};
+    data?.confirmedVisits.forEach((booking: any) => {
+      const date = new Date(booking.startTime).toISOString().split('T')[0];
+      marks[date] = { marked: true, dotColor: COLORS.secondary };
+    });
+    marks[selectedDate] = { 
+      ...marks[selectedDate], 
+      selected: true, 
+      selectedColor: COLORS.primary 
+    };
+    return marks;
+  }, [data, selectedDate]);
+
+  if (loading) return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
+
+  if(error){
+    console.log(error.message)
+  }
+  const formatDateTime = (
+    date: Date | string | null | undefined,
+    options: Intl.DateTimeFormatOptions = {}
+): string => {
+    if (!date) return 'N/A'; // Healthcare UI fallback
+
+    const d = typeof date === 'string' ? new Date(date) : date;
+
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        ...options
+    };
+
+    return d.toLocaleDateString(undefined, defaultOptions);
+};
+  return(
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Schedule</Text>
-          <Text style={styles.headerDate}>{selectedDate}</Text>
+          <Text style={styles.headerDate}>{formatDateTime(selectedDate, { month: 'long', day: 'numeric', year: 'numeric', weekday: undefined, hour: undefined, minute: undefined })}</Text>
         </View>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="filter-outline" size={22} color={COLORS.primary} />
+        <TouchableOpacity style={styles.headerIcon} onPress={() => refetch()}>
+          <Ionicons name="refresh" size={22} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Segmented Switcher */}
       <View style={styles.switcherContainer}>
         {(['Daily', 'Weekly', 'Monthly'] as ViewType[]).map((view) => (
           <TouchableOpacity
@@ -56,8 +104,6 @@ export default function VisitsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Monthly View */}
         {activeView === 'Monthly' && (
           <View style={styles.calendarWrapper}>
             <Calendar
@@ -69,67 +115,48 @@ export default function VisitsScreen() {
           </View>
         )}
 
-        {/* Weekly View */}
-        {activeView === 'Weekly' && (
-          <View style={styles.weekContainer}>
-             <Text style={styles.sectionLabel}>Upcoming this week</Text>
-             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekStrip}>
-                {['01','02','03','04','05','06','07'].map((day, i) => (
-                  <TouchableOpacity 
-                    key={i} 
-                    style={[styles.weekDayPill, selectedDate.endsWith(day) && styles.activeDayPill]}
-                    onPress={() => setSelectedDate(`2026-02-${day}`)}
-                  >
-                    <Text style={[styles.weekDayText, selectedDate.endsWith(day) && styles.activeDayText]}>Feb</Text>
-                    <Text style={[styles.weekNumText, selectedDate.endsWith(day) && styles.activeDayText]}>{day}</Text>
-                  </TouchableOpacity>
-                ))}
-             </ScrollView>
-          </View>
-        )}
-
-        {/* Visit List Header */}
         <View style={styles.visitListHeader}>
           <Text style={styles.sectionLabel}>
             {activeView === 'Daily' ? "Today's Schedule" : `Visits for ${selectedDate}`}
           </Text>
         </View>
 
-        <VisitCard 
-          name="Robert Jenkins" 
-          time="14:00 - 16:00" 
-          status="next" 
-          address="123 Oak Lane, Maplewood"
-        />
-        <VisitCard 
-          name="Alice Chen" 
-          time="17:30 - 19:30" 
-          status="scheduled" 
-          address="888 Pine St, Apt 4B"
-        />
+        {filteredVisits.length > 0 ? (
+          filteredVisits.map((booking: any) => (
+            <VisitCard 
+              key={booking.id}
+              booking={booking}
+              //onPress={() => router.push(`/(caregiver)/requests/${booking.id}`)}
+            />
+          ))
+        ) : (
+          <Text style={styles.emptyText}>No confirmed visits for this date.</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const VisitCard = ({ name, time, status, address }: any) => (
-  <View style={styles.card}>
+const VisitCard = ({ booking, onPress }: any) => (
+  <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={styles.cardTimeColumn}>
-      <Text style={styles.timeText}>{time.split(' ')[0]}</Text>
-      <View style={[styles.statusIndicator, status === 'next' && { backgroundColor: COLORS.secondary }]} />
+      <Text style={styles.timeText}>
+        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+      <View style={[styles.statusIndicator, { backgroundColor: COLORS.secondary }]} />
     </View>
     <View style={styles.cardContent}>
-      <Text style={styles.elderName}>{name}</Text>
+      <Text style={styles.elderName}>{booking.elder?.firstName} {booking.elder?.lastName}</Text>
       <View style={styles.addressRow}>
         <Ionicons name="location-outline" size={14} color={COLORS.textMuted} />
-        <Text style={styles.addressText} numberOfLines={1}>{address}</Text>
+        <Text style={styles.addressText} numberOfLines={1}>{booking.elder?.address}</Text>
       </View>
-      <TouchableOpacity style={styles.detailButton}>
+      <View style={styles.detailButton}>
         <Text style={styles.detailButtonText}>View Details</Text>
         <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />
-      </TouchableOpacity>
+      </View>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const calendarTheme = {
@@ -152,6 +179,7 @@ const calendarTheme = {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -188,32 +216,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowOpacity: 0.05,
   },
-  weekContainer: {
-    marginBottom: 24,
-  },
-  weekStrip: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  weekDayPill: {
-    width: 60,
-    height: 80,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  activeDayPill: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  weekDayText: { fontSize: 11, color: COLORS.textMuted },
-  weekNumText: { fontSize: 18, fontWeight: '700', color: COLORS.textMain },
-  activeDayText: { color: COLORS.white },
-  visitListHeader: {
-    marginBottom: 12,
-    paddingLeft: 4,
-  },
+  visitListHeader: { marginBottom: 12, paddingLeft: 4 },
   sectionLabel: {
     fontSize: 12,
     fontWeight: '800',
@@ -245,4 +248,5 @@ const styles = StyleSheet.create({
   addressText: { fontSize: 13, color: COLORS.textMuted, marginLeft: 4, flex: 1 },
   detailButton: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   detailButtonText: { color: COLORS.primary, fontWeight: '700', fontSize: 13, marginRight: 4 },
+  emptyText: { textAlign: 'center', color: COLORS.textMuted, marginTop: 20 },
 });

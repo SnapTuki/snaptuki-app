@@ -140,3 +140,12 @@ export const CANCEL_BOOKING = gql`
     }
   }
 `;
+
+export const ACCEPT_BOOKING = gql`
+  mutation AcceptBookingRequest($bookingId: Int!) {
+    confirmBooking(bookingId: $bookingId) {
+      id
+      status
+    }
+  }
+`;

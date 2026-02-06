@@ -7,6 +7,7 @@ export default function RequestsStackLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: '#fff' },
         headerShadowVisible: false, // Removes default shadow/border to match your clean look
+        headerShown: false,
       }}
     >
       {/* SCREEN 1: The Feed 

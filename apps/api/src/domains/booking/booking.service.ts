@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { BookingStatus } from "../../generated/prisma";
 import { NewBookingInput, UpdatedBookingScheduelInput } from "./booking.inputs";
-import { connect } from "http2";
 
 export class BookingService {
 
@@ -82,43 +81,77 @@ export class BookingService {
 
 
     public async getPendingBookings(userId: number) {
-    const requests = await this.dbClient.booking.findMany({
-        where: {
-            caregiver: {
-                userId: userId
+        const requests = await this.dbClient.booking.findMany({
+            where: {
+                caregiver: {
+                    userId: userId
+                },
+                status: BookingStatus.PENDING,
             },
-            status: BookingStatus.PENDING,
-        },
-        include: {
-            // Includes the family member who initiated the request
-            familyMember: {
-                include: {
-                    user: {
-                        select: {
-                            firstName: true,
-                            lastName: true,
+            include: {
+                // Includes the family member who initiated the request
+                familyMember: {
+                    include: {
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                            }
                         }
+                    }
+                },
+                // Includes the elder receiving care and their location
+                elder: true,
+                // Includes the task list so the caregiver knows the job requirements
+                careTaskBook: {
+                    include: {
+                        tasks: true
                     }
                 }
             },
-            // Includes the elder receiving care and their location
-            elder: true,
-            // Includes the task list so the caregiver knows the job requirements
-            careTaskBook: {
-                include: {
-                    tasks: true
+            orderBy: {
+                createdAt: "desc",
+            },
+
+        });
+
+        return requests;
+    }
+
+    /**
+     * Fetches all confirmed bookings for a specific user.
+     * Scoped to either a caregiver's schedule or a family member's upcoming visits.
+     */
+    public async getConfirmedBookings(userId: number) {
+        return await this.dbClient.booking.findMany({
+            where: {
+                OR: [
+                    {
+                        familyMember: {
+                            userId
+                        }
+                    },
+                    {
+                        caregiver: {
+                            userId
+                        }
+                    },
+                ],
+                status: BookingStatus.CONFIRMED, // Strictly filters for confirmed visits
+            },
+            include: {
+                elder: true, // Needed for patient name and address in list view
+                careTaskBook: {
+                    include: {
+                        tasks: true
+                    }
                 }
-            }
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-
-    });
-
-    return requests;
-}
-
+            },
+            orderBy: {
+                startTime: "asc", // Sorted chronologically for the schedule view
+            },
+        });
+    }
     public async createBooking(bookingRecord: NewBookingInput) {
         if (bookingRecord.startTime >= bookingRecord.endTime) {
             throw new Error("Start time must be before end time");
@@ -141,7 +174,7 @@ export class BookingService {
                 },
 
                 caregiver: {
-                    connect: {id: bookingRecord.caregiverId}
+                    connect: { id: bookingRecord.caregiverId }
                 },
 
                 careTaskBook: {
@@ -174,7 +207,7 @@ export class BookingService {
 
     // Confirm booking (caregiver accepts)
     public async confirmBooking(bookingId: number) {
-        return this.dbClient.booking.update({
+        return await this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),
             },
@@ -190,7 +223,7 @@ export class BookingService {
             throw new Error("Start time must be before end time");
         }
 
-        return this.dbClient.booking.update({
+        return await this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),
             },
@@ -204,7 +237,7 @@ export class BookingService {
 
     // Complete booking
     public async completeBooking(bookingId: number) {
-        return this.dbClient.booking.update({
+        return await this.dbClient.booking.update({
             where: {
                 id: Number(bookingId),
             },

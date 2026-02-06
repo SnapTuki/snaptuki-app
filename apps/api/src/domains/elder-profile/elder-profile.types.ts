@@ -21,8 +21,8 @@ export class ElderProfile {
   @Field(() => String)
   lastName: string;
 
-  @Field(() => Date, { nullable: true })
-  dateOfBirth?: Date;
+  @Field(() => GraphQLDateTime)
+  dateOfBirth: Date;
 
   @Field(() => String, { nullable: true })
   address?: string;
@@ -63,7 +63,7 @@ export class ElderProfileCard {
   lastName: string;
 
   @Field(() => GraphQLDateTime)
-  dateOfBirth?: Date;
+  dateOfBirth: Date;
 
   @Field(() => MobilityLevel)
   mobilityLevel: MobilityLevel;

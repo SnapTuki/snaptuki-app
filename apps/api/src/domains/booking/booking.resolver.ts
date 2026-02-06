@@ -1,5 +1,5 @@
 import { Arg, Mutation, Query, Resolver, Ctx, Int, FieldResolver, Root } from "type-graphql";
-import { Booking, BookingCard, PendingRequestCard } from "./booking.types";
+import { Booking, BookingCard, ConfirmedVisitCard, PendingRequestCard } from "./booking.types";
 import { NewBookingInput, UpdatedBookingScheduelInput } from "./booking.inputs";
 import { GraphQLContext } from '../../context'
 import { BookingStatus } from "./booking.types";
@@ -44,6 +44,14 @@ export class BookingResolver {
         const reqs = await ctx.services.bookingService.getPendingBookings(Number(ctx.user.id));
         console.log("reqs: ", reqs);
         return reqs;
+    }
+
+    @Query(() => [ConfirmedVisitCard])
+    async confirmedVisits(@Ctx() ctx: GraphQLContext) {
+        if (!ctx.user) throw new Error("Not authenticated");
+
+        // Uses the new specialized service method
+        return await ctx.services.bookingService.getConfirmedBookings(Number(ctx.user.id));
     }
 
     /* ---------------- MUTATIONS ---------------- */
@@ -95,7 +103,7 @@ export class BookingResolver {
         @Arg("bookingId", () => Int) bookingId: number,
         @Ctx() ctx: GraphQLContext
     ) {
-        return ctx.services.bookingService.confirmBooking(bookingId);
+        return await ctx.services.bookingService.confirmBooking(bookingId);
     }
 
     @Mutation(() => Booking)
@@ -110,7 +118,7 @@ export class BookingResolver {
 
 @Resolver(() => FamilyMemberSummary)
 export class FamilyMemberSummaryResolver {
-    
+
     // Resolves the firstName from the nested user object
     @FieldResolver(() => String)
     firstName(@Root() familyMember: any): string {

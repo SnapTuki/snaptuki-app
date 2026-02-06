@@ -238,7 +238,7 @@ export type ElderProfile = {
   address: Maybe<Scalars['String']['output']>;
   city: Maybe<Scalars['String']['output']>;
   country: Maybe<Scalars['String']['output']>;
-  dateOfBirth: Maybe<Scalars['DateTime']['output']>;
+  dateOfBirth: Scalars['DateTime']['output'];
   firstName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   lastName: Scalars['String']['output'];
@@ -521,6 +521,7 @@ export type PendingRequestCard = {
 
 export type Query = {
   __typename: 'Query';
+  confirmedVisits: Array<BookingCard>;
   getAllServiceCategories: Array<ServiceCategory>;
   getBooking: Booking;
   getCareTaskBook: Maybe<CareTaskBook>;
@@ -693,6 +694,11 @@ export type GetPendingCaregiverBookingsQueryVariables = Exact<{ [key: string]: n
 
 export type GetPendingCaregiverBookingsQuery = { pendingBookings: Array<{ __typename: 'PendingRequestCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, createdAt: Date, familyMember: { __typename: 'FamilyMemberSummary', firstName: string, lastName: string }, elder: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, isMandatory: string }> } | null }> };
 
+export type GetConfirmedVisitsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetConfirmedVisitsQuery = { confirmedVisits: Array<{ __typename: 'BookingCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number }> };
+
 export type LoginMutationVariables = Exact<{
   credentials: LoginCredentials;
 }>;
@@ -726,7 +732,7 @@ export type CreateElderProfileMutationVariables = Exact<{
 }>;
 
 
-export type CreateElderProfileMutation = { createElderProfile: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, dateOfBirth: Date | null, mobilityLevel: MobilityLevel, address: string | null, city: string | null } };
+export type CreateElderProfileMutation = { createElderProfile: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, dateOfBirth: Date, mobilityLevel: MobilityLevel, address: string | null, city: string | null } };
 
 export type UpdateElderProfileMutationVariables = Exact<{
   elderId: Scalars['Int']['input'];
@@ -772,6 +778,13 @@ export type CancelBookingMutationVariables = Exact<{
 
 export type CancelBookingMutation = { cancelBooking: { __typename: 'Booking', id: string, status: BookingStatus, updatedAt: Date } };
 
+export type AcceptBookingRequestMutationVariables = Exact<{
+  bookingId: Scalars['Int']['input'];
+}>;
+
+
+export type AcceptBookingRequestMutation = { confirmBooking: { __typename: 'Booking', id: string, status: BookingStatus } };
+
 export type WhoIsMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -799,7 +812,7 @@ export type GetElderProfileQueryVariables = Exact<{
 }>;
 
 
-export type GetElderProfileQuery = { getElderProfile: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, dateOfBirth: Date | null, mobilityLevel: MobilityLevel, address: string | null, city: string | null, country: string | null, phone: string | null, medicalNotes: string | null } | null };
+export type GetElderProfileQuery = { getElderProfile: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, dateOfBirth: Date, mobilityLevel: MobilityLevel, address: string | null, city: string | null, country: string | null, phone: string | null, medicalNotes: string | null } | null };
 
 export type ListCaregiversQueryVariables = Exact<{
   city?: InputMaybe<Scalars['String']['input']>;
@@ -834,4 +847,4 @@ export type GetBookingDetailsQueryVariables = Exact<{
 }>;
 
 
-export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfileCard', firstName: string, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', firstName: string, lastName: string, address: string | null }, careTaskBook: { __typename: 'CareTaskBookSummary', status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };
+export type GetBookingDetailsQuery = { getBooking: { __typename: 'Booking', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, notes: string | null, caregiver: { __typename: 'CaregiverProfileCard', firstName: string, profilePhotoUrl: string | null }, elder: { __typename: 'ElderProfile', firstName: string, lastName: string, address: string | null, dateOfBirth: Date }, careTaskBook: { __typename: 'CareTaskBookSummary', status: string, tasks: Array<{ __typename: 'CareTaskSummary', id: string, title: string, status: string, isMandatory: string }> } | null } };
