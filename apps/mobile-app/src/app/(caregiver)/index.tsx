@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
 
 export default function CaregiverIndex() {
-  return <Redirect href="/requests" />;
+  return <Redirect href="/myday" />;
 }

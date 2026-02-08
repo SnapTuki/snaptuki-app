@@ -200,6 +200,16 @@ export type CompleteRegisterationInput = {
   role: UserRole;
 };
 
+export type ConfirmedVisitCard = {
+  __typename: 'ConfirmedVisitCard';
+  elder: ElderProfile;
+  endTime: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  startTime: Scalars['DateTime']['output'];
+  status: BookingStatus;
+  totalPrice: Scalars['Int']['output'];
+};
+
 export type CreateElderProfileInput = {
   address: Scalars['String']['input'];
   dateOfBirth: Scalars['DateTime']['input'];
@@ -521,7 +531,7 @@ export type PendingRequestCard = {
 
 export type Query = {
   __typename: 'Query';
-  confirmedVisits: Array<BookingCard>;
+  confirmedVisits: Array<ConfirmedVisitCard>;
   getAllServiceCategories: Array<ServiceCategory>;
   getBooking: Booking;
   getCareTaskBook: Maybe<CareTaskBook>;
@@ -697,7 +707,7 @@ export type GetPendingCaregiverBookingsQuery = { pendingBookings: Array<{ __type
 export type GetConfirmedVisitsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetConfirmedVisitsQuery = { confirmedVisits: Array<{ __typename: 'BookingCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number }> };
+export type GetConfirmedVisitsQuery = { confirmedVisits: Array<{ __typename: 'ConfirmedVisitCard', id: string, status: BookingStatus, startTime: Date, endTime: Date, totalPrice: number, elder: { __typename: 'ElderProfile', id: string, firstName: string, lastName: string, address: string | null } }> };
 
 export type LoginMutationVariables = Exact<{
   credentials: LoginCredentials;

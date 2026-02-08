@@ -17,11 +17,11 @@ export default function CaregiverTabsLayout() {
     >
       {/* 1. Requests - The "Sales" funnel for new bookings */}
       <Tabs.Screen
-        name="requests"
+        name="myday"
         options={{
-          title: 'Requests',
+          title: 'Today',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'mail-unread' : 'mail-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'today' : 'today-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -30,7 +30,7 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="visits"
         options={{
-          title: 'My Visits',
+          title: 'My Scheduel',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
           ),

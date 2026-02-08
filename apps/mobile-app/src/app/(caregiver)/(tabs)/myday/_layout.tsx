@@ -21,23 +21,14 @@ export default function RequestsStackLayout() {
         }}
       />
 
-     {/*  <Stack.Screen
-        name="caregivers"
-        options={{
-          title: 'Find Caregiver',
-          headerShown: false, 
-          headerBackVisible: true, // Hides the word "Back" on iOS for a cleaner arrow
-          headerTintColor: '#007AFF', // Matches your brand color
-        }}
-      />
 
       <Stack.Screen
-        name="[caregiverId]"
+        name="[visitInProgress]"
         options={{ 
           headerShown: false,
-          headerBackVisible: false,
+          headerBackVisible: true,
          }}
-      /> */}
+      /> 
 
     </Stack>
   );

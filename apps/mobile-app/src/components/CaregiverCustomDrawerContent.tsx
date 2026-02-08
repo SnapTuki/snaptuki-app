@@ -44,7 +44,7 @@ export default function CaregiverCustomDrawerContent(props: any) {
           icon={({ size, color }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
           )}
-          onPress={() => router.push("/(caregiver)/(tabs)/requests")}
+          onPress={() => router.push("/(caregiver)/(tabs)/myday")}
         />
 
         <DrawerItem

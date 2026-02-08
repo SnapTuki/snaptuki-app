@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+--background: #f8fafc;
+--foreground: #0f172a;
+}
+
+/* In Tailwind v4, standard CSS is preferred for base body styles */
+body {
+background-color: var(--background);
+color: var(--foreground);
+margin: 0;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
