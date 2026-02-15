@@ -1,0 +1,47 @@
+{
+  "Sidebar": {
+    "overview": "Yleiskatsaus",
+    "caregivers": "Hoitajat",
+    "residents": "Asukkaat",
+    "shifts": "Työvuorot",
+    "tasks": "Tehtävät",
+    "settings": "Asetukset",
+    "logout": "Kirjaudu ulos"
+  },
+  "Dashboard": {
+    "welcome": "Tervetuloa takaisin",
+    "activeStaff": "Työvuorossa",
+    "occupancy": "Asukasmäärä",
+    "criticalAlerts": "Kriittiset hälytykset"
+  },
+  "Caregivers": {
+    "title": "Hoitajien hallinta",
+    "add": "Lisää hoitaja",
+    "role": "Rooli",
+    "status": "Tila",
+    "performance": "Tehokkuus"
+  },
+  "Patients": {
+    "title": "Asukasluettelo",
+    "admit": "Kirjaa asukas",
+    "room": "Huone",
+    "condition": "Tila",
+    "careLevel": "Hoidon tarve"
+  },
+  "Shifts": {
+    "title": "Viikkoaikataulu",
+    "assign": "Määritä vuoro",
+    "morning": "Aamu",
+    "afternoon": "Ilta",
+    "night": "Yö"
+  },
+  "Common": {
+    "loading": "Ladataan...",
+    "save": "Tallenna muutokset",
+    "cancel": "Peruuta",
+    "delete": "Poista",
+    "edit": "Muokkaa",
+    "search": "Hae...",
+    "filter": "Suodattimet"
+  }
+}

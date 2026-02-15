@@ -1,0 +1,19 @@
+{
+  "Sidebar": {
+    "overview": "Overview",
+    "caregivers": "Caregivers",
+    "residents": "Residents",
+    "shifts": "Shifts",
+    "tasks": "Tasks",
+    "settings": "Portal Settings",
+    "logout": "Logout"
+  },
+  "Dashboard": {
+    "welcome": "Welcome back, {name}",
+    "activeStaff": "Active Staff"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "save": "Save Changes"
+  }
+}

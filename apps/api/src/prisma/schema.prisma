@@ -1,427 +1,285 @@
-generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
-}
+// prisma/schema.prisma
+
+// -----------------------------------------------------------------------------
+// Datasource & Generator
+// -----------------------------------------------------------------------------
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ---------------------------------------------------------
-// PROFILES
-// ---------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum ROLE {
+  SUPER_ADMIN
+  AGENCY_STAFF
+  SUPERVISOR
+  CAREGIVER
+}
+
+enum VisitStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum TaskFrequency {
+  DAILY
+  ON_DEMAND
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// -----------------------------------------------------------------------------
+// ORGANIZATION
+// -----------------------------------------------------------------------------
+
+model CareHomeAgency {
+  id          Int      @id @default(autoincrement())
+  name        String
+  address     String?
+
+  users       User[]
+  residents   Resident[]
+  taskTemplates TaskTemplate[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("care_home_agencies")
+}
+
+// -----------------------------------------------------------------------------
+// USER (AUTH + IDENTITY)
+// -----------------------------------------------------------------------------
+
+
+model User {
+  userId       String  @id  @map("user_id")
+
+  email        String  @unique
+  passwordHash String  @map("password_hash")
+
+  firstName    String  @map("first_name")
+  lastName     String  @map("last_name")
+
+  roles        ROLE[]
+  active       Boolean @default(true)
+
+  // FIX: agencyId should match CareHomeAgency.id (Int).
+  agencyId     Int?    @map("agency_id")
+  // FIX: if FK optional, make relation optional.
+  agency       CareHomeAgency? @relation(fields: [agencyId], references: [id])
+
+  caregiverProfile CaregiverProfile?
+  staffProfile     StaffProfile?
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// ROLE-SPECIFIC PROFILES
+// -----------------------------------------------------------------------------
 
 model CaregiverProfile {
-  id Int @id @default(autoincrement())
+  id              String      @id
 
-  // --- Basic Info ---
-  phoneNumber     String?   @unique @map("phone_number") @db.VarChar(30)
-  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
-  gender          Gender?
-  address         String?
-  city            String?   @db.VarChar(100)
-  country         String?   @default("Finland") @db.VarChar(100)
-  languages       String[]  @map("languages") // Postgres Array
-  profilePhotoUrl String?   @map("profile_photo_url")
+  userId          String      @unique @map("user_id")
+  user            User     @relation(fields: [userId], references: [userId])
 
-  // --- Professional Info ---
-  bio                String?
-  hourlyRate         Decimal?     @map("hourly_rate") @db.Decimal(10, 2)
-  availabilityStatus Availability @default(offline) @map("availability_status")
+  jobTitle        String   @map("job_title")
+  employmentType  String   @map("employment_type")
+  licenseNumber   String?  @map("license_number")
 
-  // --- Services & Skills (Relations) ---
-  offeredServices ServiceTask[] // Caregiver selects specific tasks
-  skills          Skill[] // Linked skills
+  visits          Visit[]
+  actions         ActionRecord[]
 
-  // --- Background & Verification ---
-  verified              Boolean?              @default(false)
-  backgroundCheckStatus BackgroundCheckStatus @default(pending) @map("background_check_status")
-  ssn                   String?               @map("ssn") // Sensitive
-  internalNotes         String?               @map("internal_notes") // Admin only
-
-  // --- Metrics ---
-  rating             Decimal? @default(0) @map("rating") @db.Decimal(3, 2)
-  completedJobsCount Int      @default(0) @map("completed_jobs_count")
-
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
-
-  // --- Relations ---
-  user   User @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction)
-  userId Int  @unique(map: "caregiver_user_id") @map("user_id")
-
-  education    CaregiverEducation[]
-  experience   CaregiverExperience[]
-  certificates CaregiverCertificate[] // Uploaded PDFs/Images
-  documents    CaregiverDocument[] // ID verifications/contracts
-  reviews      Review[]
-  bookings     Booking[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("caregiver_profiles")
 }
 
-model ElderProfile {
-  id Int @id @default(autoincrement())
+model StaffProfile {
+  id              String      @id
 
-  firstName   String    @map("first_name") @db.VarChar(100)
-  lastName    String    @map("last_name") @db.VarChar(100)
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
-  address     String?   @db.VarChar(100)
-  postalCode  String?   @map("postal_code") @db.VarChar(10)
-  city        String?   @db.VarChar(100)
-  country     String?
-  phone       String?   @db.VarChar(30)
+  userId          String      @unique @map("user_id")
+  user            User     @relation(fields: [userId], references: [userId])
 
-  medicalNotes  String?       @map("medical_notes")
-  mobilityLevel MobilityLevel @default(independent) @map("mobility_level")
+  department      String?
+  title           String?
+  canAssignTasks  Boolean  @default(false) @map("can_assign_tasks")
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  familyMembers FamilyWithElder[]
-  bookings      Booking[]
-
-  @@map("elder_profiles")
+  @@map("staff_profiles")
 }
 
-model FamilymemberProfile {
-  id Int @id @default(autoincrement())
+// -----------------------------------------------------------------------------
+// RESIDENTS
+// -----------------------------------------------------------------------------
 
-  phoneNumber String?   @unique @map("phone_number") @db.VarChar(30)
-  dateOfBirth DateTime? @map("date_of_birth") @db.Date
-  gender      Gender?
-  address     String?
-  postalCode  String?   @map("postal_code") @db.VarChar(10)
-  city        String?   @db.VarChar(100)
-  country     String?   @default("Finland") @db.VarChar(100)
+model Resident {
+  residentId            String      @id @unique @map("resident_id")
+  firstName     String   @map("first_name")
+  lastName     String   @map("last_name")
+  roomNumber    String   @map("room_number")
 
-  // Relations
-  managedElders FamilyWithElder[]
-  user          User              @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction)
-  userId        Int               @unique @map("user_id")
-  bookings      Booking[]
+  agencyId      Int      @map("agency_id")
+  agency        CareHomeAgency @relation(fields: [agencyId], references: [id])
 
-  @@map("familymemberprofile")
+  visits        Visit[]
+  taskAssignments ResidentTaskAssignment[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("residents")
 }
 
-// ---------------------------------------------------------
-// CAREGIVER DETAILS (NEW MODELS)
-// ---------------------------------------------------------
+// -----------------------------------------------------------------------------
+// VISITS
+// -----------------------------------------------------------------------------
 
-model CaregiverEducation {
-  id          Int @id @default(autoincrement())
-  caregiverId Int @map("caregiver_id")
+model Visit {
+  visitId              String      @id @map("visit_id")
 
-  degree         String @db.VarChar(200)
-  institution    String @db.VarChar(200)
-  graduationYear Int    @map("graduation_year")
+  caregiverId     String      @map("caregiver_id")
+  caregiver       CaregiverProfile @relation(fields: [caregiverId], references: [id])
 
-  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  residentId      String      @map("resident_id")
+  resident        Resident @relation(fields: [residentId], references: [residentId])
 
-  @@map("caregiver_education")
+  scheduledStart  DateTime @map("scheduled_start")
+  scheduledEnd    DateTime @map("scheduled_end")
+  actualStart     DateTime? @map("actual_start")
+  actualEnd       DateTime? @map("actual_end")
+
+  status          VisitStatus @default(PLANNED)
+
+  taskInstances   TaskInstance[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("visits")
 }
 
-model CaregiverExperience {
-  id          Int @id @default(autoincrement())
-  caregiverId Int @map("caregiver_id")
+// -----------------------------------------------------------------------------
+// TASK TEMPLATES
+// -----------------------------------------------------------------------------
 
-  role         String  @db.VarChar(100)
-  organization String? @db.VarChar(100) // "Private" if null
-  startYear    Int     @map("start_year")
-  endYear      Int?    @map("end_year") // Null if current
-  description  String?
+model TaskTemplate {
+  id            Int      @id @default(autoincrement())
 
-  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  category      String
+  frequency     TaskFrequency
 
-  @@map("caregiver_experience")
+  requiresInput Boolean  @default(false) @map("requires_input")
+  inputSchema   Json?    @map("input_schema")
+  riskLevel     RiskLevel @default(LOW) @map("risk_level")
+
+  agencyId      Int      @map("agency_id")
+  agency        CareHomeAgency @relation(fields: [agencyId], references: [id])
+
+  assignments   ResidentTaskAssignment[]
+  taskInstances TaskInstance[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("task_templates")
 }
 
-model Skill {
-  id          Int     @id @default(autoincrement())
-  title       String  @unique @db.VarChar(100)
-  description String?
+// -----------------------------------------------------------------------------
+// RESIDENT TASK ASSIGNMENT
+// -----------------------------------------------------------------------------
 
-  // Implicit Many-to-Many
-  caregivers CaregiverProfile[]
+model ResidentTaskAssignment {
+  id              Int      @id @default(autoincrement())
 
-  @@map("skills")
+  residentId      String      @map("resident_id")
+  resident        Resident @relation(fields: [residentId], references: [residentId])
+
+  taskTemplateId  Int      @map("task_template_id")
+  taskTemplate    TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+
+  isActive        Boolean  @default(true) @map("is_active")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("resident_task_assignments")
 }
 
-model CaregiverCertificate {
-  id          Int @id @default(autoincrement())
-  caregiverId Int @map("caregiver_id")
+// -----------------------------------------------------------------------------
+// TASK INSTANCE (EXECUTION)
+// -----------------------------------------------------------------------------
 
-  name     String    @db.VarChar(200)
-  fileUrl  String    @map("file_url")
-  issuedAt DateTime? @map("issued_at")
+model TaskInstance {
+  id              String   @id
 
-  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  // FIX: Visit.visitId is String, so this must be String too
+  visitId         String   @map("visit_id")
+  visit           Visit    @relation(fields: [visitId], references: [visitId])
 
-  @@map("caregiver_certificates")
+  taskTemplateId  Int      @map("task_template_id")
+  taskTemplate    TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+
+  status          TaskStatus @default(PENDING)
+
+  actions         ActionRecord[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([visitId])
+  @@index([taskTemplateId])
+  @@map("task_instances")
 }
 
-model CaregiverDocument {
-  id          Int @id @default(autoincrement())
-  caregiverId Int @map("caregiver_id")
+// -----------------------------------------------------------------------------
+// ACTION RECORDS (AUDIT LOG)
+// -----------------------------------------------------------------------------
 
-  title      String   @map("title") // e.g., "ID Card", "Contract"
-  fileUrl    String   @map("file_url")
-  uploadedAt DateTime @default(now()) @map("uploaded_at")
+model ActionRecord {
+  id              Int      @id @default(autoincrement())
 
-  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  taskInstanceId  String      @map("task_instance_id")
+  taskInstance    TaskInstance @relation(fields: [taskInstanceId], references: [id])
 
-  @@map("caregiver_documents")
-}
+  caregiverId     String      @map("caregiver_id")
+  caregiver       CaregiverProfile @relation(fields: [caregiverId], references: [id])
 
-model Review {
-  id          Int  @id @default(autoincrement())
-  caregiverId Int  @map("caregiver_id")
-  reviewerId  Int  @map("reviewer_id") // Maps to User.id
-  bookingId   Int? @map("booking_id")
+  value           Json?
+  notes           String?
 
-  rating    Int // 1-5
-  comment   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  caregiver CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  reviewer  User             @relation(fields: [reviewerId], references: [userId], onDelete: Cascade)
-  booking   Booking?         @relation(fields: [bookingId], references: [id])
-
-  @@map("reviews")
-}
-
-// ---------------------------------------------------------
-// USER & AUTH
-// ---------------------------------------------------------
-
-model User {
-  userId Int      @id @default(autoincrement()) @map("user_id")
-  role   UserRole
-
-  email        String @unique @db.VarChar(255)
-  passwordHash String @map("password_hash")
-
-  firstName String @map("first_name") @db.VarChar(100)
-  lastName  String @map("last_name") @db.VarChar(100)
-
-  isVerified Boolean?  @default(false) @map("is_verified")
-  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
-
-  // Relations
-  caregiverProfile    CaregiverProfile?
-  familyMemberProfile FamilymemberProfile?
-  reviewsWritten      Review[]
-
-  @@map("users")
-}
-
-model AuthTokens {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @map("user_id")
-  title     String?   @map("verification_title") @db.VarChar(200)
-  code      String    @db.VarChar(255)
-  expiresAt DateTime  @map("expires_at") @db.Timestamp(6)
-  used      Boolean?  @default(false)
-  type      TokenType @default(EMAIL_VERIFICATION)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-
-  @@map("authtokens")
-}
-
-// ---------------------------------------------------------
-// RELATIONS & LOGISTICS
-// ---------------------------------------------------------
-
-model FamilyWithElder {
-  id Int @id @default(autoincrement())
-
-  family         FamilymemberProfile @relation(fields: [familyMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  familyMemberId Int                 @map("family_member_id")
-
-  elderProfile ElderProfile @relation(fields: [elderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  elderId      Int          @map("elder_id")
-
-  relationship String?   @db.VarChar(50)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-
-  @@map("family_with_elders")
-}
-
-model ServiceCategory {
-  categoryId   Int       @id @default(autoincrement()) @map("category_id")
-  categoryName String    @unique @map("category_name") @db.VarChar(100)
-  description  String?
-  isActive     Boolean?  @default(true) @map("is_active")
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-
-  serviceTasks ServiceTask[]
-
-  @@map("servicecategories")
-}
-
-model ServiceTask {
-  serviceId Int @id @default(autoincrement()) @map("id")
-
-  categoryId Int @map("category_id")
-
-  serviceName String   @map("service_name") @db.VarChar(100)
-  description String?
-  isActive    Boolean? @default(true) @map("is_active")
-
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamp(6)
-
-  serviceCategories ServiceCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction)
-
-  // Implicit Many-to-Many relation to Caregivers who offer this service
-  caregivers CaregiverProfile[]
-
-  @@unique([categoryId, serviceName])
-  @@map("servicetasks")
-}
-
-// ---------------------------------------------------------
-// BOOKINGS & TASKS
-// ---------------------------------------------------------
-
-model Booking {
-  id Int @id @default(autoincrement())
-
-  familyMember   FamilymemberProfile @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
-  familyMemberId Int                 @map("family_member_id")
-
-  caregiver   CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  caregiverId Int              @map("caregiver_id")
-
-  elder   ElderProfile @relation(fields: [elderId], references: [id], onDelete: Cascade)
-  elderId Int          @map("elder_id")
-
-  status BookingStatus @default(PENDING)
-
-  startTime DateTime @map("start_time") @db.Timestamp(6)
-  endTime   DateTime @map("end_time") @db.Timestamp(6)
-
-  notes      String?
-  totalPrice Decimal @map("total_price") @db.Decimal(10, 2)
-
-  // ✅ REQUIRED 1:1
-  careTaskBook CareTaskBook?
-
-  reviews Review[]
-
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  @@map("bookings")
-}
-
-model CareTaskBook {
-  id Int @id @default(autoincrement())
-
-  booking   Booking @relation(fields: [bookingId], references: [id])
-  bookingId Int     @unique @map("booking_id")
-
-  status CareTaskBookStatus @default(ACTIVE)
-
-  startedAt   DateTime? @map("started_at") @db.Timestamp(6)
-  completedAt DateTime? @map("completed_at") @db.Timestamp(6)
-
-  notes String?
-
-  // ✅ MUST be one-to-many
-  tasks CareTask[]
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  @@map("caretaskbooks")
-}
-
-model CareTask {
-  id Int @id @default(autoincrement())
-
-  title       String  @db.VarChar(200)
-  description String?
-
-  taskOrder   Int?
-  isMandatory Boolean @default(true)
-
-  status CareTaskStatus @default(PENDING)
-
-  completedAt    DateTime?
-  caregiverNotes String?
-
-  taskBookId Int
-  taskBook   CareTaskBook @relation(fields: [taskBookId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([taskBookId])
-  @@map("caretasks")
-}
-
-// ---------------------------------------------------------
-// ENUMS
-// ---------------------------------------------------------
-
-enum CareTaskBookStatus {
-  ACTIVE
-  COMPLETED
-  CANCELLED
-}
-
-enum CareTaskStatus {
-  PENDING
-  IN_PROGRESS
-  DONE
-  SKIPPED
-}
-
-enum BackgroundCheckStatus {
-  pending
-  approved
-  rejected
-}
-
-enum Availability {
-  offline
-  online
-  busy
-}
-
-enum MobilityLevel {
-  independent
-  needs_assistant
-  wheelchair
-}
-
-enum TokenType {
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-}
-
-enum UserRole {
-  ELDER
-  FAMILY
-  CAREGIVER
-  ADMIN
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-  PNTS
-}
-
-enum BookingStatus {
-  DRAFT
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-  EXPIRED
+  @@map("action_records")
 }

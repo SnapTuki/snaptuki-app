@@ -1,0 +1,47 @@
+{
+  "Sidebar": {
+    "overview": "Översikt",
+    "caregivers": "Vårdare",
+    "patients": "Boende",
+    "shifts": "Arbetsskift",
+    "tasks": "Uppgifter",
+    "settings": "Inställningar",
+    "logout": "Logga ut"
+  },
+  "Dashboard": {
+    "welcome": "Välkommen tillbaka",
+    "activeStaff": "Personal i tjänst",
+    "occupancy": "Beläggning",
+    "criticalAlerts": "Kritiska larm"
+  },
+  "Caregivers": {
+    "title": "Hantera vårdare",
+    "add": "Lägg till vårdare",
+    "role": "Roll",
+    "status": "Status",
+    "performance": "Effektivitet"
+  },
+  "Patients": {
+    "title": "Boenderegister",
+    "admit": "Skriv in boende",
+    "room": "Rum",
+    "condition": "Tillstånd",
+    "careLevel": "Vårdnivå"
+  },
+  "Shifts": {
+    "title": "Veckoschema",
+    "assign": "Tilldela skift",
+    "morning": "Morgon",
+    "afternoon": "Kväll",
+    "night": "Natt"
+  },
+  "Common": {
+    "loading": "Laddar...",
+    "save": "Spara ändringar",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "search": "Sök...",
+    "filter": "Filter"
+  }
+}
