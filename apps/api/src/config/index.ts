@@ -6,6 +6,8 @@ interface Config {
     redisUrl: string;
     nodeEnv: string;
     jwtSecret: string;
+    frontendOriginURL: string;
+    serverPort: number;
 };
 
 //helper function to  get env vars safely
@@ -22,5 +24,7 @@ export const config: Config = {
     postgresUrl: getEnvVar('DATABASE_URL'),
     redisUrl: getEnvVar('REDIS_URL'),
     nodeEnv: process.env.NODE_ENV || 'development',
-    jwtSecret: getEnvVar('JWT_SECRET')
+    jwtSecret: getEnvVar('JWT_SECRET'),
+    frontendOriginURL: getEnvVar('FRONTEND_ORIGIN_URL'),
+    serverPort: Number(getEnvVar('SERVER_PORT')),
 };

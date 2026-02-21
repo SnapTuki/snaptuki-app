@@ -1,8 +1,11 @@
 
 import "reflect-metadata";
 import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from "@apollo/server/standalone";
-import { buildSchema } from "type-graphql";
+import {expressMiddleware} from "@as-integrations/express5";
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+
 
 // IdentityAccess BC imports
 import { buildIdentityAccessSchema } from "./domains/identityAccess/api/schema/buildSchema";
@@ -19,7 +22,7 @@ async function buildApplicationSchema() {
 
 
 // -------------------------------------------------------
-// 👇 Gateway Context Builder
+// 👇 Gateway Context Builder<a
 // -------------------------------------------------------
 async function buildContext({ req }: any) {
     const authHeader = req.headers.authorization || "";
@@ -57,20 +60,38 @@ async function buildContext({ req }: any) {
 
 
 // -------------------------------------------------------
-// 👇 Start the server using startStandaloneServer
+// 👇 Start Gateway server - Express
 // -------------------------------------------------------
 export async function startGatewayServer() {
     const schema = await buildApplicationSchema();
 
-    const server = new ApolloServer({
+    const apollo = new ApolloServer({
         schema,
-        introspection: true,
+        introspection: true
     });
 
-    const { url } = await startStandaloneServer(server, {
-        listen: { port: 4000 },
-        context: async (ctx) => buildContext(ctx),
-    });
+    await apollo.start();
 
-    console.log(`🚀 Gateway server ready at: ${url}`);
+    const app = express();
+    app.use(
+        cors({
+            origin: config.frontendOriginURL,
+            credentials: true,
+        })
+    )
+
+    app.use(bodyParser.json());
+
+    //mount apollow middleware
+    app.use(
+        "/graphql",
+        expressMiddleware(apollo, {context: buildContext})
+    );
+
+
+
+    const PORT = config.serverPort || 4000;
+    app.listen(PORT, () => {
+        console.log(`🚀 Gateway server running at http://localhost:${PORT}/graphql`);
+    })
 }
