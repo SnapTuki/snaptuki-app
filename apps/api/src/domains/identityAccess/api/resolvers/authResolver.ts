@@ -8,7 +8,7 @@ import { UserGQL } from '../types/userGQL';
 import { AuthenticateUser } from '../../application/useCases/authenticateUser';
 import { RegisterUser } from '../../application/useCases/registerUser';
 
-import { GraphQLContext } from '../context/graphQLContext';
+import { GraphQLContext } from '../../../../lib/graphqlContext';
 
 @Resolver()
 export class AuthResolver {

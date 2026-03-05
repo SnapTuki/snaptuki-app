@@ -9,8 +9,13 @@ export type IdentityAccessContainer = {
   tokens: any;   // JwtTokenService
 };
 
+export type CaregiverManagementContainer = {
+    repo: any;
+}
+
+
 export type GraphQLContext = {
   currentUser: CurrentUser;
   identityAccess: IdentityAccessContainer;
-  
+  caregiverManagement: CaregiverManagementContainer;
 };

@@ -1,9 +1,5 @@
 // prisma/schema.prisma
 
-// -----------------------------------------------------------------------------
-// Datasource & Generator
-// -----------------------------------------------------------------------------
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -49,21 +45,38 @@ enum RiskLevel {
   HIGH
 }
 
+enum CaregiverRole {
+  CAREGIVER
+  HEAD_NURSE
+  COORDINATOR
+}
+
+enum CaregiverStatus {
+  ACTIVE
+  IN_ACTIVE
+  SUSPENDED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
 // -----------------------------------------------------------------------------
 // ORGANIZATION
 // -----------------------------------------------------------------------------
 
 model CareHomeAgency {
-  id          Int      @id @default(autoincrement())
-  name        String
-  address     String?
-
-  users       User[]
-  residents   Resident[]
+  id            Int            @id @default(autoincrement())
+  name          String
+  address       String?
+  users         User[]
+  residents     Resident[]
   taskTemplates TaskTemplate[]
 
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("care_home_agencies")
 }
@@ -72,29 +85,23 @@ model CareHomeAgency {
 // USER (AUTH + IDENTITY)
 // -----------------------------------------------------------------------------
 
-
 model User {
-  userId       String  @id  @map("user_id")
-
+  userId       String  @id @map("user_id")
   email        String  @unique
   passwordHash String  @map("password_hash")
-
   firstName    String  @map("first_name")
   lastName     String  @map("last_name")
-
   roles        ROLE[]
   active       Boolean @default(true)
 
-  // FIX: agencyId should match CareHomeAgency.id (Int).
-  agencyId     Int?    @map("agency_id")
-  // FIX: if FK optional, make relation optional.
-  agency       CareHomeAgency? @relation(fields: [agencyId], references: [id])
+  agencyId Int?            @map("agency_id")
+  agency   CareHomeAgency? @relation(fields: [agencyId], references: [id])
 
-  caregiverProfile CaregiverProfile?
+  caregiverProfile Caregiver?
   staffProfile     StaffProfile?
 
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([agencyId])
   @@map("users")
@@ -104,37 +111,51 @@ model User {
 // ROLE-SPECIFIC PROFILES
 // -----------------------------------------------------------------------------
 
-model CaregiverProfile {
-  id              String      @id
+model Caregiver {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  userId          String      @unique @map("user_id")
-  user            User     @relation(fields: [userId], references: [userId])
+  // Relation to User
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [userId])
 
-  jobTitle        String   @map("job_title")
-  employmentType  String   @map("employment_type")
-  licenseNumber   String?  @map("license_number")
+  phone          String?
+  role           CaregiverRole
+  status         CaregiverStatus @default(ACTIVE)
+  employmentType EmploymentType  @map("employment_type")
+  hireDate       DateTime        @map("hire_date")
 
-  visits          Visit[]
-  actions         ActionRecord[]
+  certifications Certification[]
+  visits         Visit[]
+  actionRecords  ActionRecord[]
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  @@map("caregivers")
+}
 
-  @@map("caregiver_profiles")
+model Certification {
+  id          String    @id @default(cuid())
+  name        String
+  issuer      String
+  validFrom   DateTime  @map("valid_from")
+  validTo     DateTime? @map("valid_to")
+  caregiverId String    @map("caregiver_id")
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("certifications")
 }
 
 model StaffProfile {
-  id              String      @id
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [userId])
 
-  userId          String      @unique @map("user_id")
-  user            User     @relation(fields: [userId], references: [userId])
+  department     String?
+  title          String?
+  canAssignTasks Boolean @default(false) @map("can_assign_tasks")
 
-  department      String?
-  title           String?
-  canAssignTasks  Boolean  @default(false) @map("can_assign_tasks")
-
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("staff_profiles")
 }
@@ -144,19 +165,19 @@ model StaffProfile {
 // -----------------------------------------------------------------------------
 
 model Resident {
-  residentId            String      @id @unique @map("resident_id")
-  firstName     String   @map("first_name")
-  lastName     String   @map("last_name")
-  roomNumber    String   @map("room_number")
+  residentId String @id @map("resident_id")
+  firstName  String @map("first_name")
+  lastName   String @map("last_name")
+  roomNumber String @map("room_number")
 
-  agencyId      Int      @map("agency_id")
-  agency        CareHomeAgency @relation(fields: [agencyId], references: [id])
+  agencyId Int            @map("agency_id")
+  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
 
-  visits        Visit[]
+  visits          Visit[]
   taskAssignments ResidentTaskAssignment[]
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("residents")
 }
@@ -166,25 +187,25 @@ model Resident {
 // -----------------------------------------------------------------------------
 
 model Visit {
-  visitId              String      @id @map("visit_id")
+  visitId String @id @map("visit_id")
 
-  caregiverId     String      @map("caregiver_id")
-  caregiver       CaregiverProfile @relation(fields: [caregiverId], references: [id])
+  caregiverId String    @map("caregiver_id")
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
 
-  residentId      String      @map("resident_id")
-  resident        Resident @relation(fields: [residentId], references: [residentId])
+  residentId String   @map("resident_id")
+  resident   Resident @relation(fields: [residentId], references: [residentId])
 
-  scheduledStart  DateTime @map("scheduled_start")
-  scheduledEnd    DateTime @map("scheduled_end")
-  actualStart     DateTime? @map("actual_start")
-  actualEnd       DateTime? @map("actual_end")
+  scheduledStart DateTime  @map("scheduled_start")
+  scheduledEnd   DateTime  @map("scheduled_end")
+  actualStart    DateTime? @map("actual_start")
+  actualEnd      DateTime? @map("actual_end")
 
-  status          VisitStatus @default(PLANNED)
+  status VisitStatus @default(PLANNED)
 
-  taskInstances   TaskInstance[]
+  taskInstances TaskInstance[]
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("visits")
 }
@@ -194,25 +215,24 @@ model Visit {
 // -----------------------------------------------------------------------------
 
 model TaskTemplate {
-  id            Int      @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  category    String
+  frequency   TaskFrequency
 
-  name          String
-  description   String?
-  category      String
-  frequency     TaskFrequency
-
-  requiresInput Boolean  @default(false) @map("requires_input")
-  inputSchema   Json?    @map("input_schema")
+  requiresInput Boolean   @default(false) @map("requires_input")
+  inputSchema   Json?     @map("input_schema")
   riskLevel     RiskLevel @default(LOW) @map("risk_level")
 
-  agencyId      Int      @map("agency_id")
-  agency        CareHomeAgency @relation(fields: [agencyId], references: [id])
+  agencyId Int            @map("agency_id")
+  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
 
   assignments   ResidentTaskAssignment[]
   taskInstances TaskInstance[]
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("task_templates")
 }
@@ -222,17 +242,17 @@ model TaskTemplate {
 // -----------------------------------------------------------------------------
 
 model ResidentTaskAssignment {
-  id              Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  residentId      String      @map("resident_id")
-  resident        Resident @relation(fields: [residentId], references: [residentId])
+  residentId String   @map("resident_id")
+  resident   Resident @relation(fields: [residentId], references: [residentId])
 
-  taskTemplateId  Int      @map("task_template_id")
-  taskTemplate    TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+  taskTemplateId Int          @map("task_template_id")
+  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
 
-  isActive        Boolean  @default(true) @map("is_active")
+  isActive Boolean @default(true) @map("is_active")
 
-  createdAt       DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("resident_task_assignments")
 }
@@ -242,21 +262,20 @@ model ResidentTaskAssignment {
 // -----------------------------------------------------------------------------
 
 model TaskInstance {
-  id              String   @id
+  id String @id @default(cuid())
 
-  // FIX: Visit.visitId is String, so this must be String too
-  visitId         String   @map("visit_id")
-  visit           Visit    @relation(fields: [visitId], references: [visitId])
+  visitId String @map("visit_id")
+  visit   Visit  @relation(fields: [visitId], references: [visitId])
 
-  taskTemplateId  Int      @map("task_template_id")
-  taskTemplate    TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+  taskTemplateId Int          @map("task_template_id")
+  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
 
-  status          TaskStatus @default(PENDING)
+  status TaskStatus @default(PENDING)
 
-  actions         ActionRecord[]
+  actions ActionRecord[]
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([visitId])
   @@index([taskTemplateId])
@@ -268,18 +287,18 @@ model TaskInstance {
 // -----------------------------------------------------------------------------
 
 model ActionRecord {
-  id              Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  taskInstanceId  String      @map("task_instance_id")
-  taskInstance    TaskInstance @relation(fields: [taskInstanceId], references: [id])
+  taskInstanceId String       @map("task_instance_id")
+  taskInstance   TaskInstance @relation(fields: [taskInstanceId], references: [id])
 
-  caregiverId     String      @map("caregiver_id")
-  caregiver       CaregiverProfile @relation(fields: [caregiverId], references: [id])
+  caregiverId String    @map("caregiver_id")
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
 
-  value           Json?
-  notes           String?
+  value Json?
+  notes String?
 
-  createdAt       DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("action_records")
 }

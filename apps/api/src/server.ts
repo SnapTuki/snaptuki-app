@@ -5,18 +5,31 @@ import {expressMiddleware} from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-
-
+import { buildSchema } from "type-graphql";
+import { GraphQLDateTime } from "graphql-scalars";
 // IdentityAccess BC imports
-import { buildIdentityAccessSchema } from "./domains/identityAccess/api/schema/buildSchema";
 import { createIdentityAccessContainer } from "./domains/identityAccess/infrastructure";
 import { JwtTokenService } from "./domains/identityAccess/infrastructure/security/jwtTokenService";
+import { AuthResolver } from "./domains/identityAccess/api/resolvers/authResolver";
+import { UserResolver } from "./domains/identityAccess/api/resolvers/userResolver";
+
+// CaregiverManagement BC imports
+import { CaregiverResolver } from "./domains/caregiverManagement/api/resolvers/CaregiverResolvers";
+
+import { createCaregiverManagementContainer } from "./domains/caregiverManagement/infrastructure";
+
 import { config } from "./config";
 
 async function buildApplicationSchema() {
-    const identityAccessSchema: any = await buildIdentityAccessSchema();
-
-    return identityAccessSchema;
+    return await buildSchema({
+        resolvers: [
+            AuthResolver,
+            UserResolver, 
+            CaregiverResolver
+        ],
+        scalarsMap: [{ type: Date, scalar: GraphQLDateTime }],
+        validate: false,
+    });
 }
 
 
@@ -47,13 +60,13 @@ async function buildContext({ req }: any) {
         }
     }
 
-    // Dependency injection container for IdentityAccess BC
     const identityAccess = createIdentityAccessContainer();
-
+    const caregiverManagement = createCaregiverManagementContainer();
 
     return {
         currentUser,
         identityAccess,
+        caregiverManagement,
     };
 
 }

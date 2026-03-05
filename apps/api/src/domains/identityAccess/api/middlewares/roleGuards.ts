@@ -1,5 +1,5 @@
 import { MiddlewareFn } from 'type-graphql';
-import { GraphQLContext } from '../context/graphQLContext';
+import { GraphQLContext } from '../../../../lib/graphqlContext';
 
 export function RequireRoles(...allowed: string[]): MiddlewareFn<GraphQLContext> {
     return async ({ context }, next) => {

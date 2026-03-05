@@ -12,7 +12,7 @@ import { ChangePassword } from '../../application/useCases/changePassword';
 import { ActivateUser } from '../../application/useCases/activateUser';
 //import { DeactivateUser } from '../../application/use-cases/DeactivateUser';
 
-import { GraphQLContext } from '../context/graphQLContext';
+import {GraphQLContext} from '../../../../lib/graphqlContext';
 import { RequireAuth } from '../middlewares/authMiddleware';
 import { RequireRoles } from '../middlewares/roleGuards';
 
