@@ -14,6 +14,13 @@ generator client {
 // ENUMS
 // -----------------------------------------------------------------------------
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNSPECIFIED
+}
+
 enum ROLE {
   SUPER_ADMIN
   AGENCY_STAFF
@@ -164,22 +171,78 @@ model StaffProfile {
 // RESIDENTS
 // -----------------------------------------------------------------------------
 
+enum MobilityLevel {
+  INDEPENDENT
+  ASSISTED
+  MEMORY
+}
+
+enum AllergySeverity {
+  MILD
+  MODERATE
+  SEVERE
+}
+
 model Resident {
-  residentId String @id @map("resident_id")
-  firstName  String @map("first_name")
-  lastName   String @map("last_name")
-  roomNumber String @map("room_number")
+  residentId String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  agencyId Int            @map("agency_id")
-  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
+  mrn       String   @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  birthDate DateTime @map("birth_date")
+  gender    Gender
 
-  visits          Visit[]
-  taskAssignments ResidentTaskAssignment[]
+  email String?
+  phone String?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  mobilityLevel MobilityLevel
+  room          String?
 
-  @@map("residents")
+  primaryCaregiverId String? // reference to CaregiverManagement (string only)
+  guardianUserId     String? // reference to IdentityAccess.User (string only)
+
+  allergies               Allergy[]
+  medications             Medication[]
+  emergencyContacts       EmergencyContact[]
+  careHomeAgency          CareHomeAgency?          @relation(fields: [careHomeAgencyId], references: [id])
+  careHomeAgencyId        Int?
+  visits                  Visit[]
+  residentTaskAssignments ResidentTaskAssignment[]
+}
+
+model Allergy {
+  id         String          @id @default(cuid())
+  name       String
+  reaction   String
+  severity   AllergySeverity
+  notes      String?
+  resident   Resident        @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
+  residentId String
+}
+
+model Medication {
+  id           String    @id @default(cuid())
+  name         String
+  dosage       String
+  frequency    String
+  startDate    DateTime
+  endDate      DateTime?
+  prescribedBy String?
+  resident     Resident  @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
+  residentId   String
+}
+
+model EmergencyContact {
+  id         String   @id @default(cuid())
+  name       String
+  relation   String
+  phone      String
+  email      String?
+  preferred  Boolean  @default(false)
+  resident   Resident @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
+  residentId String
 }
 
 // -----------------------------------------------------------------------------

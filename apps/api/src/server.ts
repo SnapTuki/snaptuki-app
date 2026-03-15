@@ -12,20 +12,22 @@ import { createIdentityAccessContainer } from "./domains/identityAccess/infrastr
 import { JwtTokenService } from "./domains/identityAccess/infrastructure/security/jwtTokenService";
 import { AuthResolver } from "./domains/identityAccess/api/resolvers/authResolver";
 import { UserResolver } from "./domains/identityAccess/api/resolvers/userResolver";
-
+import { ResidentResolver } from "./domains/residentManagement/api/graphql/resolvers/ResidentResolvers";
 // CaregiverManagement BC imports
 import { CaregiverResolver } from "./domains/caregiverManagement/api/resolvers/CaregiverResolvers";
 
 import { createCaregiverManagementContainer } from "./domains/caregiverManagement/infrastructure";
 
 import { config } from "./config";
+import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure";
 
 async function buildApplicationSchema() {
     return await buildSchema({
         resolvers: [
             AuthResolver,
             UserResolver, 
-            CaregiverResolver
+            CaregiverResolver,
+            ResidentResolver
         ],
         scalarsMap: [{ type: Date, scalar: GraphQLDateTime }],
         validate: false,
@@ -62,11 +64,12 @@ async function buildContext({ req }: any) {
 
     const identityAccess = createIdentityAccessContainer();
     const caregiverManagement = createCaregiverManagementContainer();
-
+    const residentManagement = createResidentManagementContainer();
     return {
         currentUser,
         identityAccess,
         caregiverManagement,
+        residentManagement,
     };
 
 }

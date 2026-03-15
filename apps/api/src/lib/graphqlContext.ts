@@ -10,7 +10,11 @@ export type IdentityAccessContainer = {
 };
 
 export type CaregiverManagementContainer = {
-    repo: any;
+  repo: any;
+}
+
+type ResidentManagement = {
+  repo: any
 }
 
 
@@ -18,4 +22,5 @@ export type GraphQLContext = {
   currentUser: CurrentUser;
   identityAccess: IdentityAccessContainer;
   caregiverManagement: CaregiverManagementContainer;
+  residentManagement: ResidentManagement;
 };
