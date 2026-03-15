@@ -17,10 +17,15 @@ type ResidentManagement = {
   repo: any
 }
 
+type TaskManagement = {
+  repo: any
+}
+
 
 export type GraphQLContext = {
   currentUser: CurrentUser;
   identityAccess: IdentityAccessContainer;
   caregiverManagement: CaregiverManagementContainer;
   residentManagement: ResidentManagement;
+  taskManagement: TaskManagement;
 };

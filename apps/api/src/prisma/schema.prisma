@@ -35,11 +35,6 @@ enum VisitStatus {
   CANCELLED
 }
 
-enum TaskStatus {
-  PENDING
-  COMPLETED
-  SKIPPED
-}
 
 enum TaskFrequency {
   DAILY
@@ -364,4 +359,67 @@ model ActionRecord {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("action_records")
+}
+
+
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskCategory {
+  CARE
+  MEDICATION
+  HYGIENE
+  ADMIN
+  OTHER
+}
+
+model Task {
+  id                     String        @id @default(cuid())
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  title                  String
+  description            String?
+
+  category               TaskCategory
+  priority               TaskPriority
+  status                 TaskStatus    @default(PENDING)
+
+  residentId             String?       // reference to Resident BC (string only)
+  assignedCaregiverId    String?       // reference to Caregiver BC (string only)
+
+  dueAt                  DateTime?
+  startedAt              DateTime?
+  completedAt            DateTime?
+  completedByCaregiverId String?
+  completionNotes        String?
+
+  createdByUserId        String
+
+  checklist              ChecklistItem[]
+}
+
+model ChecklistItem {
+  id                 String   @id @default(cuid())
+  label              String
+  required           Boolean  @default(false)
+  done               Boolean  @default(false)
+  doneAt             DateTime?
+  doneByCaregiverId  String?
+
+  task               Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId             String
 }
