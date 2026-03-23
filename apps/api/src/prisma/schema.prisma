@@ -88,7 +88,7 @@ model CareHomeAgency {
 // -----------------------------------------------------------------------------
 
 model User {
-  userId       String  @id @map("user_id")
+  userId       String  @id @map("user_id") @default(cuid())
   email        String  @unique
   passwordHash String  @map("password_hash")
   firstName    String  @map("first_name")
@@ -99,7 +99,7 @@ model User {
   agencyId Int?            @map("agency_id")
   agency   CareHomeAgency? @relation(fields: [agencyId], references: [id])
 
-  caregiverProfile Caregiver?
+  caregiverProfile Caregiver? 
   staffProfile     StaffProfile?
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -202,9 +202,11 @@ model Resident {
   medications             Medication[]
   emergencyContacts       EmergencyContact[]
   careHomeAgency          CareHomeAgency?          @relation(fields: [careHomeAgencyId], references: [id])
-  careHomeAgencyId        Int?
+  careHomeAgencyId        Int? @map("care_home_agency_id")
   visits                  Visit[]
   residentTaskAssignments ResidentTaskAssignment[]
+
+  @@map("residents")
 }
 
 model Allergy {
@@ -215,6 +217,8 @@ model Allergy {
   notes      String?
   resident   Resident        @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
   residentId String
+
+  @@map("allergies")
 }
 
 model Medication {
@@ -222,11 +226,13 @@ model Medication {
   name         String
   dosage       String
   frequency    String
-  startDate    DateTime
-  endDate      DateTime?
-  prescribedBy String?
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  prescribedBy String? @map("prescribed_by")
   resident     Resident  @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
   residentId   String
+
+  @@map("medications")
 }
 
 model EmergencyContact {
@@ -238,6 +244,8 @@ model EmergencyContact {
   preferred  Boolean  @default(false)
   resident   Resident @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
   residentId String
+
+  @@map("emergency_contacts")
 }
 
 // -----------------------------------------------------------------------------

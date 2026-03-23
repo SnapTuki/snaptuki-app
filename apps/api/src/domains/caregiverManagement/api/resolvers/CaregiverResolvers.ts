@@ -13,16 +13,11 @@ import { GraphQLContext } from '../../../../lib/graphqlContext';
 export class CaregiverResolver {
 
     @Query(() => [CaregiverType])
-    async caregiverList(
-        @Ctx() ctx: GraphQLContext,
-        @Arg("search", () => String,{ nullable: true }) search?: string,
-        @Arg("role", () => String, { nullable: true }) role?: string,
-        @Arg("status", () => String, { nullable: true }) status?: string,
-        @Arg("skip", () => Number,{ nullable: true }) skip?: number,
-        @Arg("take", () => Number,{ nullable: true }) take?: number,
-    ): Promise<CaregiverType[]> {
+    async caregiverList(@Ctx() ctx: GraphQLContext): Promise<CaregiverType[]> {
         const { repo } = ctx.caregiverManagement;
-        const caregivers = await repo.list({ search: search ?? null, role: role ?? null, status: status ?? null, skip, take });
+        const caregivers = await repo.list();
+        // ADD THIS LOG:
+        console.log("RESOLVER DATA:", caregivers);
         return caregivers.map(CaregiverMap.toDTO) as any;
     }
 
@@ -39,7 +34,6 @@ export class CaregiverResolver {
 
         const useCase = new RegisterCaregiverUseCase(ctx.caregiverManagement.repo);
         const caregiver = await useCase.execute({
-            id: input.id,
             firstName: input.firstName,
             lastName: input.lastName,
             passwordHash: input.passwordHash,
@@ -47,7 +41,7 @@ export class CaregiverResolver {
             phone: input.phone ?? null,
             role: input.role,
             employmentType: input.employmentType,
-            hireDate: input.hireDate.toISOString(),
+            hireDate: input.hireDate,
             agencyId: input.agencyId ?? null,
         });
         return CaregiverMap.toDTO(caregiver) as any;

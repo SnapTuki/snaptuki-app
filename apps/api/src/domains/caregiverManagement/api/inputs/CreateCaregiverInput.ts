@@ -4,7 +4,6 @@ import { CaregiverRoleEnum, EmploymentTypeEnum } from "../types/CaregiverType";
 import { GraphQLDateTime } from "graphql-scalars";
 @InputType()
 export class RegisterCaregiverInputGql {
-  @Field(() => ID) id!: string;
   @Field(() => String) firstName!: string;
   @Field(() => String) lastName!: string;
   @Field(() => String) passwordHash!: string;

@@ -1,5 +1,4 @@
 // src/domains/caregiverManagement/domain/entities/Caregiver.ts
-import { CaregiverId } from "../valueObjects/CaregiverId";
 import { Name } from "../valueObjects/Name";
 import { Email } from "../valueObjects/Email";
 import { PhoneNumber } from "../valueObjects/PhoneNumber";
@@ -10,7 +9,6 @@ export type CaregiverStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT";
 
 export interface CaregiverProps {
-  id: CaregiverId;
   firstName: string;
   lastName: string;
   email: Email;
@@ -36,7 +34,7 @@ export class Caregiver {
   }
 
   public static create(props: CaregiverProps) {
-    if (!props.id || !props.firstName || !props.lastName ||
+    if (!props.firstName || !props.lastName ||
          !props.email || !props.passwordHash|| !props.role || !props.status ||
           !props.employmentType || !props.hireDate) {
       throw new Error("Missing required Caregiver properties");
@@ -45,7 +43,6 @@ export class Caregiver {
   }
 
   // getters
-  public get id() { return this.props.id; }
   public get firstName() { return this.props.firstName; }
   public get lastName() {return this.props.lastName;}
   public get email() { return this.props.email; }

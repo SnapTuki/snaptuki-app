@@ -1,8 +1,6 @@
 // src/domains/caregiverManagement/infrastructure/mappers/CaregiverMap.ts
 import { Caregiver } from "../../domain/entities/Caregiver";
 import { Certification } from "../../domain/entities/Certification";
-import { CaregiverId } from "../../domain/valueObjects/CaregiverId";
-import { Name } from "../../domain/valueObjects/Name";
 import { Email } from "../../domain/valueObjects/Email";
 import { PhoneNumber } from "../../domain/valueObjects/PhoneNumber";
 import { CaregiverDTO } from "../../application/dtos/CaregiverDTO";
@@ -11,7 +9,6 @@ import type { User as PrismaCaregiver, Certification as PrismaCertification, Car
 export class CaregiverMap {
   static toDomain(row: PrismaCaregiver & { certifications?: PrismaCertification[] } & {caregiverProfile: PrismaCaregiverProfile}): Caregiver {
     return Caregiver.create({
-      id: CaregiverId.create(row.userId),
       firstName: row.firstName,
       lastName: row.lastName,
       email: Email.create(row.email),
@@ -22,7 +19,7 @@ export class CaregiverMap {
       employmentType: row.caregiverProfile.employmentType as any,
       hireDate: row.caregiverProfile.hireDate,
       userId: row.userId ?? null,
-      certifications: row.certifications.map(c =>
+      certifications: row.certifications?.map(c =>
         Certification.create({
           id: c.id,
           name: c.name,
@@ -38,7 +35,6 @@ export class CaregiverMap {
 
   static toPersistence(caregiver: Caregiver) {
     return {
-      id: caregiver.id.value,
       firstName: caregiver.firstName,
       lastName: caregiver.lastName,
       email: caregiver.email.value,
@@ -49,7 +45,7 @@ export class CaregiverMap {
       employmentType: caregiver.employmentType,
       hireDate: caregiver.hireDate,
       userId: caregiver.userId,
-      certifications: caregiver.certifications.map(c => ({
+      certifications: caregiver.certifications?.map(c => ({
         id: c.id,
         name: c.name,
         issuer: c.issuer,
@@ -61,7 +57,7 @@ export class CaregiverMap {
 
   static toDTO(caregiver: Caregiver): CaregiverDTO {
     return {
-      id: caregiver.id.value,
+      id: caregiver.userId,
       firstName: caregiver.firstName,
       lastName: caregiver.lastName,
       email: caregiver.email.value,
@@ -72,7 +68,7 @@ export class CaregiverMap {
       employmentType: caregiver.employmentType,
       hireDate: caregiver.hireDate.toISOString(),
       userId: caregiver.userId,
-      certifications: caregiver.certifications.map(c => ({
+      certifications: caregiver.certifications?.map(c => ({
         id: c.id,
         name: c.name,
         issuer: c.issuer,

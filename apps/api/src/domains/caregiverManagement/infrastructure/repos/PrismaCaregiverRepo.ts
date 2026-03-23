@@ -25,36 +25,28 @@ export class PrismaCaregiverRepo implements ICaregiverRepo {
     return row ? CaregiverMap.toDomain(row) : null;
   }
 
-  async list(params?: { take?: number; skip?: number; search?: string | null; role?: string | null; status?: string | null; }): Promise<Caregiver[]> {
-    const { take = 10, skip = 0, search, role, status } = params ?? {};
-    const rows = await this.prisma.user.findMany({
+  async list(): Promise<Caregiver[]> {
+  const rows = await this.prisma.user.findMany({
     where: {
-      // Ensure we only pull Users that actually have a Caregiver profile
-      caregiverProfile: { isNot: null },
-      AND: [
-        // Filter by Caregiver-specific Role
-        role ? { caregiverProfile: { role: role as any } } : {},
-        // Filter by Caregiver-specific Status
-        status ? { caregiverProfile: { status: status as any } } : {},
-        // Search across User-level identity fields
-        search ? {
-          OR: [
-            { firstName: { contains: search, mode: "insensitive" } },
-            { lastName: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ],
-        } : {},
-      ],
+      // 1. Check that the roles array contains 'CAREGIVER'
+      roles: { 
+        has: 'CAREGIVER' 
+      },
+      // 2. Ensure the actual profile record exists to prevent mapping crashes
+      caregiverProfile: {
+        isNot: null
+      }
     },
-    take,
-    skip,
-    orderBy: { createdAt: "desc" },
     include: { 
       caregiverProfile: true // Vital for CaregiverMap.toDomain to work
     },
   });
-    return rows.map(CaregiverMap.toDomain);
-  }
+
+  // ADD THIS LOG:
+  console.log("PRISMA ROWS:", rows);
+
+  return rows.map(CaregiverMap.toDomain);
+}
 
   async create(caregiver: Caregiver): Promise<void> {
     const data = CaregiverMap.toPersistence(caregiver);
@@ -65,11 +57,11 @@ export class PrismaCaregiverRepo implements ICaregiverRepo {
         hireDate: data.hireDate,
         user: {
           create: {
-            userId: data.userId,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
-            passwordHash: data.passwordHash
+            passwordHash: data.passwordHash,
+            roles: ['CAREGIVER']
           }
         }
       }

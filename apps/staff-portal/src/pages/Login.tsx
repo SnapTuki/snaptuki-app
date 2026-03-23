@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldPlus, Heart, Activity, ShieldCheck } from 'lucide-react';
 import { LoginForm } from '../features/auth/components/LoginForm';
