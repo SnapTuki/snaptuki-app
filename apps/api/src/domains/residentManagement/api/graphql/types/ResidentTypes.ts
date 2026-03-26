@@ -51,7 +51,7 @@ export class ResidentType {
   @Field(() => String, { nullable: true }) phone!: string | null;
 
 
-  @Field(() => MOBILITY_LEVEL) careLevel!: MOBILITY_LEVEL;
+  @Field(() => MOBILITY_LEVEL) mobilityLevel!: MOBILITY_LEVEL;
   @Field(() => String,{ nullable: true }) room!: string | null;
 
   @Field(()=>String,{ nullable: true }) primaryCaregiverId!: string | null;
@@ -60,7 +60,4 @@ export class ResidentType {
   @Field(() => [AllergyType]) allergies!: AllergyType[];
   @Field(() => [MedicationType]) medications!: MedicationType[];
   @Field(() => [EmergencyContactType]) emergencyContacts!: EmergencyContactType[];
-
-  @Field(() => GraphQLDateTime) createdAt!: Date;
-  @Field(() => GraphQLDateTime) updatedAt!: Date;
 }

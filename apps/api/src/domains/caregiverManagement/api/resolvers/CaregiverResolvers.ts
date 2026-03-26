@@ -16,8 +16,6 @@ export class CaregiverResolver {
     async caregiverList(@Ctx() ctx: GraphQLContext): Promise<CaregiverType[]> {
         const { repo } = ctx.caregiverManagement;
         const caregivers = await repo.list();
-        // ADD THIS LOG:
-        console.log("RESOLVER DATA:", caregivers);
         return caregivers.map(CaregiverMap.toDTO) as any;
     }
 

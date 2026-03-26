@@ -7,10 +7,8 @@ import {
   AssignPrimaryCaregiverInput,
   AddResidentAllergyInput,
   AddResidentMedicationInput,
-  UpdateResidentContactInput
 } from "../inputs/ResidentInputs";
 
-import { PrismaResidentRepo } from "../../../../residentManagement/infrastructure/repos/PrismaResidentRepo";
 import { ResidentMap } from "../../../../residentManagement/infrastructure/mappers/ResidentMap";
 
 import { RegisterResidentUseCase } from "../../../../residentManagement/application/useCases/RegisterResidentUseCase";
@@ -20,17 +18,19 @@ import { AddResidentMedicationUseCase } from "../../../../residentManagement/app
 import { AssignPrimaryCaregiverUseCase } from "../../../application/useCases/AssignPrimaryCaregiverUsecase";
 import {GraphQLContext} from '../../../../../lib/graphqlContext';
 
-@Resolver(() => ResidentType)
+@Resolver()
 export class ResidentResolver {
 
   @Query(() => [ResidentType])
   async residentList(
-    @Ctx('ctx') ctx: GraphQLContext,
+    @Ctx() ctx: GraphQLContext,
     @Arg("search", () => String,{ nullable: true }) search?: string,
     @Arg("mobilityLevel", () => String, { nullable: true }) mobilityLevel?: string,
     
   ): Promise<ResidentType[]> {
-    const residents = await ctx.residentManagement.repo.list({ search: search ?? null, mobilityLevel: mobilityLevel ?? null });
+    const residents = await ctx.residentManagement.repo.list({ 
+      search: search ?? null, mobilityLevel: mobilityLevel ?? null 
+    });
     return residents.map(ResidentMap.toDTO) as any;
   }
 
@@ -44,7 +44,6 @@ export class ResidentResolver {
   async registerResident(@Arg("input", () => RegisterResidentInput) input: RegisterResidentInput, @Ctx() ctx: GraphQLContext) {
     const useCase = new RegisterResidentUseCase(ctx.residentManagement.repo);
     const resident = await useCase.execute({
-      id: input.id,
       mrn: input.mrn,
       firstName: input.firstName,
       lastName: input.lastName,

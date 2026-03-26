@@ -1,12 +1,14 @@
 // src/domains/residentManagement/infrastructure/repos/PrismaResidentRepo.ts
-import prisma from "../../../../prisma/client";
 import { IResidentRepo } from "../../../residentManagement/application/interfaces/IResidentRepo";
 import { Resident } from "../../../residentManagement/domain/entities/Resident";
 import { ResidentMap } from "../mappers/ResidentMap";
-
+import { PrismaClient } from "../../../../generated/prisma";
 export class PrismaResidentRepo implements IResidentRepo {
+
+  constructor(private readonly prisma: PrismaClient) { }
+
   async getById(id: string): Promise<Resident | null> {
-    const row = await prisma.resident.findUnique({
+    const row = await this.prisma.resident.findUnique({
       where: { residentId: id },
       include: { allergies: true, medications: true, emergencyContacts: true },
     });
@@ -14,7 +16,7 @@ export class PrismaResidentRepo implements IResidentRepo {
   }
 
   async getByMRN(mrn: string): Promise<Resident | null> {
-    const row = await prisma.resident.findUnique({
+    const row = await this.prisma.resident.findUnique({
       where: { mrn },
       include: { allergies: true, medications: true, emergencyContacts: true },
     });
@@ -23,7 +25,7 @@ export class PrismaResidentRepo implements IResidentRepo {
 
   async list(params?: { take?: number; skip?: number; search?: string | null; status?: string | null; mobilityLevel?: string | null; }): Promise<Resident[]> {
     const { take = 50, skip = 0, search, status, mobilityLevel } = params ?? {};
-    const rows = await prisma.resident.findMany({
+    const rows = await this.prisma.resident.findMany({
       where: {
         AND: [
           mobilityLevel ? { mobilityLevel: mobilityLevel as any } : {},
@@ -49,18 +51,18 @@ export class PrismaResidentRepo implements IResidentRepo {
 
   async create(resident: Resident): Promise<void> {
     const data = ResidentMap.toPersistence(resident);
-    await prisma.resident.create({ data });
+    await this.prisma.resident.create({ data });
   }
 
   async save(resident: Resident): Promise<void> {
     const data = ResidentMap.toPersistence(resident);
-    await prisma.resident.update({
+    await this.prisma.resident.update({
       where: { residentId: resident.id },
       data,
     });
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.resident.delete({ where: { residentId: id } });
+    await this.prisma.resident.delete({ where: { residentId: id } });
   }
 }

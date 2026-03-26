@@ -10,7 +10,6 @@ export type Gender = "MALE" | "FEMALE" | "OTHER" | "UNSPECIFIED";
 export type MobilityLevel = "INDEPENDENT" | "ASSISTED" | "MEMORY";
 
 export interface ResidentProps {
-  id: string;
   mrn: MedicalRecordNumber;
   firstName: string;
   lastName: string;
@@ -41,7 +40,7 @@ export class Resident {
   }
 
   public static create(props: ResidentProps) {
-    if (!props.id || !props.mrn || !props.firstName || !props.lastName||!props.birthDate || !props.gender) {
+    if ( !props.mrn || !props.firstName || !props.lastName||!props.birthDate || !props.gender) {
       throw new Error("Missing required Resident properties");
     }
     return new Resident({
@@ -53,7 +52,6 @@ export class Resident {
   }
 
   // getters
-  get id() { return this.props.id; }
   get mrn() { return this.props.mrn; }
   get firstName() { return this.props.firstName; }
   get lastName() { return this.props.lastName; }

@@ -6,7 +6,6 @@ import { Email } from "../../../residentManagement/domain/valueObjects/Email";
 import { PhoneNumber } from "../../../residentManagement/domain/valueObjects/PhoneNumber";
 
 export interface RegisterResidentInput {
-  id: string;
   mrn: string;
   firstName: string;
   lastName: string;
@@ -29,7 +28,6 @@ export class RegisterResidentUseCase {
 
    
     const resident = Resident.create({
-      id: input.id,
       mrn: MedicalRecordNumber.create(input.mrn),
       firstName: input.firstName,
       lastName: input.lastName,

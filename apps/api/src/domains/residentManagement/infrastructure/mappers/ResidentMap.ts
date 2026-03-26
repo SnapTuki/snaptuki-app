@@ -25,13 +25,13 @@ export class ResidentMap {
       room: row.room ?? null,
       primaryCaregiverId: row.primaryCaregiverId ?? null,
       guardianUserId: row.guardianUserId ?? null,
-      allergies: row.allergies.map(a => Allergy.create({
+      allergies: row.allergies?.map(a => Allergy.create({
         id: a.id, name: a.name, reaction: a.reaction, severity: a.severity as any, notes: a.notes ?? null
       })),
-      medications: row.medications.map(m => Medication.create({
+      medications: row.medications?.map(m => Medication.create({
         id: m.id, name: m.name, dosage: m.dosage, frequency: m.frequency, startDate: m.startDate, endDate: m.endDate ?? null, prescribedBy: m.prescribedBy ?? null
       })),
-      emergencyContacts: row.emergencyContacts.map(ec => EmergencyContact.create({
+      emergencyContacts: row.emergencyContacts?.map(ec => EmergencyContact.create({
         id: ec.id, name: ec.name, relation: ec.relation, phone: ec.phone, email: ec.email ?? null, preferred: ec.preferred
       })),
       createdAt: row.createdAt,
@@ -72,16 +72,16 @@ export class ResidentMap {
       room: resident.room,
       primaryCaregiverId: resident.primaryCaregiverId,
       guardianUserId: resident.guardianUserId,
-      allergies: resident.allergies.map(a => ({
+      allergies: resident.allergies?.map(a => ({
         id: a.id, name: a.name, reaction: a.reaction, severity: a.severity, notes: a.notes
       })),
-      medications: resident.medications.map(m => ({
+      medications: resident.medications?.map(m => ({
         id: m.id, name: m.name, dosage: m.dosage, frequency: m.frequency,
         startDate: m.startDate.toISOString(),
         endDate: m.endDate ? m.endDate.toISOString() : null,
         prescribedBy: m.prescribedBy,
       })),
-      emergencyContacts: resident.emergencyContacts.map(ec => ({
+      emergencyContacts: resident.emergencyContacts?.map(ec => ({
         id: ec.id, name: ec.name, relation: ec.relation, phone: ec.phone.value, email: ec.email?.value ?? null, preferred: ec.preferred
       })),
       createdAt: resident.createdAt.toISOString(),

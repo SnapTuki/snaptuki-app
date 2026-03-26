@@ -320,8 +320,6 @@ export type ResidentType = {
   __typename?: 'ResidentType';
   allergies: Array<AllergyType>;
   birthDate: Scalars['DateTime']['output'];
-  careLevel: MobilityLevel;
-  createdAt: Scalars['DateTime']['output'];
   email?: Maybe<Scalars['String']['output']>;
   emergencyContacts: Array<EmergencyContactType>;
   firstName: Scalars['String']['output'];
@@ -330,11 +328,11 @@ export type ResidentType = {
   id: Scalars['ID']['output'];
   lastName: Scalars['String']['output'];
   medications: Array<MedicationType>;
+  mobilityLevel: MobilityLevel;
   mrn: Scalars['String']['output'];
   phone?: Maybe<Scalars['String']['output']>;
   primaryCaregiverId?: Maybe<Scalars['String']['output']>;
   room?: Maybe<Scalars['String']['output']>;
-  updatedAt: Scalars['DateTime']['output'];
 };
 
 export enum Role {
@@ -388,6 +386,13 @@ export type CaregiverListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type CaregiverListQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string, email: string, phone?: string | null, role: CaregiverRole, status: CaregiverStatus }> };
+
+export type ResidentListQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ResidentListQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', id: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, mobilityLevel: MobilityLevel, room?: string | null }> };
 
 
 export const AuthenticateUserDocument = gql`
@@ -511,3 +516,53 @@ export type CaregiverListQueryHookResult = ReturnType<typeof useCaregiverListQue
 export type CaregiverListLazyQueryHookResult = ReturnType<typeof useCaregiverListLazyQuery>;
 export type CaregiverListSuspenseQueryHookResult = ReturnType<typeof useCaregiverListSuspenseQuery>;
 export type CaregiverListQueryResult = Apollo.QueryResult<CaregiverListQuery, CaregiverListQueryVariables>;
+export const ResidentListDocument = gql`
+    query ResidentList($search: String) {
+  residentList(search: $search) {
+    id
+    mrn
+    firstName
+    lastName
+    birthDate
+    gender
+    mobilityLevel
+    room
+  }
+}
+    `;
+
+/**
+ * __useResidentListQuery__
+ *
+ * To run a query within a React component, call `useResidentListQuery` and pass it any options that fit your needs.
+ * When your component renders, `useResidentListQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useResidentListQuery({
+ *   variables: {
+ *      search: // value for 'search'
+ *   },
+ * });
+ */
+export function useResidentListQuery(baseOptions?: Apollo.QueryHookOptions<ResidentListQuery, ResidentListQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ResidentListQuery, ResidentListQueryVariables>(ResidentListDocument, options);
+      }
+export function useResidentListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ResidentListQuery, ResidentListQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ResidentListQuery, ResidentListQueryVariables>(ResidentListDocument, options);
+        }
+// @ts-ignore
+export function useResidentListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ResidentListQuery, ResidentListQueryVariables>): Apollo.UseSuspenseQueryResult<ResidentListQuery, ResidentListQueryVariables>;
+export function useResidentListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ResidentListQuery, ResidentListQueryVariables>): Apollo.UseSuspenseQueryResult<ResidentListQuery | undefined, ResidentListQueryVariables>;
+export function useResidentListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ResidentListQuery, ResidentListQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ResidentListQuery, ResidentListQueryVariables>(ResidentListDocument, options);
+        }
+export type ResidentListQueryHookResult = ReturnType<typeof useResidentListQuery>;
+export type ResidentListLazyQueryHookResult = ReturnType<typeof useResidentListLazyQuery>;
+export type ResidentListSuspenseQueryHookResult = ReturnType<typeof useResidentListSuspenseQuery>;
+export type ResidentListQueryResult = Apollo.QueryResult<ResidentListQuery, ResidentListQueryVariables>;

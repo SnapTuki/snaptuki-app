@@ -6,7 +6,6 @@ import { GraphQLDateTime } from "graphql-scalars";
 
 @InputType()
 export class RegisterResidentInput {
-  @Field(() => ID) id!: string;
   @Field(() => String) mrn!: string;
   @Field(() => String) firstName!: string;
   @Field(() => String) lastName!: string;
