@@ -10,6 +10,7 @@ export type Gender = "MALE" | "FEMALE" | "OTHER" | "UNSPECIFIED";
 export type MobilityLevel = "INDEPENDENT" | "ASSISTED" | "MEMORY";
 
 export interface ResidentProps {
+  residentId: string;
   mrn: MedicalRecordNumber;
   firstName: string;
   lastName: string;
@@ -32,6 +33,7 @@ export interface ResidentProps {
   updatedAt?: Date;
 }
 
+
 export class Resident {
   private props: ResidentProps;
 
@@ -52,6 +54,7 @@ export class Resident {
   }
 
   // getters
+  get residentId() {return this.props.residentId;}
   get mrn() { return this.props.mrn; }
   get firstName() { return this.props.firstName; }
   get lastName() { return this.props.lastName; }

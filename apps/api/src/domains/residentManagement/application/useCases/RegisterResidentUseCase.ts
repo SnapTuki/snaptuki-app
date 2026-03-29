@@ -28,6 +28,7 @@ export class RegisterResidentUseCase {
 
    
     const resident = Resident.create({
+      residentId: null,
       mrn: MedicalRecordNumber.create(input.mrn),
       firstName: input.firstName,
       lastName: input.lastName,

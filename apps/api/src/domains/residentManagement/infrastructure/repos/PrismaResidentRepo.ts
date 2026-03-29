@@ -57,7 +57,7 @@ export class PrismaResidentRepo implements IResidentRepo {
   async save(resident: Resident): Promise<void> {
     const data = ResidentMap.toPersistence(resident);
     await this.prisma.resident.update({
-      where: { residentId: resident.id },
+      where: { residentId: resident.residentId },
       data,
     });
   }

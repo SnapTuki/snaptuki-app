@@ -12,7 +12,7 @@ import type { Resident as PrismaResident, Allergy as PrismaAllergy, Medication a
 export class ResidentMap {
   static toDomain(row: PrismaResident & { allergies: PrismaAllergy[]; medications: PrismaMedication[]; emergencyContacts: PrismaEC[] }): Resident {
     return Resident.create({
-      id: row.residentId,
+      residentId: row.residentId,
       mrn: MedicalRecordNumber.create(row.mrn),
       firstName: row.firstName,
       lastName: row.lastName,
@@ -41,7 +41,6 @@ export class ResidentMap {
 
   static toPersistence(resident: Resident) {
     return {
-      residentId: resident.id,
       mrn: resident.mrn.value,
       firstName: resident.firstName,
       lastName: resident.lastName,
@@ -59,7 +58,7 @@ export class ResidentMap {
 
   static toDTO(resident: Resident): ResidentDTO {
     return {
-      id: resident.id,
+      residentId: resident.residentId,
       mrn: resident.mrn.value,
       firstName: resident.firstName,
       lastName: resident.lastName,

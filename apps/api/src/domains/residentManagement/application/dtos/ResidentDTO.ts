@@ -26,7 +26,7 @@ export interface EmergencyContactDTO {
 }
 
 export interface ResidentDTO {
-  id: string;
+  residentId: string;
   mrn: string;
   firstName: string;
   lastName: string;
