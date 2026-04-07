@@ -3,18 +3,17 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Bed, 
-  Activity, 
-  Calendar, 
+import { Link } from 'react-router-dom'; // <-- Added Link for navigation
+import {
+  Search,
+  Filter,
+  Plus,
+  Bed,
+  Activity,
+  Calendar,
   X,
   User,
   FileText,
-  Edit2,
-  Trash2,
   Loader2,
   Save,
   AlertCircle,
@@ -22,25 +21,9 @@ import {
   ChevronDown,
   Users
 } from "lucide-react";
-import { GET_RESIDENTS } from '../../features/residents/graphql/queries';
-import { REGISTER_RESIDENT } from '../../features/residents/graphql/mutations';
-import type { ResidentType } from '../../lib/graphql/generated';
-
-const DISCHARGE_RESIDENT = gql`
-  mutation DischargeResident($id: String!) {
-    dischargeResident(id: $id) {
-      id
-    }
-  }
-`;
-
-const UPDATE_RESIDENT = gql`
-  mutation UpdateResidentMedicalProfile($input: UpdateResidentMedicalProfileInputGql!) {
-    updateResidentMedicalProfile(input: $input) {
-      mrn
-    }
-  }
-`;
+import { GET_RESIDENTS } from '../../../features/residents/graphql/queries';
+import { REGISTER_RESIDENT } from '../../../features/residents/graphql/mutations';
+import type { ResidentType } from '../../../lib/graphql/generated';
 
 const calculateAge = (dobString: string) => {
   if (!dobString) return 0;
@@ -75,22 +58,18 @@ function MobilityBadge({ level }: { level: string }) {
   );
 }
 
+// --- ADMISSION DRAWER ---
 interface ResidentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  initialValues?: ResidentType | null;
   refetch: () => void;
 }
 
-function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormProps) {
-  const isEditMode = !!initialValues;
-
+function ResidentForm({ isOpen, onClose, refetch }: ResidentFormProps) {
   const [registerResident] = useMutation(REGISTER_RESIDENT);
-  const [updateResident] = useMutation(UPDATE_RESIDENT);
 
   const formik = useFormik({
-    initialValues: initialValues || {
-      id: '',
+    initialValues: {
       mrn: '',
       firstName: '',
       lastName: '',
@@ -103,31 +82,19 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
     validationSchema: ResidentSchema,
     onSubmit: async (values, { setSubmitting, resetForm, setStatus }) => {
       try {
-        if (isEditMode) {
-          await updateResident({
-            variables: {
-              input: {
-                residentId: values.id,
-                mobilityLevel: values.mobilityLevel,
-                room: values.room,
-              }
+        await registerResident({
+          variables: {
+            input: {
+              mrn: values.mrn,
+              firstName: values.firstName,
+              lastName: values.lastName,
+              birthDate: new Date(values.birthDate).toISOString(),
+              gender: values.gender,
+              mobilityLevel: values.mobilityLevel,
+              room: values.room,
             }
-          });
-        } else {
-          await registerResident({
-            variables: {
-              input: {
-                mrn: values.mrn,
-                firstName: values.firstName,
-                lastName: values.lastName,
-                birthDate: new Date(values.birthDate).toISOString(),
-                gender: values.gender,
-                mobilityLevel: values.mobilityLevel,
-                room: values.room,
-              }
-            }
-          });
-        }
+          }
+        });
         refetch();
         resetForm();
         onClose();
@@ -145,16 +112,12 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
     <>
       <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 border-l border-slate-100 flex flex-col">
-        
+
         {/* Form Header */}
         <div className="px-6 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {isEditMode ? 'Edit Resident Profile' : 'Admit New Resident'}
-            </h2>
-            <p className="text-sm text-slate-500">
-              {isEditMode ? 'Update medical and lodging records' : 'Register a new individual'}
-            </p>
+            <h2 className="text-xl font-bold text-slate-900">Admit New Resident</h2>
+            <p className="text-sm text-slate-500">Register a new individual</p>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
             <X className="w-5 h-5" />
@@ -173,14 +136,13 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
               <User className="w-4 h-4" /> Personal Details
             </h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">First Name</label>
                 <input
                   {...formik.getFieldProps('firstName')}
-                  disabled={isEditMode}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
                 {formik.touched.firstName && formik.errors.firstName && <p className="text-xs text-rose-500 ml-1 font-bold">{formik.errors.firstName as string}</p>}
               </div>
@@ -188,8 +150,7 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Last Name</label>
                 <input
                   {...formik.getFieldProps('lastName')}
-                  disabled={isEditMode}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
                 {formik.touched.lastName && formik.errors.lastName && <p className="text-xs text-rose-500 ml-1 font-bold">{formik.errors.lastName as string}</p>}
               </div>
@@ -203,8 +164,7 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
                   <input
                     type="date"
                     {...formik.getFieldProps('birthDate')}
-                    disabled={isEditMode}
-                    className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50 text-slate-700"
+                    className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-700"
                   />
                 </div>
               </div>
@@ -212,8 +172,7 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Gender</label>
                 <select
                   {...formik.getFieldProps('gender')}
-                  disabled={isEditMode}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50 appearance-none text-slate-700 font-medium"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none text-slate-700 font-medium"
                 >
                   <option value="FEMALE">Female</option>
                   <option value="MALE">Male</option>
@@ -230,7 +189,7 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4" /> Admission & Care
             </h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">MRN</label>
@@ -238,8 +197,7 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
                   <Stethoscope className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
                   <input
                     {...formik.getFieldProps('mrn')}
-                    disabled={isEditMode}
-                    className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50 uppercase"
+                    className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all uppercase"
                   />
                 </div>
               </div>
@@ -263,11 +221,11 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
                   { id: 'ASSISTED', label: 'Assisted', color: 'blue' },
                   { id: 'MEMORY', label: 'Memory', color: 'rose' },
                 ].map((level) => (
-                  <label 
+                  <label
                     key={level.id}
                     className={`
                       flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all
-                      ${formik.values.mobilityLevel === level.id 
+                      ${formik.values.mobilityLevel === level.id
                         ? `bg-${level.color}-50 border-${level.color}-500 text-${level.color}-700`
                         : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'}
                     `}
@@ -286,14 +244,14 @@ function ResidentForm({ isOpen, onClose, initialValues, refetch }: ResidentFormP
           <button onClick={onClose} type="button" className="flex-1 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
             Cancel
           </button>
-          <button 
+          <button
             onClick={() => formik.handleSubmit()}
             disabled={formik.isSubmitting}
             type="submit"
             className="flex-[2] py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2"
           >
             {formik.isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-            {isEditMode ? 'Update Record' : 'Admit'}
+            Admit Resident
           </button>
         </div>
       </div>
@@ -306,34 +264,31 @@ export function Residents() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [mobilityFilter, setMobilityFilter] = useState('ALL');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingResident, setEditingResident] = useState<ResidentType | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_RESIDENTS, {
     variables: { search: searchTerm || undefined },
     fetchPolicy: 'cache-and-network'
   });
 
-  const [dischargeResident] = useMutation(DISCHARGE_RESIDENT);
-
   const residents: ResidentType[] = data?.residentList || [];
 
   const filteredResidents = useMemo(() => {
     let filtered = residents;
-    
+
     if (mobilityFilter !== 'ALL') {
       filtered = filtered.filter(r => r.mobilityLevel === mobilityFilter);
     }
-    
+
     if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(r => 
-        r.firstName.toLowerCase().includes(lowerTerm) || 
+      filtered = filtered.filter(r =>
+        r.firstName.toLowerCase().includes(lowerTerm) ||
         r.lastName.toLowerCase().includes(lowerTerm) ||
         r.mrn.toLowerCase().includes(lowerTerm) ||
         (r.room && r.room.toLowerCase().includes(lowerTerm))
       );
     }
-    
+
     return filtered;
   }, [residents, mobilityFilter, searchTerm]);
 
@@ -341,30 +296,8 @@ export function Residents() {
   const memoryCareCount = residents.filter(r => r.mobilityLevel === 'MEMORY').length;
   const assistedCount = residents.filter(r => r.mobilityLevel === 'ASSISTED').length;
 
-  const handleEdit = (resident: ResidentType) => {
-    const formattedResident = {
-      ...resident,
-      birthDate: resident.birthDate ? new Date(resident.birthDate).toISOString().split('T')[0] : ''
-    };
-    setEditingResident(formattedResident);
-    setIsDrawerOpen(true);
-  };
-
   const handleCreate = () => {
-    setEditingResident(null);
     setIsDrawerOpen(true);
-  };
-
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Are you sure you want to discharge this resident?')) {
-      try {
-        await dischargeResident({ variables: { id } });
-        refetch();
-      } catch (err) {
-        alert('Failed to discharge resident.');
-      }
-    }
   };
 
   const clearFilters = () => {
@@ -375,7 +308,7 @@ export function Residents() {
   return (
     // ROOT: Fixed height, overflow-hidden to prevent the whole page from scrolling
     <div className="flex flex-col h-[calc(100vh-6rem)] min-h-[600px] overflow-hidden bg-slate-50/50">
-      
+
       {/* Hide Scrollbar CSS Injection */}
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
@@ -387,10 +320,9 @@ export function Residents() {
         }
       `}</style>
 
-      <ResidentForm 
-        isOpen={isDrawerOpen} 
+      <ResidentForm
+        isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        initialValues={editingResident}
         refetch={refetch}
       />
 
@@ -398,14 +330,14 @@ export function Residents() {
           FIXED HEADER AREA (Will never scroll)
           ========================================= */}
       <div className="shrink-0 flex flex-col gap-5 pb-4 pt-2 z-10 bg-slate-50/50 px-6 md:px-10">
-        
+
         {/* Title & Primary Action */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Resident Directory</h1>
             <p className="text-slate-500 font-medium mt-1">Manage admissions, care levels, and lodging.</p>
           </div>
-          <button 
+          <button
             onClick={handleCreate}
             className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all active:scale-95 text-sm"
           >
@@ -418,19 +350,19 @@ export function Residents() {
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <div className="flex items-center gap-2.5 px-4 py-2 border border-slate-200 bg-white/60 rounded-xl shadow-sm">
             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-               <Users className="w-3.5 h-3.5 text-slate-600" />
+              <Users className="w-3.5 h-3.5 text-slate-600" />
             </div>
             <span className="text-slate-500 font-medium">Total: <strong className="text-slate-900 ml-0.5">{totalResidents}</strong></span>
           </div>
           <div className="flex items-center gap-2.5 px-4 py-2 border border-slate-200 bg-white/60 rounded-xl shadow-sm">
             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-               <Activity className="w-3.5 h-3.5 text-blue-600" />
+              <Activity className="w-3.5 h-3.5 text-blue-600" />
             </div>
             <span className="text-slate-500 font-medium">Assisted: <strong className="text-slate-900 ml-0.5">{assistedCount}</strong></span>
           </div>
           <div className="flex items-center gap-2.5 px-4 py-2 border border-slate-200 bg-white/60 rounded-xl shadow-sm">
             <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
-               <Activity className="w-3.5 h-3.5 text-rose-600" />
+              <Activity className="w-3.5 h-3.5 text-rose-600" />
             </div>
             <span className="text-slate-500 font-medium">Memory: <strong className="text-slate-900 ml-0.5">{memoryCareCount}</strong></span>
           </div>
@@ -441,22 +373,21 @@ export function Residents() {
           <div className="flex w-full lg:w-auto gap-3 items-center">
             <div className="relative group w-full lg:w-72">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search MRN, name, or room..." 
+              <input
+                type="text"
+                placeholder="Search MRN, name, or room..."
                 className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 focus:border-blue-300 shadow-sm rounded-xl outline-none text-slate-700 font-medium placeholder:text-slate-400 text-sm transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && refetch()}
               />
             </div>
-            <button 
+            <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border shadow-sm transition-colors ${
-                isFilterOpen || mobilityFilter !== 'ALL'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200' 
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border shadow-sm transition-colors ${isFilterOpen || mobilityFilter !== 'ALL'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <Filter className="w-4 h-4" /> Filter
               {mobilityFilter !== 'ALL' && (
@@ -472,7 +403,7 @@ export function Residents() {
             <div className="space-y-1.5 flex-1 min-w-[200px]">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mobility Level</label>
               <div className="relative">
-                <select 
+                <select
                   value={mobilityFilter}
                   onChange={(e) => setMobilityFilter(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-300 transition-colors appearance-none"
@@ -487,9 +418,9 @@ export function Residents() {
             </div>
 
             <div className="flex items-end flex-none pb-0.5">
-                <button onClick={clearFilters} className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-                  Clear All
-                </button>
+              <button onClick={clearFilters} className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                Clear All
+              </button>
             </div>
           </div>
         )}
@@ -523,88 +454,99 @@ export function Residents() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
             {filteredResidents.map((resident) => {
-              
-              // Determine ambient glow color based on mobility level
-              const glowColor = 
-                resident.mobilityLevel === 'MEMORY' ? 'bg-rose-400' : 
-                resident.mobilityLevel === 'ASSISTED' ? 'bg-blue-400' : 'bg-emerald-400';
+
+              const isDischarged = resident.status === 'DISCHARGED';
+
+              const glowColor =
+                isDischarged ? 'bg-slate-400' :
+                  resident.mobilityLevel === 'MEMORY' ? 'bg-rose-400' :
+                    resident.mobilityLevel === 'ASSISTED' ? 'bg-blue-400' : 'bg-emerald-400';
+
+              const targetUrl = `/dashboard/residents/${resident.residentId}`;
 
               return (
-                <div 
-                  key={resident.id} 
-                  onClick={() => handleEdit(resident)}
-                  className="group bg-white rounded-[28px] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-300 transition-all duration-300 overflow-hidden flex flex-col relative cursor-pointer"
+                <Link
+                  key={resident.residentId}
+                  to={isDischarged ? "#" : targetUrl}
+                  className={isDischarged ? "pointer-events-none cursor-not-allowed block h-full" : "block h-full"}
                 >
-                  {/* Innovative Background Glow */}
-                  <div className={`absolute top-0 right-0 w-32 h-32 rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2 transition-opacity group-hover:opacity-20 ${glowColor}`} />
+                  <div
+                    className={`group bg-white rounded-[28px] border shadow-sm overflow-hidden flex flex-col relative h-full justify-between transition-all duration-300 ${
+                      isDischarged
+                        ? 'border-slate-200 opacity-60 grayscale'
+                        : 'border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-300 cursor-pointer'
+                    }`}
+                  >
+                    {/* Innovative Background Glow */}
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2 transition-opacity ${!isDischarged && 'group-hover:opacity-20'} ${glowColor}`} />
 
-                  <div className="p-6 flex flex-col flex-1 relative z-10">
-                    
-                    {/* Top Row: Avatar & Actions */}
-                    <div className="flex justify-between items-start mb-5">
-                      <div className="w-14 h-14 rounded-[16px] bg-slate-50 border border-slate-100 flex items-center justify-center text-xl font-black text-slate-400 shadow-sm group-hover:bg-white group-hover:text-blue-600 transition-colors">
-                        {resident.firstName.charAt(0)}{resident.lastName.charAt(0)}
+                    {/* Discharged Watermark Label */}
+                    {isDischarged && (
+                      <div className="absolute top-5 right-5 z-20">
+                        <span className="px-3 py-1 bg-slate-200 text-slate-600 text-[10px] font-extrabold uppercase tracking-widest rounded-lg border border-slate-300 shadow-sm">
+                          Discharged
+                        </span>
                       </div>
-                      
-                      {/* Quick Actions (Hover Reveal - slides in smoothly) */}
-                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 duration-300">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEdit(resident); }}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors bg-white border border-slate-100 shadow-sm"
-                          title="Edit Profile"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={(e) => handleDelete(resident.id, e)}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors bg-white border border-slate-100 shadow-sm"
-                          title="Discharge Resident"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    )}
+
+                    <div className="p-6 flex flex-col flex-1 relative z-10">
+
+                      {/* Top Row: Avatar & Actions */}
+                      <div className="flex justify-between items-start mb-5">
+                        <div className={`w-14 h-14 rounded-[16px] bg-slate-50 border border-slate-100 flex items-center justify-center text-xl font-black text-slate-400 shadow-sm transition-colors ${!isDischarged && 'group-hover:bg-white group-hover:text-blue-600'}`}>
+                          {resident.firstName.charAt(0)}{resident.lastName.charAt(0)}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Identity Info */}
-                    <div className="mb-6">
-                      <h3 className="text-xl font-extrabold text-slate-900 tracking-tight mb-1.5 group-hover:text-blue-600 transition-colors line-clamp-1">
-                        {resident.firstName} {resident.lastName}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                        <Bed className="w-4 h-4 text-slate-400" />
-                        Room {resident.room || 'Unassigned'}
+                      {/* Identity Info */}
+                      <div className="mb-6">
+                        <h3 className={`text-xl font-extrabold text-slate-900 tracking-tight mb-1.5 transition-colors line-clamp-1 ${!isDischarged && 'group-hover:text-blue-600'}`}>
+                          {resident.firstName} {resident.lastName}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+                          <Bed className="w-4 h-4 text-slate-400" />
+                          Room {resident.room || 'Unassigned'}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Edge-to-Edge Clinical Data Ribbon */}
-                    <div className="flex items-center justify-between py-4 border-y border-slate-100/80 mt-auto mb-5 bg-slate-50/50 -mx-6 px-6">
-                       <div className="flex flex-col">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Stethoscope className="w-3 h-3"/> MRN</span>
-                         <span className="text-sm font-bold text-slate-700">{resident.mrn}</span>
-                       </div>
-                       <div className="w-px h-8 bg-slate-200/60" />
-                       <div className="flex flex-col">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Calendar className="w-3 h-3"/> Age</span>
-                         <span className="text-sm font-bold text-slate-700">{calculateAge(resident.birthDate)} <span className="text-xs font-medium text-slate-500">yrs</span></span>
-                       </div>
-                       <div className="w-px h-8 bg-slate-200/60" />
-                       <div className="flex flex-col">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><User className="w-3 h-3"/> Sex</span>
-                         <span className="text-sm font-bold text-slate-700 capitalize">{resident.gender.toLowerCase()}</span>
-                       </div>
-                    </div>
+                      {/* Edge-to-Edge Clinical Data Ribbon */}
+                      <div className="flex items-center justify-between py-4 border-y border-slate-100/80 mt-auto mb-5 bg-slate-50/50 -mx-6 px-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Stethoscope className="w-3 h-3" /> MRN</span>
+                          <span className="text-sm font-bold text-slate-700">{resident.mrn}</span>
+                        </div>
+                        <div className="w-px h-8 bg-slate-200/60" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Age</span>
+                          <span className="text-sm font-bold text-slate-700">{calculateAge(resident.birthDate)} <span className="text-xs font-medium text-slate-500">yrs</span></span>
+                        </div>
+                        <div className="w-px h-8 bg-slate-200/60" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Sex</span>
+                          <span className="text-sm font-bold text-slate-700 capitalize">{resident.gender.toLowerCase()}</span>
+                        </div>
+                      </div>
 
-                    {/* Footer: Badge & Detail Link */}
-                    <div className="flex items-center justify-between">
-                      <MobilityBadge level={resident.mobilityLevel} />
-                      
-                      <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors flex items-center gap-1">
-                        View Profile <ChevronDown className="w-3 h-3 -rotate-90" />
-                      </span>
-                    </div>
+                      {/* Footer: Badge & Detail Link */}
+                      <div className="flex items-center justify-between">
+                        {isDischarged ? (
+                          <span className="px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-widest border flex items-center gap-1.5 w-fit text-slate-500 bg-slate-100 border-slate-200">
+                            Discharged
+                          </span>
+                        ) : (
+                          <MobilityBadge level={resident.mobilityLevel} />
+                        )}
 
+                        {!isDischarged && (
+                          <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors flex items-center gap-1">
+                            View Profile <ChevronDown className="w-3 h-3 -rotate-90" />
+                          </span>
+                        )}
+                      </div>
+
+                    </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

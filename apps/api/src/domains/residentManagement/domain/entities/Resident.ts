@@ -5,12 +5,14 @@ import { MedicalRecordNumber } from "../valueObjects/MedicalRecordNumber";
 import { Allergy } from "./Allergy";
 import { Medication } from "./Medication";
 import { EmergencyContact } from "./EmergencyContact";
-
-export type Gender = "MALE" | "FEMALE" | "OTHER" | "UNSPECIFIED";
-export type MobilityLevel = "INDEPENDENT" | "ASSISTED" | "MEMORY";
+// Import TaskAssignment to complete the Care Plan domain
+import { TaskAssignment } from "./TaskAssignment"; 
+import { Gender, MobilityLevel, ResidentStatus } from "../../../../generated/prisma";
+import { Task } from "./Task";
 
 export interface ResidentProps {
   residentId: string;
+  agencyId: number; // CRITICAL: Added for multi-tenancy
   mrn: MedicalRecordNumber;
   firstName: string;
   lastName: string;
@@ -21,18 +23,19 @@ export interface ResidentProps {
 
   mobilityLevel: MobilityLevel;
   room: string | null;
+  status: ResidentStatus;
 
-  primaryCaregiverId?: string | null; // reference to CaregiverManagement
-  guardianUserId?: string | null;     // reference to IdentityAccess.User
+  primaryCaregiverId?: string | null;
+  guardianUserId?: string | null;
 
   allergies: Allergy[];
   medications: Medication[];
   emergencyContacts: EmergencyContact[];
-
+  taskAssignments: TaskAssignment[]; // Added: The "Care Plan"
+  tasks: Task[];
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 
 export class Resident {
   private props: ResidentProps;
@@ -41,78 +44,129 @@ export class Resident {
     this.props = { ...props };
   }
 
-  public static create(props: ResidentProps) {
-    if ( !props.mrn || !props.firstName || !props.lastName||!props.birthDate || !props.gender) {
-      throw new Error("Missing required Resident properties");
+  public static create(props: ResidentProps): Resident {
+    // Basic validation
+    if (!props.residentId || !props.agencyId || !props.mrn || !props.firstName || !props.lastName) {
+      throw new Error("Resident creation failed: Missing identity or agency context.");
     }
+
     return new Resident({
       ...props,
       allergies: props.allergies ?? [],
       medications: props.medications ?? [],
       emergencyContacts: props.emergencyContacts ?? [],
+      taskAssignments: props.taskAssignments ?? [],
+      status: props.status ?? ResidentStatus.ACTIVE,
     });
   }
 
-  // getters
-  get residentId() {return this.props.residentId;}
+  // --- Getters ---
+  get residentId() { return this.props.residentId; }
+  get agencyId() { return this.props.agencyId; }
   get mrn() { return this.props.mrn; }
-  get firstName() { return this.props.firstName; }
-  get lastName() { return this.props.lastName; }
-  get birthDate() { return this.props.birthDate; }
-  get gender() { return this.props.gender; }
-  get email() { return this.props.email; }
-  get phone() { return this.props.phone; }
-
+  get fullName() { return `${this.props.firstName} ${this.props.lastName}`; }
+  get firstName(){return this.props.firstName;}
+  get lastName(){return this.props.lastName;}
+  get status() { return this.props.status; }
   get mobilityLevel() { return this.props.mobilityLevel; }
   get room() { return this.props.room; }
+  get birthDate() {return this.props.birthDate;}
+  get email(){return this.props.email;}
+  get phone(){return this.props.phone;}
+  get gender(){return this.props.gender;}
+  get createdAt(){return this.props.createdAt;}
+  get updatedAt(){return this.props.updatedAt;}
 
-  get primaryCaregiverId() { return this.props.primaryCaregiverId ?? null; }
-  get guardianUserId() { return this.props.guardianUserId ?? null; }
-
+  // Return copies to prevent external mutation of private state
   get allergies() { return [...this.props.allergies]; }
   get medications() { return [...this.props.medications]; }
-  get emergencyContacts() { return [...this.props.emergencyContacts]; }
+  get taskAssignments() { return [...this.props.taskAssignments]; }
+  get emergencyContacts(){return [...this.props.emergencyContacts];}
+  get tasks(){return [...this.props.tasks];}
 
-  get createdAt() { return this.props.createdAt ?? new Date(); }
-  get updatedAt() { return this.props.updatedAt ?? new Date(); }
+  // --- Domain Behaviors (The "Rich" part of the model) ---
 
-  // behaviors
-  updateContact(email: Email | null, phone: PhoneNumber | null) {
-    this.props.email = email;
-    this.props.phone = phone;
+  /**
+   * Discharging a resident is a major lifecycle event.
+   * You might want to add logic here to deactivate all task assignments automatically.
+   */
+  public discharge(): void {
+    this.props.status = ResidentStatus.DISCHARGED;
+    this.props.updatedAt = new Date();
+    // Logic: When discharged, stop all recurring care
+    this.props.taskAssignments.forEach(assignment => assignment.deactivate());
   }
 
+  public updateCareLevel(level: MobilityLevel, newRoom?: string): void {
+    this.props.mobilityLevel = level;
+    if (newRoom) this.props.room = newRoom;
+    this.props.updatedAt = new Date();
+  }
 
-  setPrimaryCaregiver(caregiverId: string | null) {
+  public assignToCaregiver(caregiverId: string | null): void {
     this.props.primaryCaregiverId = caregiverId;
   }
 
-  changeCareLevel(level: MobilityLevel, room: string | null) {
-    this.props.mobilityLevel = level;
-    this.props.room = room;
-  }
-
-  
-
-  addAllergy(a: Allergy) {
-    if (!this.props.allergies.find(x => x.id === a.id)) {
-      this.props.allergies.push(a);
+  public addMedication(med: Medication): void {
+    const exists = this.props.medications.some(m => m.id === med.id);
+    if (!exists) {
+      this.props.medications.push(med);
     }
   }
 
-  addMedication(m: Medication) {
-    if (!this.props.medications.find(x => x.id === m.id)) {
-      this.props.medications.push(m);
+  public addAllergy(allergy: Allergy): void {
+    // 1. Business Rule: Check for duplicates by ID
+    const alreadyExists = this.props.allergies.some(a => a.id === allergy.id);
+    
+    if (alreadyExists) {
+      // In a medical context, you might want to throw an error 
+      // or simply return to avoid redundant data.
+      throw new Error(`Allergy with ID ${allergy.id} is already recorded for this resident.`);
     }
+
+    // 2. Business Rule: Perhaps check for duplicate names (optional but safer)
+    const duplicateName = this.props.allergies.some(
+      a => a.name.toLowerCase() === allergy.name.toLowerCase()
+    );
+
+    if (duplicateName) {
+        // Log a warning or handle differently if the names match but IDs don't
+    }
+
+    // 3. Add to the private props
+    this.props.allergies.push(allergy);
+    
+    // 4. Update the timestamp
+    this.props.updatedAt = new Date();
   }
 
-  addEmergencyContact(c: EmergencyContact) {
-    if (!this.props.emergencyContacts.find(x => x.id === c.id)) {
-      this.props.emergencyContacts.push(c);
+  public setPrimaryCaregiver(caregiverId: string | null): void {
+    // 1. Logic Check: If the ID is already the same, do nothing to avoid redundant updates
+    if (this.props.primaryCaregiverId === caregiverId) {
+      return;
     }
+
+    // 2. Domain Rule: You might want to prevent assigning a caregiver 
+    // if the resident is currently DISCHARGED.
+    if (this.props.status === ResidentStatus.DISCHARGED && caregiverId !== null) {
+      throw new Error("Cannot assign a primary caregiver to a discharged resident.");
+    }
+
+    // 3. Update the internal property
+    this.props.primaryCaregiverId = caregiverId;
+
+    // 4. Update the audit timestamp
+    this.props.updatedAt = new Date();
+
+    // 5. Future-Proofing: This is where you would record a Domain Event
+    // this.addDomainEvent(new PrimaryCaregiverChangedEvent(this.residentId, caregiverId));
   }
 
-  linkGuardianUser(userId: string) {
-    this.props.guardianUserId = userId;
+  /**
+   * Adds a new recurring care rule to the resident's Care Plan.
+   */
+  public assignTaskTemplate(templateId: number): void {
+    // Logic to prevent duplicate templates could go here
+    // this.props.taskAssignments.push(TaskAssignment.create(...));
   }
 }

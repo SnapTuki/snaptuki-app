@@ -13,13 +13,14 @@ import { JwtTokenService } from "./domains/identityAccess/infrastructure/securit
 import { AuthResolver } from "./domains/identityAccess/api/resolvers/authResolver";
 import { UserResolver } from "./domains/identityAccess/api/resolvers/userResolver";
 import { ResidentResolver } from "./domains/residentManagement/api/graphql/resolvers/ResidentResolvers";
+import { TaskResolver } from "./domains/taskManagement/api/graphql/resolvers/TaskResolver";
 // CaregiverManagement BC imports
 import { CaregiverResolver } from "./domains/caregiverManagement/api/resolvers/CaregiverResolvers";
 
 import { createCaregiverManagementContainer } from "./domains/caregiverManagement/infrastructure";
-
-import { config } from "./config";
 import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure";
+import { createTaskManagementContainer } from "./domains/taskManagement/infrastructure";
+import { config } from "./config";
 
 async function buildApplicationSchema() {
     return await buildSchema({
@@ -27,7 +28,8 @@ async function buildApplicationSchema() {
             AuthResolver,
             UserResolver, 
             CaregiverResolver,
-            ResidentResolver
+            ResidentResolver,
+            TaskResolver,
         ],
         scalarsMap: [{ type: Date, scalar: GraphQLDateTime }],
         validate: false,
@@ -65,11 +67,13 @@ async function buildContext({ req }: any) {
     const identityAccess = createIdentityAccessContainer();
     const caregiverManagement = createCaregiverManagementContainer();
     const residentManagement = createResidentManagementContainer();
+    const taskManagement = createTaskManagementContainer();
     return {
         currentUser,
         identityAccess,
         caregiverManagement,
         residentManagement,
+        taskManagement,
     };
 
 }

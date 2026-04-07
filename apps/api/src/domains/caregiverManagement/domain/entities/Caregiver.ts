@@ -4,7 +4,7 @@ import { Email } from "../valueObjects/Email";
 import { PhoneNumber } from "../valueObjects/PhoneNumber";
 import { Certification } from "./Certification";
 
-export type CaregiverRole = "CAREGIVER" | "HEAD_NURSE" | "COORDINATOR";
+import { CaregiverRole } from "../../../../generated/prisma";
 export type CaregiverStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT";
 

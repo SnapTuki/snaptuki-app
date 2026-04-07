@@ -1,6 +1,7 @@
 // src/domains/taskManagement/application/useCases/AssignTaskUseCase.ts
 import { ITaskRepo } from "../interfaces/ITaskRepo";
-import { Task, TaskCategory, TaskPriority } from "../../../taskManagement/domain/entities/Task";
+import { Task } from "../../../taskManagement/domain/entities/Task";
+import { TaskCategory, TaskPriority} from "../../../../generated/prisma";
 import { Title } from "../../../taskManagement/domain/valueObjects/Title";
 import { Description } from "../../../taskManagement/domain/valueObjects/Description";
 import { ChecklistItem } from "../../../taskManagement/domain/entities/ChecklistItem";

@@ -1,4 +1,14 @@
-// src/domains/residentManagement/application/dtos/ResidentDTO.ts
+import { 
+  Gender, 
+  MobilityLevel, 
+  ResidentStatus, 
+  TaskStatus, 
+  TaskPriority, 
+  TaskCategory 
+} from "../../../../generated/prisma";
+
+// --- Nested DTOs ---
+
 export interface AllergyDTO {
   id: string;
   name: string;
@@ -12,7 +22,7 @@ export interface MedicationDTO {
   name: string;
   dosage: string;
   frequency: string;
-  startDate: string;
+  startDate: string; // ISO String
   endDate: string | null;
   prescribedBy: string | null;
 }
@@ -22,28 +32,61 @@ export interface EmergencyContactDTO {
   name: string;
   relation: string;
   phone: string;
-  email: string | null;
+  isPrimary: boolean; // Updated from 'email' to match schema 'is_primary'
 }
+
+export interface TaskAssignmentDTO {
+  id: number;
+  isActive: boolean;
+  taskTemplate: {
+    id: number;
+    name: string;
+    category?: TaskCategory;
+    priority?: TaskPriority;
+  };
+}
+
+export interface TaskHistoryDTO {
+  id: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  category: TaskCategory;
+  dueAt: string;
+  completedAt: string | null;
+  completionNotes: string | null;
+  checklist: Array<{
+    label: string;
+    isCompleted: boolean;
+  }>;
+}
+
+// --- Main Resident DTO ---
 
 export interface ResidentDTO {
   residentId: string;
+  agencyId: number; // Added for Multi-tenancy context
   mrn: string;
   firstName: string;
   lastName: string;
-  birthDate: string;
-  gender: "MALE" | "FEMALE" | "OTHER" | "UNSPECIFIED";
+  birthDate: string; // ISO String
+  gender: Gender;
   email: string | null;
   phone: string | null;
 
-  mobilityLevel: "INDEPENDENT" | "ASSISTED" | "MEMORY";
+  mobilityLevel: MobilityLevel;
   room: string | null;
+  status: ResidentStatus;
+  
+  primaryCaregiverId?: string | null;
 
-  primaryCaregiverId: string | null;
-  guardianUserId: string | null;
-
+  // Nested Collections
   allergies: AllergyDTO[];
   medications: MedicationDTO[];
   emergencyContacts: EmergencyContactDTO[];
+  
+  // Care Plan & History (New)
+  taskAssignments: TaskAssignmentDTO[];
+  tasks: TaskHistoryDTO[];
 
   createdAt: string;
   updatedAt: string;

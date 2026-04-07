@@ -1,3 +1,4 @@
+import { CaregiverRole } from "../../../../generated/prisma";
 // src/domains/caregiverManagement/application/dtos/CaregiverDTO.ts
 export interface CertificationDTO {
   id: string;
@@ -14,7 +15,7 @@ export interface CaregiverDTO {
   email: string;
   passwordHash: string;
   phone: string | null;
-  role: "CAREGIVER" | "HEAD_NURSE" | "COORDINATOR";
+  role: CaregiverRole;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   employmentType: "FULL_TIME" | "PART_TIME" | "CONTRACT";
   hireDate: string;

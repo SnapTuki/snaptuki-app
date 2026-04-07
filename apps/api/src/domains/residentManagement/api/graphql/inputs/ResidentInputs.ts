@@ -1,19 +1,24 @@
 // src/domains/residentManagement/api/graphql/inputs/ResidentInputs.ts
-import { InputType, Field, ID } from "type-graphql";
-import { GENDER, MOBILITY_LEVEL, ALLERGY_SERVERITY } from "../types/ResidentTypes";
+import { InputType, Field, ID, registerEnumType } from "type-graphql";
+import { Gender, MobilityLevel, AllergySeverity } from "../../../../../generated/prisma";
+
 import { GraphQLDateTime } from "graphql-scalars";
+registerEnumType(Gender, { name: "Gender" });
+registerEnumType(MobilityLevel, { name: "MobilityLevel" });
+registerEnumType(AllergySeverity, { name: "AllergySeverity" });
 
 
 @InputType()
 export class RegisterResidentInput {
+  @Field(() => Number) agencyId!: number;
   @Field(() => String) mrn!: string;
   @Field(() => String) firstName!: string;
   @Field(() => String) lastName!: string;
   @Field(() => GraphQLDateTime) birthDate!: Date;
-  @Field(() => GENDER) gender!: GENDER;
+  @Field(() => Gender) gender!: Gender;
   @Field(() => String, { nullable: true }) email?: string | null;
   @Field(() => String, { nullable: true }) phone?: string | null;
-  @Field(() => MOBILITY_LEVEL) mobilityLevel!: MOBILITY_LEVEL;
+  @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room?: string | null;
 }
 
@@ -29,7 +34,7 @@ export class UpdateResidentContactInput {
 @InputType()
 export class UpdateResidentMedicalProfileInput {
   @Field(() => ID) id!: string;
-  @Field(() => MOBILITY_LEVEL) mobilityLevel!: MOBILITY_LEVEL;
+  @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room?: string | null;
 }
 
@@ -45,7 +50,7 @@ export class AddResidentAllergyInput {
   @Field(() => ID) id!: string;
   @Field(() => String) name!: string;
   @Field(() => String) reaction!: string;
-  @Field(() => ALLERGY_SERVERITY) severity!: ALLERGY_SERVERITY;
+  @Field(() => AllergySeverity) severity!: AllergySeverity;
   @Field(() => String, { nullable: true }) notes?: string | null;
 }
 

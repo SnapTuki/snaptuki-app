@@ -2,10 +2,9 @@
 import { Title } from "../valueObjects/Title";
 import { Description } from "../valueObjects/Description";
 import { ChecklistItem } from "./ChecklistItem";
-
-export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-export type TaskStatus = "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-export type TaskCategory = "CARE" | "MEDICATION" | "HYGIENE" | "ADMIN" | "OTHER";
+import { TaskPriority } from "../../../../generated/prisma";
+import { TaskStatus } from "../../../../generated/prisma";
+import { TaskCategory } from "../../../../generated/prisma";
 
 export interface TaskProps {
   id: string;
@@ -16,8 +15,10 @@ export interface TaskProps {
   status: TaskStatus;
 
   residentId?: string | null;
+  resident?: any;
   assignedCaregiverId?: string | null;
 
+  dueAt?: Date | null;
   startedAt?: Date | null;
   completedAt?: Date | null;
   completedByCaregiverId?: string | null;
@@ -66,8 +67,10 @@ export class Task {
   get status() { return this.props.status; }
 
   get residentId() { return this.props.residentId ?? null; }
+  get resident(){return this.props.resident;}
   get assignedCaregiverId() { return this.props.assignedCaregiverId ?? null; }
 
+  get dueAt(){return this.props.dueAt ?? null;}
   get startedAt() { return this.props.startedAt ?? null; }
   get completedAt() { return this.props.completedAt ?? null; }
   get completedByCaregiverId() { return this.props.completedByCaregiverId ?? null; }

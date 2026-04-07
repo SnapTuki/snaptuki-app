@@ -1,10 +1,10 @@
 // src/domains/caregiverManagement/application/useCases/RegisterCaregiverUseCase.ts
 import { ICaregiverRepo } from "../interfaces/ICaregiverRepo";
-import { Caregiver, EmploymentType, CaregiverRole } from "../../domain/entities/Caregiver";
+import { Caregiver } from "../../domain/entities/Caregiver";
+import { CaregiverRole } from "../../../../generated/prisma";
 
 import { Email } from "../../domain/valueObjects/Email";
 import { PhoneNumber } from "../../domain/valueObjects/PhoneNumber";
-import { RegisterCaregiverInputGql } from "../../api/inputs/CreateCaregiverInput";
 
 
 export class RegisterCaregiverUseCase {
@@ -12,7 +12,7 @@ export class RegisterCaregiverUseCase {
     private repo: ICaregiverRepo,
   ) {}
 
-  public async execute(input: RegisterCaregiverInputGql): Promise<Caregiver> {
+  public async execute(input: any): Promise<Caregiver> {
     const exists = await this.repo.getByEmail(input.email);
     if (exists) throw new Error("Email already in use by another caregiver");
 

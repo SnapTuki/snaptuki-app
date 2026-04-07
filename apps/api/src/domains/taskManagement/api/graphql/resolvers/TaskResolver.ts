@@ -20,7 +20,7 @@ export class TaskResolver {
 
   @Query(() => [TaskType])
   async taskList(
-    @Ctx('ctx') ctx: GraphQLContext,
+    @Ctx() ctx: GraphQLContext,
     @Arg("search", () => String,{ nullable: true }) search?: string,
     @Arg("status", () => String, { nullable: true }) status?: string,
     @Arg("caregiverId", () => String, { nullable: true }) caregiverId?: string,
@@ -36,6 +36,7 @@ export class TaskResolver {
       residentId: residentId ?? null,
       skip, take
     });
+    console.log(tasks.map(TaskMap.toDTO));
     return tasks.map(TaskMap.toDTO) as any;
   }
 

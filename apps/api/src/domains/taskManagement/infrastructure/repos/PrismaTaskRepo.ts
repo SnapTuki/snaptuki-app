@@ -1,12 +1,14 @@
 // src/domains/taskManagement/infrastructure/repos/PrismaTaskRepo.ts
-import prisma from "../../../../prisma/client";
 import { ITaskRepo } from "../../../taskManagement/application/interfaces/ITaskRepo";
 import { Task } from "../../../taskManagement/domain/entities/Task";
 import { TaskMap } from "../mappers/TaskMap";
+import { PrismaClient } from "../../../../generated/prisma";
 
 export class PrismaTaskRepo implements ITaskRepo {
+  constructor(private readonly prisma: PrismaClient){}
+
   async getById(id: string): Promise<Task | null> {
-    const row = await prisma.task.findUnique({
+    const row = await this.prisma.task.findUnique({
       where: { id },
       include: { checklist: true },
     });
@@ -19,32 +21,16 @@ export class PrismaTaskRepo implements ITaskRepo {
     fromDueAt?: Date | null; toDueAt?: Date | null;
   }): Promise<Task[]> {
     const { take = 50, skip = 0, search, status, caregiverId, residentId, fromDueAt, toDueAt } = params ?? {};
-    const rows = await prisma.task.findMany({
-      where: {
-        AND: [
-          status ? { status: status as any } : {},
-          caregiverId ? { assignedCaregiverId: caregiverId } : {},
-          residentId ? { residentId } : {},
-          search ? {
-            OR: [
-              { title: { contains: search, mode: "insensitive" } },
-              { description: { contains: search, mode: "insensitive" } },
-            ]
-          } : {},
-          fromDueAt ? { dueAt: { gte: fromDueAt } } : {},
-          toDueAt ? { dueAt: { lte: toDueAt } } : {},
-        ]
-      },
+    const rows = await this.prisma.task.findMany({
       orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
-      take, skip,
-      include: { checklist: true },
+      include: { checklist: true, resident: true, template: true },
     });
     return rows.map(TaskMap.toDomain);
   }
 
   async create(task: Task): Promise<void> {
     const data = TaskMap.toPersistence(task);
-    await prisma.task.create({
+    await this.prisma.task.create({
       data: {
         ...data,
         checklist: {
@@ -63,7 +49,7 @@ export class PrismaTaskRepo implements ITaskRepo {
 
   async save(task: Task): Promise<void> {
     const data = TaskMap.toPersistence(task);
-    await prisma.task.update({
+    await this.prisma.task.update({
       where: { id: task.id },
       data,
     });
@@ -71,6 +57,6 @@ export class PrismaTaskRepo implements ITaskRepo {
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.task.delete({ where: { id } });
+    await this.prisma.task.delete({ where: { id } });
   }
 }

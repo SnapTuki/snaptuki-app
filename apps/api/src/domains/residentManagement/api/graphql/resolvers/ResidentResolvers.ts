@@ -16,27 +16,28 @@ import { UpdateResidentMedicalProfileUseCase } from "../../../../residentManagem
 import { AddResidentAllergyUseCase } from "../../../../residentManagement/application/useCases/AddResidentAllergyUseCase";
 import { AddResidentMedicationUseCase } from "../../../../residentManagement/application/useCases/AddResidentMedicationUseCase";
 import { AssignPrimaryCaregiverUseCase } from "../../../application/useCases/AssignPrimaryCaregiverUsecase";
-import {GraphQLContext} from '../../../../../lib/graphqlContext';
-
+import { GraphQLContext } from '../../../../../lib/graphqlContext';
+import { DischargeResidentUseCase } from "../../../application/useCases/DischargeResidentUseCase";
 @Resolver()
 export class ResidentResolver {
 
   @Query(() => [ResidentType])
   async residentList(
     @Ctx() ctx: GraphQLContext,
-    @Arg("search", () => String,{ nullable: true }) search?: string,
+    @Arg("search", () => String, { nullable: true }) search?: string,
     @Arg("mobilityLevel", () => String, { nullable: true }) mobilityLevel?: string,
-    
+
   ): Promise<ResidentType[]> {
-    const residents = await ctx.residentManagement.repo.list({ 
-      search: search ?? null, mobilityLevel: mobilityLevel ?? null 
+    const residents = await ctx.residentManagement.repo.list({
+      search: search ?? null, mobilityLevel: mobilityLevel ?? null
     });
     return residents.map(ResidentMap.toDTO) as any;
   }
 
   @Query(() => ResidentType, { nullable: true })
-  async residentById(@Arg("id", () => String) id: string, @Ctx('ctx') ctx: GraphQLContext) {
-    const resident = await ctx.residentManagement.repo.getById(id);
+  async getResidentById(@Arg("residentId", () => String) residentId: string, @Ctx() ctx: GraphQLContext) {
+    const resident = await ctx.residentManagement.repo.getById(residentId);
+    console.log(resident)
     return resident ? (ResidentMap.toDTO(resident) as any) : null;
   }
 
@@ -44,11 +45,13 @@ export class ResidentResolver {
   async registerResident(@Arg("input", () => RegisterResidentInput) input: RegisterResidentInput, @Ctx() ctx: GraphQLContext) {
     const useCase = new RegisterResidentUseCase(ctx.residentManagement.repo);
     const resident = await useCase.execute({
+      agencyId: input.agencyId,
       mrn: input.mrn,
       firstName: input.firstName,
       lastName: input.lastName,
       birthDate: input.birthDate,
       gender: input.gender,
+      status: "ACTIVE",
       email: input.email ?? null,
       phone: input.phone ?? null,
       mobilityLevel: input.mobilityLevel,
@@ -58,23 +61,29 @@ export class ResidentResolver {
   }
 
 
-//   @Authorized("HEAD_NURSE", "COORDINATOR")
-//   @Mutation(() => ResidentType)
-//   async updateResidentContact(@Arg("input") input: UpdateResidentContactInput, @Ctx() ctx: GraphQLContext) {
-//     const useCase = new UpdateResidentContactUseCase(ctx.residentManagement.repo);
-//     const resident = await useCase.execute({
-//       id: input.id,
-//       email: input.email ?? null,
-//       phone: input.phone ?? null,
-//     });
-//     return ResidentMap.toDTO(resident) as any;
-//   }
-
+  //   @Authorized("HEAD_NURSE", "COORDINATOR")
+  //   @Mutation(() => ResidentType)
+  //   async updateResidentContact(@Arg("input") input: UpdateResidentContactInput, @Ctx() ctx: GraphQLContext) {
+  //     const useCase = new UpdateResidentContactUseCase(ctx.residentManagement.repo);
+  //     const resident = await useCase.execute({
+  //       id: input.id,
+  //       email: input.email ?? null,
+  //       phone: input.phone ?? null,
+  //     });
+  //     return ResidentMap.toDTO(resident) as any;
+  //   }
 
 
   @Mutation(() => ResidentType)
+  async dischargeResident(@Arg("id", () => String) id: string, @Ctx() ctx: GraphQLContext) {
+    const useCase = new DischargeResidentUseCase(ctx.residentManagement.repo);
+    const resident = await useCase.execute(id);
+    console.log("Dischargied : " + resident.status);
+    return ResidentMap.toDTO(resident) as any;
+  }
+  @Mutation(() => ResidentType)
   async updateResidentMedicalProfile(@Arg("input", () => UpdateResidentMedicalProfileInput) input: UpdateResidentMedicalProfileInput,
-@Ctx() ctx: GraphQLContext) {
+    @Ctx() ctx: GraphQLContext) {
     const useCase = new UpdateResidentMedicalProfileUseCase(ctx.residentManagement.repo);
     const resident = await useCase.execute({
       id: input.id,

@@ -1,175 +1,198 @@
-import { 
-  PrismaClient, 
-  Gender, 
-  ROLE, 
-  CaregiverRole, 
-  CaregiverStatus, 
-  EmploymentType, 
-  MobilityLevel, 
-  AllergySeverity, 
-  TaskCategory, 
-  TaskPriority 
+import {
+  PrismaClient,
+  Gender,
+  ROLE,
+  CaregiverStatus,
+  EmploymentType,
+  MobilityLevel,
+  AllergySeverity,
+  TaskCategory,
+  TaskPriority,
+  TaskFrequency,
+  TaskStatus,
+  ResidentStatus,
+  VisitStatus,
+  CaregiverRole // Added based on your schema
 } from '../generated/prisma/client';
-import * as bcrypt from 'bcrypt';
-import { PasswordHasher } from '../domains/identityAccess/application/interfaces/passwordHasher';
 import { Argon2PasswordHasher } from '../domains/identityAccess/infrastructure/security/argon2PasswordHasher';
+
 const prisma = new PrismaClient();
 
-// Helper to get random items from an array
 const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 Starting Professional Database Seeding...');
 
-  // 1. Create a Base Agency
+  const hasher = new Argon2PasswordHasher();
+  const passwordHash = await hasher.hash('12345678');
+
+  // 1. ORGANIZATION
   const agency = await prisma.careHomeAgency.create({
     data: {
       name: 'Snaptuki Care Helsinki',
-      address: 'Mannerheimintie 1, 00100 Helsinki, Finland',
+      address: 'Mannerheimintie 1, 00100 Helsinki',
     },
   });
-  console.log(`✔️ Created Agency: ${agency.name}`);
 
-  // 2. Hash the password "12345678"
-  const hasher: PasswordHasher = new Argon2PasswordHasher();
-  const passwordHash = await hasher.hash('12345678');
-
-  // 3. Create the COORDINATOR Account
+  // 2. COORDINATOR (Staff Profile)
   const coordinator = await prisma.user.create({
     data: {
       email: 'hamid.aebadi@snaptuki.com',
       passwordHash,
       firstName: 'Hamid',
       lastName: 'Aebadi',
-      roles: [ROLE.AGENCY_STAFF], // Identity role
+      roles: [ROLE.AGENCY_STAFF, ROLE.SUPERVISOR],
       agencyId: agency.id,
+      staffProfile: {
+        create: {
+          department: 'Operations',
+          title: 'Head Coordinator',
+          canAssignTasks: true
+        }
+      }
     },
   });
-  console.log(`✔️ Created Coordinator: ${coordinator.email}`);
 
-  // 4. Create 10 Caregivers
-  const caregiverFirstNames = ['Anna', 'Mikko', 'Laura', 'Juha', 'Sari', 'Matti', 'Minna', 'Pekka', 'Tiina', 'Antti'];
-  const caregiverLastNames = ['Virtanen', 'Korhonen', 'Nieminen', 'Mäkinen', 'Hämäläinen', 'Laine', 'Heikkinen', 'Koskinen', 'Järvinen', 'Lehtonen'];
-  
-  const createdCaregivers = [];
+  // 3. 10 CAREGIVERS
+  const cgNames = [
+    { f: 'Anna', l: 'Laine' }, { f: 'Mikko', l: 'Virtanen' }, { f: 'Laura', l: 'Mäkinen' },
+    { f: 'Juha', l: 'Heikkinen' }, { f: 'Sari', l: 'Koskinen' }, { f: 'Pekka', l: 'Järvinen' },
+    { f: 'Tiina', l: 'Lehtonen' }, { f: 'Antti', l: 'Saarinen' }, { f: 'Minna', l: 'Salonen' },
+    { f: 'Eero', l: 'Rinne' }
+  ];
 
-  for (let i = 0; i < 10; i++) {
-    const cg = await prisma.user.create({
+  const caregivers = [];
+  for (const name of cgNames) {
+    const user = await prisma.user.create({
       data: {
-        email: `${caregiverFirstNames[i]}.${caregiverLastNames[i]}@snaptuki.com`,
+        email: `${name.f.toLowerCase()}.${name.l.toLowerCase()}@snaptuki.com`,
         passwordHash,
-        firstName: caregiverFirstNames[i],
-        lastName: caregiverLastNames[i],
+        firstName: name.f,
+        lastName: name.l,
         roles: [ROLE.CAREGIVER],
         agencyId: agency.id,
         caregiverProfile: {
           create: {
-            phone: `+358 40 555 000${i}`,
-            role: CaregiverRole.CAREGIVER,
+            phone: `+358 40 ${Math.floor(1000000 + Math.random() * 9000000)}`,
             status: CaregiverStatus.ACTIVE,
-            employmentType: getRandom([EmploymentType.FULL_TIME, EmploymentType.PART_TIME, EmploymentType.CONTRACT]),
-            hireDate: new Date(Date.now() - Math.random() * 10000000000), // Random past date
+            role: CaregiverRole.HEAD_NURSE, // Uses the Enum from your schema
+            employmentType: getRandom([EmploymentType.FULL_TIME, EmploymentType.PART_TIME]),
+            hireDate: new Date('2023-01-01'),
           },
         },
       },
-      include: { caregiverProfile: true },
+      include: { caregiverProfile: true }
     });
-    createdCaregivers.push(cg.caregiverProfile!);
+    caregivers.push(user.caregiverProfile!);
   }
-  console.log(`✔️ Created 10 Caregivers`);
 
-  // 5. Create 10 Residents with Full Data
-  const residentFirstNames = ['Eeva', 'Olli', 'Ritva', 'Kari', 'Aino', 'Pentti', 'Seija', 'Jorma', 'Pirjo', 'Heikki'];
-  const residentLastNames = ['Saarinen', 'Salonen', 'Oksanen', 'Anttila', 'Ahonen', 'Väisänen', 'Tuominen', 'Leppänen', 'Hakala', 'Toivonen'];
-  const medicationsList = [
-    { name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily' },
-    { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily with meals' },
-    { name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily in the morning' },
-    { name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily at bedtime' }
+  // 4. TASK TEMPLATES
+  const templates = [
+    { name: 'Morning Meds', cat: TaskCategory.MEDICATION, freq: TaskFrequency.DAILY, prio: TaskPriority.HIGH, steps: ['Verify Identity', 'Confirm Swallowing', 'Log Side Effects'] },
+    { name: 'Blood Pressure Check', cat: TaskCategory.CARE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Rest 5 mins', 'Measure Left Arm', 'Record Systolic/Diastolic'] },
+    { name: 'Hydration Assist', cat: TaskCategory.CARE, freq: TaskFrequency.ON_DEMAND, prio: TaskPriority.LOW, steps: ['Offer 200ml Water', 'Record Intake'] },
+    { name: 'Evening Hygiene', cat: TaskCategory.HYGIENE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Oral Care', 'Skin Integrity Check', 'Change Linens'] },
+    { name: 'Mobility Walk', cat: TaskCategory.CARE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Assist to Hallway', '10 Min Walk', 'Check Fatigue'] }
   ];
 
-  const createdResidents = [];
-
-  for (let i = 0; i < 10; i++) {
-    const r = await prisma.resident.create({
+  const createdTemplates = [];
+  for (const t of templates) {
+    const temp = await prisma.taskTemplate.create({
       data: {
-        mrn: `MRN-${10000 + i}`,
-        firstName: residentFirstNames[i],
-        lastName: residentLastNames[i],
-        birthDate: new Date(1930 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), 1), // Born 1930-1950
-        gender: getRandom([Gender.MALE, Gender.FEMALE]),
-        mobilityLevel: getRandom([MobilityLevel.INDEPENDENT, MobilityLevel.ASSISTED, MobilityLevel.MEMORY]),
-        room: `Room ${101 + i}`,
-        primaryCaregiverId: getRandom(createdCaregivers).id, // Cross-context soft link
-        careHomeAgencyId: agency.id,
-        
-        // Nested Medical Data
-        medications: {
-          create: [
-            getRandom(medicationsList),
-            getRandom(medicationsList)
-          ].map(m => ({ ...m, startDate: new Date('2024-01-01'), prescribedBy: 'Dr. Salo' }))
-        },
-        allergies: {
-          create: [
-            { name: 'Penicillin', reaction: 'Hives', severity: AllergySeverity.SEVERE }
-          ]
-        },
-        emergencyContacts: {
-          create: [
-            { name: `${residentFirstNames[i]}'s Child`, relation: 'Child', phone: '+358 50 123 4567', preferred: true }
-          ]
+        name: t.name,
+        category: t.cat,
+        frequency: t.freq,
+        priority: t.prio,
+        agencyId: agency.id,
+        defaultChecklist: {
+          create: t.steps.map((s, i) => ({ label: s, isRequired: true, sortOrder: i }))
         }
+      },
+      include: { defaultChecklist: true }
+    });
+    createdTemplates.push(temp);
+  }
+
+  // 5. 15 RESIDENTS
+  const resNames = [
+    { f: 'Eeva', l: 'Korhonen' }, { f: 'Olli', l: 'Nieminen' }, { f: 'Ritva', l: 'Hämäläinen' },
+    { f: 'Kari', l: 'Korpela' }, { f: 'Aino', l: 'Mustonen' }, { f: 'Pentti', l: 'Paananen' },
+    { f: 'Seija', l: 'Salo' }, { f: 'Jorma', l: 'Peltonen' }, { f: 'Pirjo', l: 'Vatanen' },
+    { f: 'Heikki', l: 'Aalto' }, { f: 'Marjatta', l: 'Kivi' }, { f: 'Veikko', l: 'Lehto' },
+    { f: 'Tuula', l: 'Jokinen' }, { f: 'Antero', l: 'Laakso' }, { f: 'Sinikka', l: 'Koivisto' }
+  ];
+
+  for (const name of resNames) {
+    const resident = await prisma.resident.create({
+      data: {
+        mrn: `MRN-${Math.floor(100000 + Math.random() * 900000)}`,
+        firstName: name.f,
+        lastName: name.l,
+        birthDate: new Date(1935 + Math.floor(Math.random() * 15), 5, 20),
+        gender: getRandom([Gender.MALE, Gender.FEMALE]),
+        status: ResidentStatus.ACTIVE,
+        mobilityLevel: getRandom([MobilityLevel.ASSISTED, MobilityLevel.MEMORY]),
+        room: `${Math.floor(1 + Math.random() * 4)}0${Math.floor(Math.random() * 9)}`,
+        agencyId: agency.id,
+
+        // Setup Care Plan (Assignments)
+        taskAssignments: {
+          create: createdTemplates.map(t => ({ taskTemplateId: t.id }))
+        },
+
+        // Medical Data
+        allergies: { create: [{ name: 'Lactose', reaction: 'Stomach Pain', severity: AllergySeverity.MILD }] },
+        medications: { create: [{ name: 'Panadol', dosage: '500mg', frequency: 'As needed', startDate: new Date() }] },
+        emergencyContacts: { create: [{ name: 'Family', relation: 'Daughter', phone: '040555', isPrimary: true }] }
       }
     });
-    createdResidents.push(r);
-  }
-  console.log(`✔️ Created 10 Residents with Medications, Allergies, and Contacts`);
 
-  // 6. Create Tasks for Residents
-  const taskTemplates = [
-    { title: 'Morning Medication Administration', category: TaskCategory.MEDICATION, priority: TaskPriority.HIGH },
-    { title: 'Assist with Bathing', category: TaskCategory.HYGIENE, priority: TaskPriority.MEDIUM },
-    { title: 'Check Vital Signs', category: TaskCategory.CARE, priority: TaskPriority.HIGH },
-    { title: 'Room Cleaning & Laundry', category: TaskCategory.ADMIN, priority: TaskPriority.LOW },
-  ];
-
-  for (const resident of createdResidents) {
-    // Assign 2 random tasks to each resident
-    for (let i = 0; i < 2; i++) {
-      const template = getRandom(taskTemplates);
-      const assignedCaregiver = getRandom(createdCaregivers);
-
+    // 6. GENERATE 5 TASKS PER RESIDENT (Execution)
+    for (const temp of createdTemplates) {
       await prisma.task.create({
         data: {
-          title: template.title,
-          description: `Routine ${template.title.toLowerCase()} for ${resident.firstName} ${resident.lastName}`,
-          category: template.category,
-          priority: template.priority,
-          residentId: resident.residentId, // Soft link to Resident
-          assignedCaregiverId: assignedCaregiver.id, // Soft link to Caregiver
-          createdByUserId: coordinator.userId, // Hamid created the task
-          dueAt: new Date(Date.now() + 86400000), // Due tomorrow
-          
+          status: TaskStatus.PENDING,
+          priority: temp.priority,
+          category: temp.category,
+          dueAt: new Date(),
           checklist: {
-            create: [
-              { label: 'Prepare supplies', required: true },
-              { label: 'Verify patient identity', required: true },
-              { label: 'Log completion notes', required: false },
-            ]
-          }
+            create: temp.defaultChecklist.map(s => ({
+              label: s.label,
+              isRequired: s.isRequired
+              // isCompleted defaults to false in your schema
+            }))
+          },
+          resident: {
+            connect: {
+              residentId: resident.residentId
+            }
+          },
+
+          template: {
+            connect: { id: temp.id }
+          },
         }
       });
     }
-  }
-  console.log(`✔️ Created sample Tasks and Checklists for all Residents`);
 
-  console.log('✅ Seeding completed successfully!');
+    // 7. CREATE 1 VISIT FOR EACH RESIDENT
+    await prisma.visit.create({
+      data: {
+        caregiverId: getRandom(caregivers).id,
+        residentId: resident.residentId, // Matches your @id name in schema
+        status: VisitStatus.PLANNED,
+        scheduledStart: new Date(),
+        scheduledEnd: new Date(Date.now() + 3600000),
+      }
+    });
+  }
+
+  console.log(`✅ Seed Success: 1 Agency, 1 Coordinator, 10 Caregivers, 15 Residents, 75 Tasks.`);
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Error during seeding:', e);
+  .catch(e => {
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

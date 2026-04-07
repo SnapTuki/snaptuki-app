@@ -9,16 +9,16 @@ export class EmergencyContact {
     public readonly relation: string,
     public readonly phone: PhoneNumber,
     public readonly email: Email | null,
-    public readonly preferred: boolean
+    public readonly isPrimary: boolean
   ) {}
 
   public static create(props: {
     id: string;
     name: string;
     relation: string;
-    phone: string;
+    phone: PhoneNumber;
     email?: string | null;
-    preferred?: boolean;
+    isPrimary?: boolean;
   }) {
     if (!props.id || !props.name || !props.relation || !props.phone) {
       throw new Error("EmergencyContact requires id, name, relation, phone");
@@ -27,9 +27,9 @@ export class EmergencyContact {
       props.id,
       props.name.trim(),
       props.relation.trim(),
-      PhoneNumber.create(props.phone)!,
+      PhoneNumber.create(props.phone.value)!,
       Email.create(props.email),
-      props.preferred ?? false
+      props.isPrimary ?? false
     );
   }
 }

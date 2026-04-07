@@ -1,10 +1,10 @@
 // src/domains/caregiverManagement/application/useCases/CreateCaregiverProfileUseCase.ts
 // Use this when a User already exists in IdentityAccess and you just need a Caregiver profile.
 import { ICaregiverRepo } from "../interfaces/ICaregiverRepo";
-import { Caregiver, EmploymentType, CaregiverRole } from "../../domain/entities/Caregiver";
-import { CaregiverId } from "../../domain/valueObjects/CaregiverId";
+import { Caregiver, EmploymentType } from "../../domain/entities/Caregiver";
 import { Email } from "../../domain/valueObjects/Email";
 import { PhoneNumber } from "../../domain/valueObjects/PhoneNumber";
+import { CaregiverRole } from "../../../../generated/prisma";
 
 export interface CreateCaregiverProfileInput {
   id: string;
@@ -27,7 +27,6 @@ export class CreateCaregiverProfileUseCase {
     if (exists) throw new Error("Email already in use by another caregiver");
 
     const caregiver = Caregiver.create({
-      id: CaregiverId.create(input.id),
       firstName: input.firstName,
       lastName: input.lastName,
       email: Email.create(input.email),

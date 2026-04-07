@@ -1,9 +1,11 @@
 // src/domains/residentManagement/application/useCases/RegisterResidentUseCase.ts
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { MobilityLevel, Resident } from "../../../residentManagement/domain/entities/Resident";
+import { Resident } from "../../../residentManagement/domain/entities/Resident";
 import { MedicalRecordNumber } from "../../../residentManagement/domain/valueObjects/MedicalRecordNumber";
 import { Email } from "../../../residentManagement/domain/valueObjects/Email";
 import { PhoneNumber } from "../../../residentManagement/domain/valueObjects/PhoneNumber";
+import { ResidentStatus } from "../../../../generated/prisma";
+import { MobilityLevel, Gender} from "../../../../generated/prisma";
 
 export interface RegisterResidentInput {
   mrn: string;
@@ -11,7 +13,9 @@ export interface RegisterResidentInput {
   lastName: string;
   mobilityLevel: MobilityLevel
   birthDate: Date;
-  gender: "MALE" | "FEMALE" | "OTHER" | "UNSPECIFIED";
+  status: ResidentStatus;
+  gender: Gender;
+  agencyId: number
   email?: string | null;
   phone?: string | null;
   room?: string | null;
@@ -38,6 +42,10 @@ export class RegisterResidentUseCase {
       phone: PhoneNumber.create(input.phone ?? null),
       mobilityLevel: input.mobilityLevel,
       room: input.room ?? null,
+      agencyId: input.agencyId,
+      taskAssignments: [],
+      tasks: [],
+      status: ResidentStatus.ACTIVE,
       allergies: [],
       medications: [],
       emergencyContacts: [],
