@@ -25,3 +25,23 @@ export const GET_TASK_LIST:TypedDocumentNode<Query> = gql`
   }
 `;
 
+export const SEARCH_RESIDENTS:TypedDocumentNode<Query> = gql`
+  query SearchResidents($search: String) {
+    residentList(search: $search) {
+      residentId
+      firstName
+      lastName
+    }
+  }
+`;
+
+export const SEARCH_CAREGIVERS:TypedDocumentNode<Query> = gql`
+  query SearchCaregivers($search: String) {
+    caregiverList(search: $search) {
+      id
+      firstName
+      lastName
+    }
+  }
+`;
+

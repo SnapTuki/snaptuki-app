@@ -331,6 +331,11 @@ export type QueryCaregiverByIdArgs = {
 };
 
 
+export type QueryCaregiverListArgs = {
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QueryGetResidentByIdArgs = {
   residentId: Scalars['String']['input'];
 };
@@ -453,7 +458,7 @@ export type Task = {
   createdAt: Scalars['DateTime']['output'];
   createdByUserId?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
-  dueAt: Scalars['DateTime']['output'];
+  dueAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   priority: TaskPriority;
   resident?: Maybe<ResidentType>;
@@ -621,7 +626,21 @@ export type GetTaskListQueryVariables = Exact<{
 }>;
 
 
-export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, category: TaskCategory, priority: TaskPriority, status: TaskStatus, dueAt: any, resident?: { __typename?: 'ResidentType', residentId: string, firstName: string, lastName: string } | null, visit?: { __typename?: 'Visit', caregiver: { __typename?: 'CaregiverType', firstName: string } } | null }> };
+export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'ResidentType', firstName: string, lastName: string } | null, visit?: { __typename?: 'Visit', caregiver: { __typename?: 'CaregiverType', firstName: string } } | null }> };
+
+export type SearchResidentsQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type SearchResidentsQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, firstName: string, lastName: string }> };
+
+export type SearchCaregiversQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', userId?: string | null, firstName: string, lastName: string }> };
 
 
 export const AuthenticateUserDocument = gql`
@@ -972,12 +991,12 @@ export const GetTaskListDocument = gql`
     query GetTaskList($search: String, $status: String, $residentId: String) {
   taskList(search: $search, status: $status, residentId: $residentId) {
     id
+    title
     category
     priority
     status
     dueAt
     resident {
-      residentId
       firstName
       lastName
     }
@@ -1027,3 +1046,93 @@ export type GetTaskListQueryHookResult = ReturnType<typeof useGetTaskListQuery>;
 export type GetTaskListLazyQueryHookResult = ReturnType<typeof useGetTaskListLazyQuery>;
 export type GetTaskListSuspenseQueryHookResult = ReturnType<typeof useGetTaskListSuspenseQuery>;
 export type GetTaskListQueryResult = Apollo.QueryResult<GetTaskListQuery, GetTaskListQueryVariables>;
+export const SearchResidentsDocument = gql`
+    query SearchResidents($search: String) {
+  residentList(search: $search) {
+    residentId
+    firstName
+    lastName
+  }
+}
+    `;
+
+/**
+ * __useSearchResidentsQuery__
+ *
+ * To run a query within a React component, call `useSearchResidentsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchResidentsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSearchResidentsQuery({
+ *   variables: {
+ *      search: // value for 'search'
+ *   },
+ * });
+ */
+export function useSearchResidentsQuery(baseOptions?: Apollo.QueryHookOptions<SearchResidentsQuery, SearchResidentsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchResidentsQuery, SearchResidentsQueryVariables>(SearchResidentsDocument, options);
+      }
+export function useSearchResidentsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchResidentsQuery, SearchResidentsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchResidentsQuery, SearchResidentsQueryVariables>(SearchResidentsDocument, options);
+        }
+// @ts-ignore
+export function useSearchResidentsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchResidentsQuery, SearchResidentsQueryVariables>): Apollo.UseSuspenseQueryResult<SearchResidentsQuery, SearchResidentsQueryVariables>;
+export function useSearchResidentsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchResidentsQuery, SearchResidentsQueryVariables>): Apollo.UseSuspenseQueryResult<SearchResidentsQuery | undefined, SearchResidentsQueryVariables>;
+export function useSearchResidentsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchResidentsQuery, SearchResidentsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchResidentsQuery, SearchResidentsQueryVariables>(SearchResidentsDocument, options);
+        }
+export type SearchResidentsQueryHookResult = ReturnType<typeof useSearchResidentsQuery>;
+export type SearchResidentsLazyQueryHookResult = ReturnType<typeof useSearchResidentsLazyQuery>;
+export type SearchResidentsSuspenseQueryHookResult = ReturnType<typeof useSearchResidentsSuspenseQuery>;
+export type SearchResidentsQueryResult = Apollo.QueryResult<SearchResidentsQuery, SearchResidentsQueryVariables>;
+export const SearchCaregiversDocument = gql`
+    query SearchCaregivers($search: String) {
+  caregiverList(search: $search) {
+    userId
+    firstName
+    lastName
+  }
+}
+    `;
+
+/**
+ * __useSearchCaregiversQuery__
+ *
+ * To run a query within a React component, call `useSearchCaregiversQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchCaregiversQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSearchCaregiversQuery({
+ *   variables: {
+ *      search: // value for 'search'
+ *   },
+ * });
+ */
+export function useSearchCaregiversQuery(baseOptions?: Apollo.QueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
+      }
+export function useSearchCaregiversLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
+        }
+// @ts-ignore
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery | undefined, SearchCaregiversQueryVariables>;
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
+        }
+export type SearchCaregiversQueryHookResult = ReturnType<typeof useSearchCaregiversQuery>;
+export type SearchCaregiversLazyQueryHookResult = ReturnType<typeof useSearchCaregiversLazyQuery>;
+export type SearchCaregiversSuspenseQueryHookResult = ReturnType<typeof useSearchCaregiversSuspenseQuery>;
+export type SearchCaregiversQueryResult = Apollo.QueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;

@@ -13,9 +13,11 @@ import { GraphQLContext } from '../../../../lib/graphqlContext';
 export class CaregiverResolver {
 
     @Query(() => [CaregiverType])
-    async caregiverList(@Ctx() ctx: GraphQLContext): Promise<CaregiverType[]> {
+    async caregiverList(
+        @Ctx() ctx: GraphQLContext,
+        @Arg("search", () => String, { nullable: true }) search: string): Promise<CaregiverType[]> {
         const { repo } = ctx.caregiverManagement;
-        const caregivers = await repo.list();
+        const caregivers = await repo.list({search});
         return caregivers.map(CaregiverMap.toDTO) as any;
     }
 
@@ -24,6 +26,7 @@ export class CaregiverResolver {
         const caregiver = await ctx.caregiverManagement.repo.getById(id);
         return caregiver ? (CaregiverMap.toDTO(caregiver) as any) : null;
     }
+
 
     @Mutation(() => CaregiverType)
     async registerCaregiver(

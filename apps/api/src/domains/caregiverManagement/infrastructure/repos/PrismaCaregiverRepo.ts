@@ -25,27 +25,27 @@ export class PrismaCaregiverRepo implements ICaregiverRepo {
     return row ? CaregiverMap.toDomain(row) : null;
   }
 
-  async list(): Promise<Caregiver[]> {
-  const rows = await this.prisma.user.findMany({
+  async list(params?: { search?: string | null }): Promise<Caregiver[]> {
+  const { search } = params ?? {};
+
+  const users = await this.prisma.user.findMany({
     where: {
-      // 1. Check that the roles array contains 'CAREGIVER'
-      roles: { 
-        has: 'CAREGIVER' 
-      },
-      // 2. Ensure the actual profile record exists to prevent mapping crashes
-      caregiverProfile: {
-        isNot: null
-      }
+      // 1. Ensure the user IS a caregiver
+      caregiverProfile: { isNot: null },
+      
+      // 2. Apply name filters
+      OR: search ? [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+      ] : undefined,
     },
-    include: { 
-      caregiverProfile: true // Vital for CaregiverMap.toDomain to work
+    // 3. Include the profile data (the link to the Caregiver table)
+    include: {
+      caregiverProfile: true,
     },
   });
 
-  // ADD THIS LOG:
-  console.log("PRISMA ROWS:", rows);
-
-  return rows.map(CaregiverMap.toDomain);
+  return users.map(CaregiverMap.toDomain);
 }
 
   async create(caregiver: Caregiver): Promise<void> {
