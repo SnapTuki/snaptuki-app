@@ -1,5 +1,5 @@
 import { ObjectType, Field, ID, registerEnumType } from "type-graphql";
-import { TaskPriority, TaskStatus, TaskCategory} from "../../../../../generated/prisma";
+import { TaskPriority, TaskStatus, TaskCategory, Caregiver} from "../../../../../generated/prisma";
 import { GraphQLDateTime } from "graphql-scalars";
 import { ResidentType } from "../../../../residentManagement/api/graphql/types/ResidentTypes";
 import { VisitStatus } from "../../../../../generated/prisma";
@@ -26,7 +26,7 @@ export class TaskType {
   
   // These are derived from TaskTemplate in your schema
   @Field(() => String) title!: string; 
-  @Field(() => String, { nullable: true }) description!: string | null;
+  @Field(() => String, { nullable: true }) description?: string | null;
 
   @Field(() => TaskCategory) category!: TaskCategory;
   @Field(() => TaskPriority) priority!: TaskPriority;
@@ -42,22 +42,32 @@ export class TaskType {
   visit?: VisitType;
 
   // Note: assignedCaregiverId likely comes from the linked Visit
-  @Field(() => String, { nullable: true }) assignedCaregiverId!: string | null;
+  @Field(() => String, { nullable: true }) assignedCaregiverId?: string;
+  @Field(() => TaskTypeCaregiverProfile, { nullable: true }) assignedCaregiver?: TaskTypeCaregiverProfile;
 
-  @Field(() => GraphQLDateTime, {nullable: true}) dueAt!: Date; // Required in Prisma
-  @Field(() => GraphQLDateTime, { nullable: true }) startedAt!: Date | null;
-  @Field(() => GraphQLDateTime, { nullable: true }) completedAt!: Date | null;
-  @Field(() => String, { nullable: true }) completionNotes!: string | null;
+  @Field(() => GraphQLDateTime, {nullable: true}) dueAt?: Date; // Required in Prisma
+  @Field(() => GraphQLDateTime, { nullable: true }) startedAt?: Date | null;
+  @Field(() => GraphQLDateTime, { nullable: true }) completedAt?: Date | null;
+  @Field(() => String, { nullable: true }) completionNotes?: string | null;
 
-  @Field(() => [ChecklistItemType]) checklist!: ChecklistItemType[];
+  @Field(() => [ChecklistItemType]) checklist?: ChecklistItemType[];
 
   // Mark as nullable if not yet added to Prisma schema
-  @Field(() => String, { nullable: true }) createdByUserId!: string | null; 
+  @Field(() => String, { nullable: true }) createdByUserId?: string | null; 
   
   @Field(() => GraphQLDateTime) createdAt!: Date;
   @Field(() => GraphQLDateTime) updatedAt!: Date;
 }
 
+@ObjectType()
+class TaskTypeCaregiverProfile {
+
+  @Field(() => String)
+  firstName: string;
+
+  @Field(() => String)
+  lastName: string;
+}
 @ObjectType("Visit")
 export class VisitType {
   @Field(() => ID)

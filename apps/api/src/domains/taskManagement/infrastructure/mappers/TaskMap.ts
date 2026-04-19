@@ -15,6 +15,7 @@ import type {
 type PrismaTaskWithRelations = PrismaTask & {
   checklist: PrismaChecklist[];
   resident?: any;
+  assignedCaregiver:any;
   template?: TaskTemplate | null; // Necessary to get the 'title/name'
 };
 
@@ -22,26 +23,26 @@ export class TaskMap {
   static toDomain(row: PrismaTaskWithRelations): Task {
     return Task.create({
       id: row.id,
-      // In your schema, 'name' lives on the Template. 
-      // If ad-hoc tasks have a custom title, ensure your Domain Entity handles this fallback.
-      title: Title.create(row.template?.name || "Ad-hoc Task"),
-      description: row.template?.description ? Description.create(row.template.description) : null,
+      title: Title.create(row.title),
+      description: row.description ? Description.create(row.description) : null,
       category: row.category,
       priority: row.priority,
       status: row.status,
+      dueAt: row.dueAt,
       residentId: row.residentId,
       resident: row.resident ? {
         firstName: row.resident.firstName,
         lastName: row.resident.lastName,
       } : undefined,
-      // Note: Your schema uses 'visitId' to link to a caregiver via 'Visit'
-      // If your domain expects 'assignedCaregiverId', you'll need to map row.visit?.caregiverId
-      assignedCaregiverId: null,
+      
+      assignedCaregiverId: row.assignedCaregiverId,
+      assignedCaregiver: row.assignedCaregiver ? {
+        firstName: row.assignedCaregiver.user.firstName,
+        lastName: row.assignedCaregiver.user.lastName,
+      }: undefined,
       startedAt: row.startedAt ?? null,
       completedAt: row.completedAt ?? null,
-      // Schema uses 'completionNotes', not 'completedByCaregiverId' directly on Task
       completedByCaregiverId: null,
-      completionNotes: row.completionNotes ?? null,
       checklist: row.checklist.map(ci => ChecklistItem.create({
         id: ci.id,
         label: ci.label,
@@ -59,17 +60,30 @@ export class TaskMap {
 
   static toPersistence(task: Task) {
     return {
-      id: task.id,
       // Note: Persistence usually handles the Task model. 
       // If updating title, you'd likely update the associated Template or a custom field.
+      id: task.id,
+      title: task.title.value,
+      description: task.description.value,
       category: task.category,
       priority: task.priority,
       status: task.status,
       residentId: task.residentId,
-      dueAt: new Date(), // Required in Prisma Schema
+      dueAt: task.dueAt,
       startedAt: task.startedAt,
       completedAt: task.completedAt,
+      assignedCaregiverId: task.assignedCaregiverId,
       completionNotes: task.completionNotes,
+      checklist: {
+        create: task.checklist.map(item => ({
+          id: item.id,
+          label: item.label,
+          // Change 'required' to 'isRequired' (or whatever your schema says)
+          isRequired: item.required,
+          done: item.done,
+          // ... other fields
+        }))
+      }
       // visitId: task.visitId // You'll need this to link to a caregiver
     };
   }
@@ -86,6 +100,10 @@ export class TaskMap {
       residentId: task.residentId,
       resident: task.resident,
       assignedCaregiverId: task.assignedCaregiverId,
+      assignedCaregiver: task.assignedCaregiver ? {
+      firstName: task.assignedCaregiver.firstName,
+      lastName:  task.assignedCaregiver.lastName,
+    } : null,
       startedAt: task.startedAt ? task.startedAt : null,
       completedAt: task.completedAt ? task.completedAt : null,
       completedByCaregiverId: task.completedByCaregiverId,

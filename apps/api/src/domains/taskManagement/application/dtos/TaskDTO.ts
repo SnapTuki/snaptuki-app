@@ -1,6 +1,5 @@
 // src/domains/taskManagement/application/dtos/TaskDTO.ts
 import { TaskCategory, TaskPriority, TaskStatus } from "../../../../generated/prisma";
-import { Resident } from "../../../residentManagement/domain/entities/Resident";
 export interface ChecklistItemDTO {
   id: string;
   label: string;
@@ -20,16 +19,29 @@ export interface TaskDTO {
 
   residentId: string | null;
   assignedCaregiverId: string | null;
-  resident: Resident;
+  resident: any;
+  assignedCaregiver: any;
   dueAt: Date | null;
   startedAt: Date | null;
   completedAt: Date | null;
   completedByCaregiverId: string | null;
-  completionNotes: string | null;
+  completionNotes: string[] | null;
 
   checklist: ChecklistItemDTO[];
 
   createdByUserId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CreateTaskDTO {
+  title: string;
+  description?: string | null;
+  category: any; // Use your aliased TaskCategory
+  priority: any; // Use your aliased TaskPriority
+  residentId?: string | null;
+  assignedCaregiverId?: string | null;
+  dueAt?: Date | null;
+  createdByUserId: string;
+  checklist?: Array<{ id: string; label: string; required?: boolean }>;
 }

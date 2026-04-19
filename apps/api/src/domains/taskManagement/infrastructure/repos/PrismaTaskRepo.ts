@@ -3,14 +3,20 @@ import { ITaskRepo } from "../../../taskManagement/application/interfaces/ITaskR
 import { Task } from "../../../taskManagement/domain/entities/Task";
 import { TaskMap } from "../mappers/TaskMap";
 import { PrismaClient } from "../../../../generated/prisma";
-
+import { Prisma } from "../../../../generated/prisma";
 export class PrismaTaskRepo implements ITaskRepo {
-  constructor(private readonly prisma: PrismaClient){}
+  constructor(private readonly prisma: PrismaClient) { }
 
   async getById(id: string): Promise<Task | null> {
     const row = await this.prisma.task.findUnique({
       where: { id },
-      include: { checklist: true },
+      include: {
+        checklist: true, assignedCaregiver: {
+          include: {
+            user: true
+          }
+        }, resident: true
+      },
     });
     return row ? TaskMap.toDomain(row) : null;
   }
@@ -23,37 +29,81 @@ export class PrismaTaskRepo implements ITaskRepo {
     const { take = 50, skip = 0, search, status, caregiverId, residentId, fromDueAt, toDueAt } = params ?? {};
     const rows = await this.prisma.task.findMany({
       orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
-      include: { checklist: true, resident: true, template: true },
+      include: {
+        checklist: true, resident: true, assignedCaregiver: {
+          include: {
+            user: true
+          }
+        }
+      },
     });
+    console.log("From Repo: ", rows);
     return rows.map(TaskMap.toDomain);
   }
 
   async create(task: Task): Promise<void> {
     const data = TaskMap.toPersistence(task);
+    console.log("Data in create tas repo: ", data)
+    // We do NOT destructure here. 
+    // We send the IDs directly to the columns defined by @map in your schema.
     await this.prisma.task.create({
       data: {
-        ...data,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        category: data.category,
+        dueAt: data.dueAt,
+
+        // Direct foreign key mapping (matches your @map names)
+        residentId: data.residentId,
+        assignedCaregiverId: data.assignedCaregiverId || null,
+
+        // Nested checklist creation
         checklist: {
           create: task.checklist.map(ci => ({
             id: ci.id,
             label: ci.label,
-            required: ci.required,
-            done: ci.done,
-            doneAt: ci.doneAt,
-            doneByCaregiverId: ci.doneByCaregiverId,
+            isRequired: ci.required, // Ensure this matches your checklist model
+            isCompleted: ci.done,
+            completedAt: ci.doneAt || null,
           })),
         },
-      },
+      } as Prisma.TaskUncheckedCreateInput, // This tells Prisma to allow raw IDs
     });
   }
 
   async save(task: Task): Promise<void> {
     const data = TaskMap.toPersistence(task);
+
     await this.prisma.task.update({
       where: { id: task.id },
-      data,
+      data: {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        priority: data.priority,
+        status: data.status,
+        dueAt: data.dueAt,
+
+        // Pass raw IDs directly
+        residentId: data.residentId,
+        // Handle the empty string issue (Postgres hates empty strings for FKs)
+        assignedCaregiverId: data.assignedCaregiverId || null,
+
+        // Sync the checklist
+        checklist: {
+        deleteMany: {},
+        create: task.checklist.map(item => ({
+          id: item.id,
+          label: item.label,
+          isRequired: item.required,
+          isCompleted: item.done,
+          completedAt: item.doneAt || null
+        }))
+      }
+      } as Prisma.TaskUncheckedUpdateInput, // 🔥 THIS IS THE KEY
     });
-    // Checklist updates occur via dedicated mutations/use-cases
   }
 
   async delete(id: string): Promise<void> {

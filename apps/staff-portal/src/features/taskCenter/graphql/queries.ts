@@ -9,18 +9,23 @@ export const GET_TASK_LIST:TypedDocumentNode<Query> = gql`
       title
       category
       priority
+      description
       status
       dueAt
       resident {
         firstName
         lastName
       }
-      # Since Task connects to Caregiver via Visit in your schema:
-      visit {
-        caregiver {
-          firstName
-        }
+      assignedCaregiver{
+        firstName
+        lastName
       }
+
+      checklist{
+        id
+        label
+      }
+     
     }
   }
 `;

@@ -151,6 +151,7 @@ model Caregiver {
   certifications Certification[]
   visits         Visit[]
   actionRecords  ActionRecord[]
+  assignedTasks  Task[] @relation("CaregiverAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -202,7 +203,7 @@ enum AllergySeverity {
 }
 
 model Resident {
-  residentId String   @id @default(cuid())
+  residentId String   @id @default(cuid()) @map("resident_id")
   mrn        String   @unique
   firstName  String   @map("first_name")
   lastName   String   @map("last_name")
@@ -223,7 +224,7 @@ model Resident {
   emergencyContacts EmergencyContact[]
   visits            Visit[]
   taskAssignments   ResidentTaskAssignment[]
-  tasks             Task[]
+  tasks             Task[] @relation("ResidentAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -324,13 +325,19 @@ model ResidentTaskAssignment {
 
 model Task {
   id              String       @id @default(cuid())
-  
+  title           String
   // Link to template if scheduled, null if ad-hoc
   templateId      Int?         @map("template_id")
   template        TaskTemplate? @relation(fields: [templateId], references: [id])
 
   residentId      String       @map("resident_id")
-  resident        Resident     @relation(fields: [residentId], references: [residentId])
+  resident        Resident     @relation("ResidentAssignments",fields: [residentId], references: [residentId])
+
+  description     String?
+  // The foreign key field
+  assignedCaregiverId String?    @map("assigned_caregiver_id")
+  // The relation field (points to the Caregiver model)
+  assignedCaregiver   Caregiver? @relation("CaregiverAssignments",fields: [assignedCaregiverId], references: [id])
   
   visitId         String?      @map("visit_id")
   visit           Visit?       @relation(fields: [visitId], references: [visitId])
@@ -343,7 +350,7 @@ model Task {
   startedAt       DateTime?    @map("started_at")
   completedAt     DateTime?    @map("completed_at")
   
-  completionNotes String?      @map("completion_notes")
+  completionNotes String[]    @map("completion_notes")
   
   checklist       ChecklistItem[]
   actionRecords   ActionRecord[]

@@ -11,6 +11,7 @@ export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT";
 export interface CaregiverProps {
   firstName: string;
   lastName: string;
+  caregiverProfile?: any;
   email: Email;
   passwordHash: string
   phone: PhoneNumber | null;
@@ -56,6 +57,7 @@ export class Caregiver {
   public get certifications() { return [...this.props.certifications]; }
   public get createdAt() { return this.props.createdAt ?? new Date(); }
   public get updatedAt() { return this.props.updatedAt ?? new Date(); }
+  public get caregiverProfile() { return this.props.caregiverProfile;}
 
   // behaviors
   public changeContact(email: Email, phone: PhoneNumber | null) {

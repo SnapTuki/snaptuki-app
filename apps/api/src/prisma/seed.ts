@@ -86,33 +86,6 @@ async function main() {
     caregivers.push(user.caregiverProfile!);
   }
 
-  // 4. TASK TEMPLATES
-  const templates = [
-    { name: 'Morning Meds', cat: TaskCategory.MEDICATION, freq: TaskFrequency.DAILY, prio: TaskPriority.HIGH, steps: ['Verify Identity', 'Confirm Swallowing', 'Log Side Effects'] },
-    { name: 'Blood Pressure Check', cat: TaskCategory.CARE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Rest 5 mins', 'Measure Left Arm', 'Record Systolic/Diastolic'] },
-    { name: 'Hydration Assist', cat: TaskCategory.CARE, freq: TaskFrequency.ON_DEMAND, prio: TaskPriority.LOW, steps: ['Offer 200ml Water', 'Record Intake'] },
-    { name: 'Evening Hygiene', cat: TaskCategory.HYGIENE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Oral Care', 'Skin Integrity Check', 'Change Linens'] },
-    { name: 'Mobility Walk', cat: TaskCategory.CARE, freq: TaskFrequency.DAILY, prio: TaskPriority.MEDIUM, steps: ['Assist to Hallway', '10 Min Walk', 'Check Fatigue'] }
-  ];
-
-  const createdTemplates = [];
-  for (const t of templates) {
-    const temp = await prisma.taskTemplate.create({
-      data: {
-        name: t.name,
-        category: t.cat,
-        frequency: t.freq,
-        priority: t.prio,
-        agencyId: agency.id,
-        defaultChecklist: {
-          create: t.steps.map((s, i) => ({ label: s, isRequired: true, sortOrder: i }))
-        }
-      },
-      include: { defaultChecklist: true }
-    });
-    createdTemplates.push(temp);
-  }
-
   // 5. 15 RESIDENTS
   const resNames = [
     { f: 'Eeva', l: 'Korhonen' }, { f: 'Olli', l: 'Nieminen' }, { f: 'Ritva', l: 'Hämäläinen' },
@@ -135,11 +108,6 @@ async function main() {
         room: `${Math.floor(1 + Math.random() * 4)}0${Math.floor(Math.random() * 9)}`,
         agencyId: agency.id,
 
-        // Setup Care Plan (Assignments)
-        taskAssignments: {
-          create: createdTemplates.map(t => ({ taskTemplateId: t.id }))
-        },
-
         // Medical Data
         allergies: { create: [{ name: 'Lactose', reaction: 'Stomach Pain', severity: AllergySeverity.MILD }] },
         medications: { create: [{ name: 'Panadol', dosage: '500mg', frequency: 'As needed', startDate: new Date() }] },
@@ -147,33 +115,6 @@ async function main() {
       }
     });
 
-    // 6. GENERATE 5 TASKS PER RESIDENT (Execution)
-    for (const temp of createdTemplates) {
-      await prisma.task.create({
-        data: {
-          status: TaskStatus.PENDING,
-          priority: temp.priority,
-          category: temp.category,
-          dueAt: new Date(),
-          checklist: {
-            create: temp.defaultChecklist.map(s => ({
-              label: s.label,
-              isRequired: s.isRequired
-              // isCompleted defaults to false in your schema
-            }))
-          },
-          resident: {
-            connect: {
-              residentId: resident.residentId
-            }
-          },
-
-          template: {
-            connect: { id: temp.id }
-          },
-        }
-      });
-    }
 
     // 7. CREATE 1 VISIT FOR EACH RESIDENT
     await prisma.visit.create({

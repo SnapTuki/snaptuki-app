@@ -11,6 +11,7 @@ export class CaregiverMap {
     return Caregiver.create({
       firstName: row.firstName,
       lastName: row.lastName,
+      caregiverProfile: row.caregiverProfile,
       email: Email.create(row.email),
       passwordHash: row.passwordHash,
       phone: row.caregiverProfile.phone ? PhoneNumber.create(row.caregiverProfile.phone) : null,
@@ -57,7 +58,7 @@ export class CaregiverMap {
 
   static toDTO(caregiver: Caregiver): CaregiverDTO {
     return {
-      id: caregiver.userId,
+      id: caregiver.caregiverProfile.id,
       firstName: caregiver.firstName,
       lastName: caregiver.lastName,
       email: caregiver.email.value,

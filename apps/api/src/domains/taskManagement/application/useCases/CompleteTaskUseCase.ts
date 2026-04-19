@@ -5,7 +5,7 @@ import { Task } from "../../../taskManagement/domain/entities/Task";
 export interface CompleteTaskInput {
   id: string;
   completedByCaregiverId: string;
-  notes?: string | null;
+  notes?: string[] | null;
 }
 
 export class CompleteTaskUseCase {

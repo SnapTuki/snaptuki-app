@@ -95,7 +95,7 @@ export class ResidentMap {
       dueAt: t.dueAt,
       startedAt: t.startedAt,
       completedAt: t.completedAt,
-      completionNotes: t.completionNotes,
+      //completionNotes: t.completionNotes,
       checklist: t.checklist.map(c => new ChecklistItem({
         id: c.id,
         label: c.label,

@@ -85,18 +85,6 @@ export type AssignRoleInput = {
   userId: Scalars['ID']['input'];
 };
 
-export type AssignTaskInputGql = {
-  assignedCaregiverId: Scalars['String']['input'];
-  category: TaskCategory;
-  checklist?: InputMaybe<Array<ChecklistItemInput>>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  dueAt?: InputMaybe<Scalars['DateTime']['input']>;
-  id: Scalars['ID']['input'];
-  priority: TaskPriority;
-  residentId?: InputMaybe<Scalars['String']['input']>;
-  title: Scalars['String']['input'];
-};
-
 export type AuthResultGql = {
   __typename?: 'AuthResultGQL';
   token: Scalars['String']['output'];
@@ -152,6 +140,7 @@ export type ChangePasswordInput = {
 };
 
 export type ChecklistItemInput = {
+  done?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['ID']['input'];
   label: Scalars['String']['input'];
   required?: InputMaybe<Scalars['Boolean']['input']>;
@@ -161,6 +150,18 @@ export type CompleteTaskInputGql = {
   completedByCaregiverId: Scalars['ID']['input'];
   id: Scalars['ID']['input'];
   notes?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateTaskInput = {
+  assignedCaregiverId: Scalars['String']['input'];
+  category: TaskCategory;
+  checklist?: InputMaybe<Array<ChecklistItemInput>>;
+  description: Scalars['String']['input'];
+  dueAt?: InputMaybe<Scalars['DateTime']['input']>;
+  priority: TaskPriority;
+  residentId?: InputMaybe<Scalars['String']['input']>;
+  status: TaskStatus;
+  title: Scalars['String']['input'];
 };
 
 export type EmergencyContactType = {
@@ -210,10 +211,10 @@ export type Mutation = {
   addResidentMedication: ResidentType;
   assignPrimaryCaregiver: ResidentType;
   assignRole: User;
-  assignTask: Task;
   authenticateUser: AuthResultGql;
   changePassword: Scalars['Boolean']['output'];
   completeTask: Task;
+  createTask: Task;
   deactivateCaregiver: CaregiverType;
   dischargeResident: ResidentType;
   registerCaregiver: CaregiverType;
@@ -222,6 +223,7 @@ export type Mutation = {
   toggleChecklistItem: Task;
   updateCaregiverContact: CaregiverType;
   updateResidentMedicalProfile: ResidentType;
+  updateTask: Task;
 };
 
 
@@ -255,11 +257,6 @@ export type MutationAssignRoleArgs = {
 };
 
 
-export type MutationAssignTaskArgs = {
-  input: AssignTaskInputGql;
-};
-
-
 export type MutationAuthenticateUserArgs = {
   input: AuthenticateInput;
 };
@@ -272,6 +269,11 @@ export type MutationChangePasswordArgs = {
 
 export type MutationCompleteTaskArgs = {
   input: CompleteTaskInputGql;
+};
+
+
+export type MutationCreateTaskArgs = {
+  input: CreateTaskInput;
 };
 
 
@@ -312,6 +314,11 @@ export type MutationUpdateCaregiverContactArgs = {
 
 export type MutationUpdateResidentMedicalProfileArgs = {
   input: UpdateResidentMedicalProfileInput;
+};
+
+
+export type MutationUpdateTaskArgs = {
+  input: UpdateTaskInput;
 };
 
 export type Query = {
@@ -450,6 +457,7 @@ export enum Role {
 
 export type Task = {
   __typename?: 'Task';
+  assignedCaregiver?: Maybe<TaskTypeCaregiverProfile>;
   assignedCaregiverId?: Maybe<Scalars['String']['output']>;
   category: TaskCategory;
   checklist: Array<TaskChecklistItem>;
@@ -517,6 +525,12 @@ export type TaskTemplateType = {
   priority: TaskPriority;
 };
 
+export type TaskTypeCaregiverProfile = {
+  __typename?: 'TaskTypeCaregiverProfile';
+  firstName: Scalars['String']['output'];
+  lastName: Scalars['String']['output'];
+};
+
 export type ToggleChecklistItemInputGql = {
   byCaregiverId?: InputMaybe<Scalars['String']['input']>;
   done: Scalars['Boolean']['input'];
@@ -534,6 +548,17 @@ export type UpdateResidentMedicalProfileInput = {
   id: Scalars['ID']['input'];
   mobilityLevel: MobilityLevel;
   room?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateTaskInput = {
+  assignedCaregiverId?: InputMaybe<Scalars['String']['input']>;
+  checklist?: InputMaybe<Array<ChecklistItemInput>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueAt?: InputMaybe<Scalars['DateTime']['input']>;
+  id: Scalars['String']['input'];
+  priority?: InputMaybe<TaskPriority>;
+  status?: InputMaybe<TaskStatus>;
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
@@ -613,11 +638,18 @@ export type GetResidentByIdQueryVariables = Exact<{
 export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }>, taskAssignments: Array<{ __typename?: 'TaskAssignmentType', id: number, isActive: boolean, taskTemplate: { __typename?: 'TaskTemplateType', id: number, name: string, category: TaskCategory, priority: TaskPriority } }>, tasks: Array<{ __typename?: 'ResidentTask', id: string, status: TaskStatus, priority: TaskPriority, category: TaskCategory, dueAt: any, completedAt?: any | null, completionNotes?: string | null, checklist: Array<{ __typename?: 'ResidentChecklistItem', id: string, label: string, isCompleted: boolean, completedAt?: any | null }>, actionRecords: Array<{ __typename?: 'ActionRecordType', id: number, value?: any | null, notes?: string | null, createdAt: any }> }> } | null };
 
 export type CreateAdHocTaskMutationVariables = Exact<{
-  input: AssignTaskInputGql;
+  input: CreateTaskInput;
 }>;
 
 
-export type CreateAdHocTaskMutation = { __typename?: 'Mutation', assignTask: { __typename?: 'Task', id: string, status: TaskStatus, priority: TaskPriority } };
+export type CreateAdHocTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string, status: TaskStatus, priority: TaskPriority } };
+
+export type UpdateTaskMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdateTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
 
 export type GetTaskListQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -626,7 +658,7 @@ export type GetTaskListQueryVariables = Exact<{
 }>;
 
 
-export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'ResidentType', firstName: string, lastName: string } | null, visit?: { __typename?: 'Visit', caregiver: { __typename?: 'CaregiverType', firstName: string } } | null }> };
+export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, description?: string | null, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'ResidentType', firstName: string, lastName: string } | null, assignedCaregiver?: { __typename?: 'TaskTypeCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
 
 export type SearchResidentsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -640,7 +672,7 @@ export type SearchCaregiversQueryVariables = Exact<{
 }>;
 
 
-export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', userId?: string | null, firstName: string, lastName: string }> };
+export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string }> };
 
 
 export const AuthenticateUserDocument = gql`
@@ -953,8 +985,8 @@ export type GetResidentByIdLazyQueryHookResult = ReturnType<typeof useGetResiden
 export type GetResidentByIdSuspenseQueryHookResult = ReturnType<typeof useGetResidentByIdSuspenseQuery>;
 export type GetResidentByIdQueryResult = Apollo.QueryResult<GetResidentByIdQuery, GetResidentByIdQueryVariables>;
 export const CreateAdHocTaskDocument = gql`
-    mutation CreateAdHocTask($input: AssignTaskInputGql!) {
-  assignTask(input: $input) {
+    mutation CreateAdHocTask($input: CreateTaskInput!) {
+  createTask(input: $input) {
     id
     status
     priority
@@ -987,6 +1019,39 @@ export function useCreateAdHocTaskMutation(baseOptions?: Apollo.MutationHookOpti
 export type CreateAdHocTaskMutationHookResult = ReturnType<typeof useCreateAdHocTaskMutation>;
 export type CreateAdHocTaskMutationResult = Apollo.MutationResult<CreateAdHocTaskMutation>;
 export type CreateAdHocTaskMutationOptions = Apollo.BaseMutationOptions<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>;
+export const UpdateTaskDocument = gql`
+    mutation UpdateTask($input: UpdateTaskInput!) {
+  updateTask(input: $input) {
+    id
+  }
+}
+    `;
+export type UpdateTaskMutationFn = Apollo.MutationFunction<UpdateTaskMutation, UpdateTaskMutationVariables>;
+
+/**
+ * __useUpdateTaskMutation__
+ *
+ * To run a mutation, you first call `useUpdateTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateTaskMutation, { data, loading, error }] = useUpdateTaskMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateTaskMutation(baseOptions?: Apollo.MutationHookOptions<UpdateTaskMutation, UpdateTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateTaskMutation, UpdateTaskMutationVariables>(UpdateTaskDocument, options);
+      }
+export type UpdateTaskMutationHookResult = ReturnType<typeof useUpdateTaskMutation>;
+export type UpdateTaskMutationResult = Apollo.MutationResult<UpdateTaskMutation>;
+export type UpdateTaskMutationOptions = Apollo.BaseMutationOptions<UpdateTaskMutation, UpdateTaskMutationVariables>;
 export const GetTaskListDocument = gql`
     query GetTaskList($search: String, $status: String, $residentId: String) {
   taskList(search: $search, status: $status, residentId: $residentId) {
@@ -994,16 +1059,20 @@ export const GetTaskListDocument = gql`
     title
     category
     priority
+    description
     status
     dueAt
     resident {
       firstName
       lastName
     }
-    visit {
-      caregiver {
-        firstName
-      }
+    assignedCaregiver {
+      firstName
+      lastName
+    }
+    checklist {
+      id
+      label
     }
   }
 }
@@ -1094,7 +1163,7 @@ export type SearchResidentsQueryResult = Apollo.QueryResult<SearchResidentsQuery
 export const SearchCaregiversDocument = gql`
     query SearchCaregivers($search: String) {
   caregiverList(search: $search) {
-    userId
+    id
     firstName
     lastName
   }
