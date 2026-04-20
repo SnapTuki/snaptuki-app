@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Link } from 'react-router-dom';
 import {
   Plus, Search, Activity, Loader2, Trash2, ClipboardCheck,
   Clock, Save, Info, MapPin, Briefcase, Users, X, UserPlus,
@@ -13,7 +12,7 @@ import * as Yup from 'yup';
 import { GET_TASK_LIST, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
 import { CREATE_ADHOC_TASK } from '../../features/taskCenter/graphql/mutations';
 import { UPDATE_TASK } from '../../features/taskCenter/graphql/mutations';
-
+import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
 export default function TaskCenter() {
   const [activeTab, setActiveTab] = useState('Today'); // Today, Performance, History
   const [searchTerm, setSearchTerm] = useState('');
@@ -145,7 +144,7 @@ export default function TaskCenter() {
               {selectedTask ? (
                 <div className="max-w-4xl mx-auto py-12 px-10">
                   <div className="">
-                    <TaskDetailView task={selectedTask} key={selectedTask.id} onUpdate={() => refetch()}/>
+                    <TaskDetailView task={selectedTask} key={selectedTask.id} onUpdate={() => refetch()} />
                   </div>
                 </div>
               ) : (
@@ -275,7 +274,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   const [updateTask, { loading }] = useMutation(UPDATE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
-      
+
       // 1. Trigger the refetch in the parent immediately
       if (onUpdate) onUpdate();
 
@@ -339,11 +338,12 @@ function TaskDetailView({ task, onUpdate }: any) {
           residentId: task.resident?.id || '',
           residentName: `${task.resident?.firstName} ${task.resident?.lastName}` || 'Unknown Resident',
           assignedCaregiverId: task.assignedCaregiverId || '',
+          assignedCaregiver: task.assignedCaregiver || null,
           caregiverName: task.assignedCaregiver
             ? `${task.assignedCaregiver.firstName} ${task.assignedCaregiver.lastName}`
             : '',
           room: task.resident?.room || '402',
-          dueAt: task.dueAt ? new Date(task.dueAt).toISOString().slice(0, 16) : '',
+          dueAt: task.dueAt ? new Date(task.dueAt).toISOString() : new Date().toISOString(),
           checklist: task.checklist?.map((ci: any) => ({
             id: ci.id,
             label: ci.label,
@@ -355,7 +355,7 @@ function TaskDetailView({ task, onUpdate }: any) {
         onSubmit={async (values) => {
           // 2. Prepare the payload
           // Ensure we don't send UI-specific fields like 'caregiverName'
-          const { caregiverName, residentName, residentId,room, dueAt, ...cleanPayload } = values;
+          const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, ...cleanPayload } = values;
           if (!dueAt) {
             setMutationStatus('ERROR');
             setErrorMessage("A valid due date and time is required.");
@@ -392,14 +392,10 @@ function TaskDetailView({ task, onUpdate }: any) {
 
                 <div className="flex items-center gap-3">
                   {/* Due Date Editor */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <Field
-                      type="datetime-local"
-                      name="dueAt"
-                      className="bg-transparent border-none text-[10px] font-black uppercase outline-none text-slate-600"
-                    />
-                  </div>
+                  <ClinicalScheduler
+                    value={values.dueAt}
+                    onChange={(iso) => setFieldValue('dueAt', iso)}
+                  />
 
                   <Field as="select" name="priority" className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none">
                     <option value="LOW">Low</option>
@@ -466,38 +462,20 @@ function TaskDetailView({ task, onUpdate }: any) {
                     </div>
 
                     <div className="relative group">
-                      <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Assigned Provider</p>
 
-                      {values.caregiverName ? (
-                        <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-[10px] text-white font-bold">
-                              {values.caregiverName.charAt(0)}
-                            </div>
-                            <span className="text-sm font-bold text-indigo-900">{values.caregiverName}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFieldValue('assignedCaregiverId', '');
-                              setFieldValue('caregiverName', '');
-                            }}
-                            className="p-1.5 hover:bg-indigo-100 rounded-lg text-indigo-400"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                          <input
-                            placeholder="Search caregiver..."
-                            className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                            value={cgSearch}
-                            onChange={(e) => setCgSearch(e.target.value)}
-                          />
-                        </div>
-                      )}
+                      <CaregiverSelect
+                        value={values.assignedCaregiver} // Pass the object from Formik
+                        onChange={(cg: any) => {
+                          // Update the ID for the API
+                          setFieldValue('assignedCaregiverId', cg?.id || '');
+                          // Update the Object for this component's display
+                          setFieldValue('assignedCaregiver', cg ? {
+                            id: cg.id,
+                            firstName: cg.firstName,
+                            lastName: cg.lastName
+                          } : null);
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -799,20 +777,14 @@ const DispatchSchema = Yup.object().shape({
 
 function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
   const [residentSearch, setResidentSearch] = useState('');
-  const [caregiverSearch, setCaregiverSearch] = useState('');
+  // 💡 Caregiver search state/queries are no longer needed here as CaregiverSelect handles them internally
 
   const { data: resData } = useQuery(SEARCH_RESIDENTS, {
     variables: { search: residentSearch },
   });
 
-  const { data: cgData } = useQuery(SEARCH_CAREGIVERS, {
-    variables: { search: caregiverSearch },
-  });
-
   const [createTask, { loading }] = useMutation(CREATE_ADHOC_TASK);
-
   const residents = resData?.residentList ?? [];
-  const caregivers = cgData?.caregiverList ?? [];
 
   if (!isOpen) return null;
 
@@ -825,26 +797,26 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
           title: '',
           description: '',
           residentId: '',
-          residentName: '', // UI Only
+          residentName: '',
           assignedCaregiverId: '',
-          caregiverName: '', // UI Only
+          assignedCaregiver: null, // Full object for the CaregiverSelect badge
           category: 'CARE',
           priority: 'MEDIUM',
-          dueAt: new Date().toISOString().slice(0, 16),
+          // Set initial default to Now + 30 mins in ISO format
+          dueAt: new Date(Date.now() + 30 * 60000).toISOString(),
           steps: ['Initial assessment']
         }}
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
-          // 🔥 PROBLEM 2 FIX: Construct a clean input object
-          // GraphQL fails if you send fields like 'residentName' that aren't in the schema.
+          // Construct the domain-ready checklist
           const checklistInput = values.steps.map(label => ({
-            id: crypto.randomUUID(), // Ensure domain ID is present
+            id: crypto.randomUUID(), 
             label,
-            required: true
+            required: true,
+            done: false,
           }));
 
           try {
-
             await createTask({
               variables: {
                 input: {
@@ -854,7 +826,8 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                   priority: values.priority,
                   residentId: values.residentId,
                   assignedCaregiverId: values.assignedCaregiverId || null,
-                  dueAt: new Date(values.dueAt).toISOString(),
+                  // Use the ISO string directly from Formik state
+                  dueAt: values.dueAt, 
                   checklist: checklistInput,
                   status: values.assignedCaregiverId ? 'ASSIGNED' : 'PENDING'
                 }
@@ -863,13 +836,14 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
             onSuccess();
             onClose();
           } catch (err) {
-            console.error("Mutation Error Details:", err);
+            console.error("Dispatch Error:", err);
           }
         }}
       >
         {({ values, setFieldValue }) => (
           <Form className="relative w-full max-w-6xl bg-white rounded-[40px] shadow-2xl flex flex-col h-[90vh] animate-in fade-in zoom-in duration-300 overflow-hidden text-slate-800">
-            {/* HEADER ... (unchanged) */}
+            
+            {/* HEADER */}
             <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100">
@@ -886,10 +860,10 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
             </div>
 
             <div className="flex-1 overflow-hidden flex bg-white">
-              {/* LEFT: CONTENT (Protocol/Checklist) ... (unchanged) */}
+              {/* LEFT: CONTENT (Protocol) */}
               <section className="flex-[1.5] overflow-y-auto p-12 border-r border-slate-100 space-y-12">
                 <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600">01. Task Definition</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 font-black">01. Task Definition</h3>
                   <Field
                     name="title"
                     placeholder="Task Title (e.g. Wound Care)"
@@ -899,24 +873,24 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                     as="textarea"
                     name="description"
                     placeholder="Clinical notes..."
-                    className="w-full min-h-[100px] text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none"
+                    className="w-full min-h-[100px] text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none border-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
                   />
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600">02. Execution Checklist</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 font-black">02. Execution Checklist</h3>
                   <FieldArray name="steps">
                     {({ push, remove }) => (
                       <div className="space-y-3">
                         {values.steps.map((_, index) => (
-                          <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group">
+                          <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group border border-transparent hover:border-indigo-100 transition-all">
                             <span className="text-[10px] font-black text-slate-300 w-4">{index + 1}</span>
                             <Field
                               name={`steps.${index}`}
                               placeholder="Describe protocol step..."
-                              className="flex-1 bg-transparent outline-none font-bold text-sm"
+                              className="flex-1 bg-transparent outline-none font-bold text-sm text-slate-700"
                             />
-                            <button type="button" onClick={() => remove(index)} className="opacity-0 group-hover:opacity-100 text-rose-400">
+                            <button type="button" onClick={() => remove(index)} className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-all">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -924,7 +898,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                         <button
                           type="button"
                           onClick={() => push('')}
-                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50"
+                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
                         >
                           + Add Protocol Step
                         </button>
@@ -936,32 +910,39 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
 
               {/* RIGHT: LOGISTICS */}
               <section className="flex-1 overflow-y-auto p-12 bg-slate-50/30 space-y-10">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">03. Participants</h3>
+                <div className="space-y-8">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
 
                   {/* Resident Selection */}
                   <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resident</label>
                     {values.residentId ? (
-                      <div className="flex items-center justify-between p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm">
-                        <span className="text-sm font-black text-slate-800">{values.residentName}</span>
-                        <button type="button" onClick={() => { setFieldValue('residentId', ''); setFieldValue('residentName', ''); }} className="text-rose-500"><X className="w-4 h-4" /></button>
+                      <div className="flex items-center justify-between p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-right-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                             <User className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-black text-slate-800">{values.residentName}</span>
+                        </div>
+                        <button type="button" onClick={() => { setFieldValue('residentId', ''); setFieldValue('residentName', ''); }} className="text-rose-400 hover:text-rose-600 transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     ) : (
                       <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                         <input
                           placeholder="Search residents..."
-                          className="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none shadow-sm"
+                          className="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-indigo-300 transition-all"
                           value={residentSearch}
                           onChange={(e) => setResidentSearch(e.target.value)}
                         />
                         {residents.length > 0 && residentSearch && (
-                          <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                          <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
                             {residents.map((res: any) => (
                               <button
                                 key={res.residentId} type="button"
-                                className="w-full px-5 py-3 text-left hover:bg-slate-50 text-xs font-bold border-b border-slate-50 last:border-0"
+                                className="w-full px-5 py-3 text-left hover:bg-slate-50 text-xs font-bold border-b border-slate-50 last:border-0 hover:text-indigo-600 transition-colors"
                                 onClick={() => {
                                   setFieldValue('residentId', res.residentId);
                                   setFieldValue('residentName', `${res.firstName} ${res.lastName}`);
@@ -977,61 +958,35 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                     )}
                   </div>
 
-                  {/* 🔥 PROBLEM 1 FIX: Caregiver Selection */}
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Caregiver</label>
-                    {values.assignedCaregiverId ? (
-                      <div className="flex items-center justify-between p-4 bg-white border border-emerald-100 rounded-2xl shadow-sm">
-                        <span className="text-sm font-black text-slate-800">{values.caregiverName}</span>
-                        <button type="button" onClick={() => { setFieldValue('assignedCaregiverId', ''); setFieldValue('caregiverName', ''); }} className="text-rose-500"><X className="w-4 h-4" /></button>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input
-                          placeholder="Search staff members..."
-                          className="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none shadow-sm"
-                          value={caregiverSearch}
-                          onChange={(e) => setCaregiverSearch(e.target.value)}
-                        />
-                        {caregivers.length > 0 && caregiverSearch && (
-                          <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-                            {caregivers.map((cg: any) => (
-                              <button
-                                key={cg.id} type="button"
-                                className="w-full px-5 py-3 text-left hover:bg-slate-50 text-xs font-bold border-b border-slate-50 last:border-0"
-                                onClick={() => {
-                                  setFieldValue('assignedCaregiverId', cg.id);
-                                  setFieldValue('caregiverName', `${cg.firstName} ${cg.lastName}`);
-                                  setCaregiverSearch('');
-                                }}
-                              >
-                                {cg.firstName} {cg.lastName}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <CaregiverSelect
+                    value={values.assignedCaregiver}
+                    onChange={(cg: any) => {
+                      setFieldValue('assignedCaregiverId', cg?.id || '');
+                      setFieldValue('assignedCaregiver', cg);
+                    }}
+                  />
                 </div>
 
-                {/* TIMELINE & PRIORITY (unchanged) */}
-                <div className="space-y-6 pt-6 border-t border-slate-100">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">04. Timeline</h3>
-                  <Field
-                    type="datetime-local"
-                    name="dueAt"
-                    className="w-full px-5 py-4 bg-white border border-slate-100 rounded-xl outline-none font-bold text-sm"
+                {/* TIMELINE & PRIORITY */}
+                <div className="space-y-8 pt-8 border-t border-slate-100">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
+                  
+                  <ClinicalScheduler
+                    value={values.dueAt}
+                    onChange={(iso) => setFieldValue('dueAt', iso)}
                   />
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority</label>
+                  
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
                     <div className="flex gap-2">
                       {['LOW', 'MEDIUM', 'HIGH'].map(p => (
                         <button
                           key={p} type="button"
                           onClick={() => setFieldValue('priority', p)}
-                          className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase transition-all ${values.priority === p ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-400'
+                          className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase transition-all duration-200 ${
+                            values.priority === p 
+                              ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200' 
+                              : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
                             }`}
                         >
                           {p}
@@ -1045,11 +1000,17 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
 
             {/* FOOTER */}
             <div className="p-10 border-t border-slate-100 bg-white flex justify-end items-center gap-6 shrink-0">
-              <button type="button" onClick={onClose} className="text-xs font-black uppercase tracking-widest text-slate-400">Discard</button>
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Discard
+              </button>
               <button
                 type="submit"
-                disabled={loading || !values.residentId}
-                className="px-12 py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all disabled:bg-slate-100 flex items-center gap-3"
+                disabled={loading || !values.residentId || !values.title}
+                className="px-12 py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-200 transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center gap-3 active:scale-95"
               >
                 {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm Dispatch'}
               </button>

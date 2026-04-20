@@ -21,6 +21,7 @@ export class CreateNewTaskUseCase {
       assignedCaregiverId: input.assignedCaregiverId ?? null,
       createdByUserId: input.createdByUserId, // Now correctly handled
       completionNotes: [],
+      dueAt: input.dueAt,
       // Map checklist items through their own domain factory
       checklist: (input.checklist ?? []).map(item => ChecklistItem.create({
         id: item.id,

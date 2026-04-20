@@ -55,9 +55,15 @@ export class PrismaTaskRepo implements ITaskRepo {
         category: data.category,
         dueAt: data.dueAt,
 
-        // Direct foreign key mapping (matches your @map names)
-        residentId: data.residentId,
-        assignedCaregiverId: data.assignedCaregiverId || null,
+       resident:{
+        connect: {residentId: data.residentId}
+       },
+
+       ...(data.assignedCaregiverId && {
+        assignedCaregiver:{
+          connect: {id: data.assignedCaregiverId}
+        }
+       }),
 
         // Nested checklist creation
         checklist: {
@@ -69,7 +75,7 @@ export class PrismaTaskRepo implements ITaskRepo {
             completedAt: ci.doneAt || null,
           })),
         },
-      } as Prisma.TaskUncheckedCreateInput, // This tells Prisma to allow raw IDs
+      }
     });
   }
 

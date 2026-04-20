@@ -49,6 +49,7 @@ export class TaskResolver {
   // Assigning tasks
   @Mutation(() => TaskType)
   async createTask(@Arg("input", () => CreateTaskInput) input: CreateTaskInput, @Ctx() ctx: GraphQLContext) {
+    console.log("INput from form: ", input)
     const useCase = new CreateNewTaskUseCase(ctx.taskManagement.repo);
 
     const task = await useCase.execute({
