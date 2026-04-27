@@ -7,8 +7,26 @@ import { Medication } from "./Medication";
 import { EmergencyContact } from "./EmergencyContact";
 // Import TaskAssignment to complete the Care Plan domain
 import { TaskAssignment } from "./TaskAssignment"; 
-import { Gender, MobilityLevel, ResidentStatus } from "../../../../generated/prisma";
 import { Task } from "./Task";
+
+
+export enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  UNSPECIFIED = "UNSPECIFIED",
+  OTHER = "OTHER"
+}
+
+export enum MobilityLevel{
+  Independent = "INDEPENDENT",
+  Assisted = "ASSISTED",
+  Memory = "MEMORY"
+}
+
+export enum ResidentStatus {
+  Active = "ACTIVE",
+  Discharged = "DISCHARGED"
+}
 
 export interface ResidentProps {
   residentId: string;
@@ -56,7 +74,7 @@ export class Resident {
       medications: props.medications ?? [],
       emergencyContacts: props.emergencyContacts ?? [],
       taskAssignments: props.taskAssignments ?? [],
-      status: props.status ?? ResidentStatus.ACTIVE,
+      status: props.status ?? ResidentStatus.Active,
     });
   }
 
@@ -91,7 +109,7 @@ export class Resident {
    * You might want to add logic here to deactivate all task assignments automatically.
    */
   public discharge(): void {
-    this.props.status = ResidentStatus.DISCHARGED;
+    this.props.status = ResidentStatus.Discharged;
     this.props.updatedAt = new Date();
     // Logic: When discharged, stop all recurring care
     this.props.taskAssignments.forEach(assignment => assignment.deactivate());
@@ -148,7 +166,7 @@ export class Resident {
 
     // 2. Domain Rule: You might want to prevent assigning a caregiver 
     // if the resident is currently DISCHARGED.
-    if (this.props.status === ResidentStatus.DISCHARGED && caregiverId !== null) {
+    if (this.props.status === ResidentStatus.Discharged && caregiverId !== null) {
       throw new Error("Cannot assign a primary caregiver to a discharged resident.");
     }
 
@@ -168,5 +186,58 @@ export class Resident {
   public assignTaskTemplate(templateId: number): void {
     // Logic to prevent duplicate templates could go here
     // this.props.taskAssignments.push(TaskAssignment.create(...));
+  }
+
+  /**
+   * Updates core identity fields.
+   * Logic: Prevents MRN changes (usually immutable) and birthDate logic.
+   */
+  public updateIdentity(data: {
+    firstName?: string;
+    lastName?: string;
+    birthDate?: Date;
+    gender?: Gender;
+  }): void {
+    if (data.firstName) this.props.firstName = data.firstName;
+    if (data.lastName) this.props.lastName = data.lastName;
+    if (data.birthDate) {
+      // Business Rule: Validate that resident isn't from the future
+      if (data.birthDate > new Date()) throw new Error("Birth date cannot be in the future");
+      this.props.birthDate = data.birthDate;
+    }
+    if (data.gender) this.props.gender = data.gender;
+    
+    this.props.updatedAt = new Date();
+  }
+
+  public updatePlacement(data: {
+    room?: string;
+    mobilityLevel?: MobilityLevel;
+    admissionDate?: Date;
+  }): void {
+    // If the room changes, you might trigger a "Room Migration" event later
+    if (data.room !== undefined) this.props.room = data.room;
+    
+    if (data.mobilityLevel) {
+      this.props.mobilityLevel = data.mobilityLevel;
+    }
+
+    // Note: admissionDate would need to be added to ResidentProps if you want to track it
+    this.props.updatedAt = new Date();
+  }
+
+  /**
+   * Synchronizes the Emergency Contact list.
+   * This replaces the current list with the new one provided.
+   */
+  public setContacts(contacts: EmergencyContact[]): void {
+    // Domain Rule: A resident must have at least one contact if they are in Memory Care
+    if (this.props.mobilityLevel === MobilityLevel.Memory && contacts.length === 0) {
+      throw new Error("Memory Care residents must have at least one emergency contact.");
+    }
+
+    // Replace the collection
+    this.props.emergencyContacts = [...contacts];
+    this.props.updatedAt = new Date();
   }
 }

@@ -1,11 +1,8 @@
 // src/domains/residentManagement/api/graphql/inputs/ResidentInputs.ts
 import { InputType, Field, ID, registerEnumType } from "type-graphql";
-import { Gender, MobilityLevel, AllergySeverity } from "../../../../../generated/prisma";
-
+import { AllergySeverity } from "../../../../../generated/prisma";
+import { Gender, MobilityLevel } from "../../../domain/entities/Resident";
 import { GraphQLDateTime } from "graphql-scalars";
-registerEnumType(Gender, { name: "Gender" });
-registerEnumType(MobilityLevel, { name: "MobilityLevel" });
-registerEnumType(AllergySeverity, { name: "AllergySeverity" });
 
 
 @InputType()
@@ -64,4 +61,68 @@ export class AddResidentMedicationInput {
   @Field(() => GraphQLDateTime) startDate!: Date;
   @Field(() => GraphQLDateTime,{ nullable: true }) endDate?: Date | null;
   @Field(() => String,{ nullable: true }) prescribedBy?: string | null;
+}
+
+@InputType()
+export class UpdateResidentIdentityInput {
+  @Field(() => ID)
+  residentId: string;
+
+  @Field(() => String,{ nullable: true })
+  firstName?: string;
+
+  @Field(() => String, { nullable: true })
+  lastName?: string;
+
+  @Field(() => GraphQLDateTime, { nullable: true })
+  birthDate?: Date | String;
+
+  @Field(() => Gender, { nullable: true })
+  gender?: Gender; 
+
+  @Field(() => String, { nullable: true })
+  ssn?: string; // Social Security Number
+}
+
+@InputType()
+export class UpdateResidentPlacementInput {
+  @Field(() => ID)
+  residentId: string;
+
+  @Field(() => String, { nullable: true })
+  room?: string;
+
+  @Field(() => MobilityLevel, { nullable: true })
+  mobilityLevel?: MobilityLevel; // e.g., 'INDEPENDENT' | 'ASSISTED' | 'MEMORY'
+
+  @Field(() => GraphQLDateTime, { nullable: true })
+  admissionDate?: Date;
+}
+
+
+@InputType()
+export class EmergencyContactInput {
+  @Field(() => ID, { nullable: true })
+  id?: string; // If null, the UseCase knows to create a new one
+
+  @Field(() => String)
+  name: string;
+
+  @Field(() => String)
+  relation: string;
+
+  @Field(() => String)
+  phone: string;
+
+  @Field(() => Boolean, { defaultValue: false })
+  isPrimary: boolean;
+}
+
+@InputType()
+export class UpdateResidentContactsInput {
+  @Field(() => ID)
+  residentId: string;
+
+  @Field(() => [EmergencyContactInput])
+  contacts: EmergencyContactInput[];
 }

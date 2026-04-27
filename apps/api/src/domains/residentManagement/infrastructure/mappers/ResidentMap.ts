@@ -11,7 +11,9 @@ import { TaskAssignment } from "../../domain/entities/TaskAssignment";
 import { Task } from "../../domain/entities/Task";
 import { ChecklistItem } from "../../domain/entities/ChecklistItem";
 import { ActionRecord } from "../../domain/valueObjects/ActionRecord";
-
+import { toDomainGender } from "./GenderMap";
+import { toDomainResidentStatus } from "./ResidentStatusMap";
+import { toDomainMobilityLevel } from "./MobilityLevelMap";
 import type { Resident as PrismaResident, 
   Allergy as PrismaAllergy, 
   Medication as PrismaMedication, 
@@ -36,11 +38,11 @@ export class ResidentMap {
     firstName: row.firstName,
     lastName: row.lastName,
     birthDate: row.birthDate,
-    gender: row.gender,
+    gender: toDomainGender(row.gender),
     email: row.email ? Email.create(row.email) : null,
     phone: row.phone ? PhoneNumber.create(row.phone) : null,
-    status: row.status,
-    mobilityLevel: row.mobilityLevel,
+    status: toDomainResidentStatus(row.status),
+    mobilityLevel: toDomainMobilityLevel(row.mobilityLevel),
     room: row.room ?? null,
 
     // --- Identity & Clinical Mapping ---
@@ -131,6 +133,18 @@ export class ResidentMap {
       status: resident.status,
       mobilityLevel: resident.mobilityLevel,
       room: resident.room,
+
+      emergencyContacts: {
+      // In a Purist approach, we often "overwrite" the collection 
+      // to ensure the DB perfectly matches the Domain Entity state.
+      deleteMany: {}, 
+      create: resident.emergencyContacts.map(ec => ({
+        name: ec.name,
+        relation: ec.relation,
+        phone: ec.phone.value,
+        isPrimary: ec.isPrimary ?? false
+      }))
+    },
     };
   }
 
@@ -141,7 +155,7 @@ export class ResidentMap {
     mrn: resident.mrn.value,
     firstName: resident.firstName,
     lastName: resident.lastName,
-    birthDate: resident.birthDate.toISOString(),
+    birthDate: resident.birthDate,
     gender: resident.gender,
     email: resident.email?.value ?? null,
     phone: resident.phone?.value ?? null,
@@ -163,8 +177,8 @@ export class ResidentMap {
       name: m.name, 
       dosage: m.dosage, 
       frequency: m.frequency,
-      startDate: m.startDate.toISOString(),
-      endDate: m.endDate ? m.endDate.toISOString() : null,
+      startDate: m.startDate,
+      endDate: m.endDate ? m.endDate : null,
       prescribedBy: m.prescribedBy,
     })),
 
@@ -194,8 +208,8 @@ export class ResidentMap {
       status: t.status,
       priority: t.priority,
       category: t.category,
-      dueAt: t.dueAt.toISOString(),
-      completedAt: t.completedAt?.toISOString() ?? null,
+      dueAt: t.dueAt,
+      completedAt: t.completedAt?? null,
       completionNotes: t.completionNotes,
       checklist: t.checklist.map(c => ({
         label: c.label,
@@ -203,8 +217,8 @@ export class ResidentMap {
       }))
     })) ?? [],
 
-    createdAt: resident.createdAt.toISOString(),
-    updatedAt: resident.updatedAt.toISOString(),
+    createdAt: resident.createdAt,
+    updatedAt: resident.updatedAt,
   };
 }
 }

@@ -1,12 +1,10 @@
 import { 
-  Gender, 
-  MobilityLevel, 
-  ResidentStatus, 
+
   TaskStatus, 
   TaskPriority, 
   TaskCategory 
 } from "../../../../generated/prisma";
-
+import { Gender, MobilityLevel, ResidentStatus } from "../../domain/entities/Resident";
 // --- Nested DTOs ---
 
 export interface AllergyDTO {
@@ -22,8 +20,8 @@ export interface MedicationDTO {
   name: string;
   dosage: string;
   frequency: string;
-  startDate: string; // ISO String
-  endDate: string | null;
+  startDate: Date; 
+  endDate: Date | null;
   prescribedBy: string | null;
 }
 
@@ -51,8 +49,8 @@ export interface TaskHistoryDTO {
   status: TaskStatus;
   priority: TaskPriority;
   category: TaskCategory;
-  dueAt: string;
-  completedAt: string | null;
+  dueAt: Date;
+  completedAt: Date | null;
   completionNotes: string | null;
   checklist: Array<{
     label: string;
@@ -68,7 +66,7 @@ export interface ResidentDTO {
   mrn: string;
   firstName: string;
   lastName: string;
-  birthDate: string; // ISO String
+  birthDate: Date; // ISO String
   gender: Gender;
   email: string | null;
   phone: string | null;
@@ -88,6 +86,6 @@ export interface ResidentDTO {
   taskAssignments: TaskAssignmentDTO[];
   tasks: TaskHistoryDTO[];
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

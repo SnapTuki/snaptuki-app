@@ -164,6 +164,14 @@ export type CreateTaskInput = {
   title: Scalars['String']['input'];
 };
 
+export type EmergencyContactInput = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+  isPrimary?: Scalars['Boolean']['input'];
+  name: Scalars['String']['input'];
+  phone: Scalars['String']['input'];
+  relation: Scalars['String']['input'];
+};
+
 export type EmergencyContactType = {
   __typename?: 'EmergencyContactType';
   id: Scalars['ID']['output'];
@@ -198,9 +206,9 @@ export type MedicationType = {
 };
 
 export enum MobilityLevel {
-  Assisted = 'ASSISTED',
-  Independent = 'INDEPENDENT',
-  Memory = 'MEMORY'
+  Assisted = 'Assisted',
+  Independent = 'Independent',
+  Memory = 'Memory'
 }
 
 export type Mutation = {
@@ -222,7 +230,8 @@ export type Mutation = {
   registerUser: User;
   toggleChecklistItem: Task;
   updateCaregiverContact: CaregiverType;
-  updateResidentMedicalProfile: ResidentType;
+  updateEmergencyContacts: ResidentType;
+  updateResidentIdentity: ResidentType;
   updateTask: Task;
 };
 
@@ -312,8 +321,14 @@ export type MutationUpdateCaregiverContactArgs = {
 };
 
 
-export type MutationUpdateResidentMedicalProfileArgs = {
-  input: UpdateResidentMedicalProfileInput;
+export type MutationUpdateEmergencyContactsArgs = {
+  contacts: Array<EmergencyContactInput>;
+  residentId: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateResidentIdentityArgs = {
+  input: UpdateResidentIdentityInput;
 };
 
 
@@ -349,7 +364,7 @@ export type QueryGetResidentByIdArgs = {
 
 
 export type QueryResidentListArgs = {
-  mobilityLevel?: InputMaybe<Scalars['String']['input']>;
+  mobilityLevel?: InputMaybe<MobilityLevel>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -412,8 +427,8 @@ export type ResidentChecklistItem = {
 };
 
 export enum ResidentStatus {
-  Active = 'ACTIVE',
-  Discharged = 'DISCHARGED'
+  Active = 'Active',
+  Discharged = 'Discharged'
 }
 
 export type ResidentTask = {
@@ -544,10 +559,13 @@ export type UpdateCaregiverContactInputGql = {
   phone?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type UpdateResidentMedicalProfileInput = {
-  id: Scalars['ID']['input'];
-  mobilityLevel: MobilityLevel;
-  room?: InputMaybe<Scalars['String']['input']>;
+export type UpdateResidentIdentityInput = {
+  birthDate?: InputMaybe<Scalars['DateTime']['input']>;
+  firstName?: InputMaybe<Scalars['String']['input']>;
+  gender?: InputMaybe<Gender>;
+  lastName?: InputMaybe<Scalars['String']['input']>;
+  residentId: Scalars['ID']['input'];
+  ssn?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateTaskInput = {
@@ -623,12 +641,27 @@ export type RegisterResidentMutationVariables = Exact<{
 
 export type RegisterResidentMutation = { __typename?: 'Mutation', registerResident: { __typename?: 'ResidentType', mrn: string } };
 
+export type UpdateResidentIdentityMutationVariables = Exact<{
+  input: UpdateResidentIdentityInput;
+}>;
+
+
+export type UpdateResidentIdentityMutation = { __typename?: 'Mutation', updateResidentIdentity: { __typename?: 'ResidentType', residentId: string, firstName: string, lastName: string, gender: Gender, birthDate: any } };
+
+export type UpdateEmergencyContactsMutationVariables = Exact<{
+  residentId: Scalars['String']['input'];
+  contacts: Array<EmergencyContactInput> | EmergencyContactInput;
+}>;
+
+
+export type UpdateEmergencyContactsMutation = { __typename?: 'Mutation', updateEmergencyContacts: { __typename?: 'ResidentType', residentId: string, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', name: string, relation: string, phone: string }> } };
+
 export type ResidentListQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type ResidentListQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, mobilityLevel: MobilityLevel, status: ResidentStatus, room?: string | null }> };
+export type ResidentListQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, mobilityLevel: MobilityLevel, status: ResidentStatus, room?: string | null, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string }> }> };
 
 export type GetResidentByIdQueryVariables = Exact<{
   residentId: Scalars['String']['input'];
@@ -829,6 +862,82 @@ export function useRegisterResidentMutation(baseOptions?: Apollo.MutationHookOpt
 export type RegisterResidentMutationHookResult = ReturnType<typeof useRegisterResidentMutation>;
 export type RegisterResidentMutationResult = Apollo.MutationResult<RegisterResidentMutation>;
 export type RegisterResidentMutationOptions = Apollo.BaseMutationOptions<RegisterResidentMutation, RegisterResidentMutationVariables>;
+export const UpdateResidentIdentityDocument = gql`
+    mutation UpdateResidentIdentity($input: UpdateResidentIdentityInput!) {
+  updateResidentIdentity(input: $input) {
+    residentId
+    firstName
+    lastName
+    gender
+    birthDate
+  }
+}
+    `;
+export type UpdateResidentIdentityMutationFn = Apollo.MutationFunction<UpdateResidentIdentityMutation, UpdateResidentIdentityMutationVariables>;
+
+/**
+ * __useUpdateResidentIdentityMutation__
+ *
+ * To run a mutation, you first call `useUpdateResidentIdentityMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateResidentIdentityMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateResidentIdentityMutation, { data, loading, error }] = useUpdateResidentIdentityMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateResidentIdentityMutation(baseOptions?: Apollo.MutationHookOptions<UpdateResidentIdentityMutation, UpdateResidentIdentityMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateResidentIdentityMutation, UpdateResidentIdentityMutationVariables>(UpdateResidentIdentityDocument, options);
+      }
+export type UpdateResidentIdentityMutationHookResult = ReturnType<typeof useUpdateResidentIdentityMutation>;
+export type UpdateResidentIdentityMutationResult = Apollo.MutationResult<UpdateResidentIdentityMutation>;
+export type UpdateResidentIdentityMutationOptions = Apollo.BaseMutationOptions<UpdateResidentIdentityMutation, UpdateResidentIdentityMutationVariables>;
+export const UpdateEmergencyContactsDocument = gql`
+    mutation UpdateEmergencyContacts($residentId: String!, $contacts: [EmergencyContactInput!]!) {
+  updateEmergencyContacts(residentId: $residentId, contacts: $contacts) {
+    residentId
+    emergencyContacts {
+      name
+      relation
+      phone
+    }
+  }
+}
+    `;
+export type UpdateEmergencyContactsMutationFn = Apollo.MutationFunction<UpdateEmergencyContactsMutation, UpdateEmergencyContactsMutationVariables>;
+
+/**
+ * __useUpdateEmergencyContactsMutation__
+ *
+ * To run a mutation, you first call `useUpdateEmergencyContactsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateEmergencyContactsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateEmergencyContactsMutation, { data, loading, error }] = useUpdateEmergencyContactsMutation({
+ *   variables: {
+ *      residentId: // value for 'residentId'
+ *      contacts: // value for 'contacts'
+ *   },
+ * });
+ */
+export function useUpdateEmergencyContactsMutation(baseOptions?: Apollo.MutationHookOptions<UpdateEmergencyContactsMutation, UpdateEmergencyContactsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateEmergencyContactsMutation, UpdateEmergencyContactsMutationVariables>(UpdateEmergencyContactsDocument, options);
+      }
+export type UpdateEmergencyContactsMutationHookResult = ReturnType<typeof useUpdateEmergencyContactsMutation>;
+export type UpdateEmergencyContactsMutationResult = Apollo.MutationResult<UpdateEmergencyContactsMutation>;
+export type UpdateEmergencyContactsMutationOptions = Apollo.BaseMutationOptions<UpdateEmergencyContactsMutation, UpdateEmergencyContactsMutationVariables>;
 export const ResidentListDocument = gql`
     query ResidentList($search: String) {
   residentList(search: $search) {
@@ -841,6 +950,12 @@ export const ResidentListDocument = gql`
     mobilityLevel
     status
     room
+    emergencyContacts {
+      id
+      name
+      relation
+      phone
+    }
   }
 }
     `;

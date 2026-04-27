@@ -12,9 +12,10 @@ interface AuthState {
 
 // Check for existing token on initial load
 const initialToken = Cookies.get('_snaptuki_auth') || null;
+const savedUser = typeof window !== 'undefined' ? localStorage.getItem('_snaptuki_user') : null;
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null, 
+  user: savedUser ? JSON.parse(savedUser) : null, 
   token: initialToken,
   isAuthenticated: !!initialToken,
 
@@ -27,6 +28,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       sameSite: 'strict' 
     });
     
+    // Persist user object to localStorage
+    localStorage.setItem('_snaptuki_user', JSON.stringify(user));
+
     // 2. Update React State
     set({ user, token, isAuthenticated: true });
   },

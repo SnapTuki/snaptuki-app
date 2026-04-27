@@ -7,17 +7,26 @@ import {
   AssignPrimaryCaregiverInput,
   AddResidentAllergyInput,
   AddResidentMedicationInput,
+  EmergencyContactInput,
+  UpdateResidentIdentityInput,
 } from "../inputs/ResidentInputs";
 
 import { ResidentMap } from "../../../../residentManagement/infrastructure/mappers/ResidentMap";
 
 import { RegisterResidentUseCase } from "../../../../residentManagement/application/useCases/RegisterResidentUseCase";
-import { UpdateResidentMedicalProfileUseCase } from "../../../../residentManagement/application/useCases/UpdateResidentMedicalProfileUseCase";
 import { AddResidentAllergyUseCase } from "../../../../residentManagement/application/useCases/AddResidentAllergyUseCase";
 import { AddResidentMedicationUseCase } from "../../../../residentManagement/application/useCases/AddResidentMedicationUseCase";
 import { AssignPrimaryCaregiverUseCase } from "../../../application/useCases/AssignPrimaryCaregiverUsecase";
 import { GraphQLContext } from '../../../../../lib/graphqlContext';
 import { DischargeResidentUseCase } from "../../../application/useCases/DischargeResidentUseCase";
+import { UpdateResidentIdentityUseCase } from "../../../application/useCases/UpdateResidentIdentityUseCase";
+import { UpdateEmergencyContactsUseCase } from "../../../application/useCases/UpdateEmergencyContactsUseCase";
+import { ListResidentsUseCase } from "../../../application/useCases/ListResidentsUseCase";
+import { toDomainGender } from "../../../infrastructure/mappers/GenderMap";
+import { toDomainResidentStatus } from "../../../infrastructure/mappers/ResidentStatusMap";
+import { toDomainMobilityLevel } from "../../../infrastructure/mappers/MobilityLevelMap";
+import { MobilityLevel } from "../../../domain/entities/Resident";
+
 @Resolver()
 export class ResidentResolver {
 
@@ -25,13 +34,18 @@ export class ResidentResolver {
   async residentList(
     @Ctx() ctx: GraphQLContext,
     @Arg("search", () => String, { nullable: true }) search?: string,
-    @Arg("mobilityLevel", () => String, { nullable: true }) mobilityLevel?: string,
+    @Arg("mobilityLevel", () => MobilityLevel, { nullable: true }) mobilityLevel?: MobilityLevel,
 
   ): Promise<ResidentType[]> {
-    const residents = await ctx.residentManagement.repo.list({
-      search: search ?? null, mobilityLevel: mobilityLevel ?? null
+    
+    const useCase = new ListResidentsUseCase(ctx.residentManagement.repo);
+    console.log('Query residentList is called ');
+    const residents = await useCase.execute({
+      search: search ?? null,
+      mobilityLevel: mobilityLevel ?? null
     });
-    return residents.map(ResidentMap.toDTO) as any;
+
+    return residents.map(resident => ResidentMap.toDTO(resident));
   }
 
   @Query(() => ResidentType, { nullable: true })
@@ -50,11 +64,11 @@ export class ResidentResolver {
       firstName: input.firstName,
       lastName: input.lastName,
       birthDate: input.birthDate,
-      gender: input.gender,
-      status: "ACTIVE",
+      gender: toDomainGender(input.gender),
+      status: toDomainResidentStatus("ACTIVE"),
       email: input.email ?? null,
       phone: input.phone ?? null,
-      mobilityLevel: input.mobilityLevel,
+      mobilityLevel: toDomainMobilityLevel(input.mobilityLevel),
       room: input.room ?? null,
     });
     return ResidentMap.toDTO(resident) as any;
@@ -81,17 +95,7 @@ export class ResidentResolver {
     console.log("Dischargied : " + resident.status);
     return ResidentMap.toDTO(resident) as any;
   }
-  @Mutation(() => ResidentType)
-  async updateResidentMedicalProfile(@Arg("input", () => UpdateResidentMedicalProfileInput) input: UpdateResidentMedicalProfileInput,
-    @Ctx() ctx: GraphQLContext) {
-    const useCase = new UpdateResidentMedicalProfileUseCase(ctx.residentManagement.repo);
-    const resident = await useCase.execute({
-      id: input.id,
-      mobilityLevel: input.mobilityLevel,
-      room: input.room ?? null,
-    });
-    return ResidentMap.toDTO(resident) as any;
-  }
+
 
   @Mutation(() => ResidentType)
   async assignPrimaryCaregiver(@Arg("input", () => AssignPrimaryCaregiverInput) input: AssignPrimaryCaregiverInput, @Ctx() ctx: GraphQLContext) {
@@ -128,6 +132,31 @@ export class ResidentResolver {
       prescribedBy: input.prescribedBy ?? null,
     });
     return ResidentMap.toDTO(resident) as any;
+  }
+
+  @Mutation(() => ResidentType)
+  async updateResidentIdentity(
+    @Arg("input", () => UpdateResidentIdentityInput) input: UpdateResidentIdentityInput,
+    @Ctx() ctx: GraphQLContext
+  ) {
+    // Logic: Name, DOB, SSN changes
+    const useCase = new UpdateResidentIdentityUseCase(ctx.residentManagement.repo);
+    const resident = await useCase.execute(input);
+    return ResidentMap.toDTO(resident);
+  }
+
+  @Mutation(() => ResidentType)
+  async updateEmergencyContacts(
+    @Arg("residentId", () => String) residentId: string,
+    @Arg("contacts", () => [EmergencyContactInput]) contacts: EmergencyContactInput[],
+    @Ctx() ctx: GraphQLContext
+  ) {
+    console.log('Calling updateEmergencyContacts with parameters: ', contacts)
+    // Logic: Replaces or syncs the contact list
+    const useCase = new UpdateEmergencyContactsUseCase(ctx.residentManagement.repo);
+    const resident = await useCase.execute(residentId, contacts);
+    console.log("Resident from emergency update: ", resident.emergencyContacts);
+    return ResidentMap.toDTO(resident);
   }
 
 }

@@ -12,6 +12,7 @@ export class PrismaResidentRepo implements IResidentRepo {
       where: { residentId: id },
       include: { allergies: true, medications: true, emergencyContacts: true },
     });
+    console.log("Found the row ", row)
     return row ? ResidentMap.toDomain(row) : null;
   }
 
@@ -58,7 +59,19 @@ export class PrismaResidentRepo implements IResidentRepo {
     const data = ResidentMap.toPersistence(resident);
     await this.prisma.resident.update({
       where: { residentId: resident.residentId },
-      data,
+      data: {
+        ...data,
+        emergencyContacts: {
+        // Purist approach: Delete existing and recreate to match domain state
+        deleteMany: {}, 
+        create: resident.emergencyContacts.map(ec => ({
+          name: ec.name,
+          relation: ec.relation,
+          phone: ec.phone.value, // Access the Value Object value
+          isPrimary: ec.isPrimary?? false
+        }))
+      }
+      },
     });
   }
 

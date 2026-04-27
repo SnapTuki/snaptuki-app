@@ -4,8 +4,7 @@ import { Resident } from "../../../residentManagement/domain/entities/Resident";
 import { MedicalRecordNumber } from "../../../residentManagement/domain/valueObjects/MedicalRecordNumber";
 import { Email } from "../../../residentManagement/domain/valueObjects/Email";
 import { PhoneNumber } from "../../../residentManagement/domain/valueObjects/PhoneNumber";
-import { ResidentStatus } from "../../../../generated/prisma";
-import { MobilityLevel, Gender} from "../../../../generated/prisma";
+import { Gender, MobilityLevel, ResidentStatus } from "../../../residentManagement/domain/entities/Resident";
 
 export interface RegisterResidentInput {
   mrn: string;
@@ -45,7 +44,7 @@ export class RegisterResidentUseCase {
       agencyId: input.agencyId,
       taskAssignments: [],
       tasks: [],
-      status: ResidentStatus.ACTIVE,
+      status: ResidentStatus.Active,
       allergies: [],
       medications: [],
       emergencyContacts: [],

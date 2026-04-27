@@ -14,6 +14,12 @@ export const GET_RESIDENTS: TypedDocumentNode<Query> = gql`
         mobilityLevel
         status
         room
+        emergencyContacts{
+          id
+          name
+          relation
+          phone
+        }
     }
   }
 `;
