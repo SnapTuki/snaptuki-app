@@ -162,93 +162,14 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Timezone</label>
-            <div className="relative">
-              <Clock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
-              <select className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none font-medium text-slate-700 transition-all">
-                <option value="utc+2">Eastern European Time (EET / Helsinki)</option>
-                <option value="utc+1">Central European Time (CET)</option>
-                <option value="utc+0">Greenwich Mean Time (GMT)</option>
-              </select>
-            </div>
-          </div>
+  
         </div>
       </Section>
 
-      {/* 3. Visual Preferences */}
-      <Section icon={Monitor} title="Appearance & Interface" description="Customize how Snaptuki looks on your device.">
-        <div className="divide-y divide-slate-100">
-          <Toggle 
-            label="Dark Mode" 
-            description="Reduce eye strain during night shifts by switching to a darker color palette."
-            checked={settings.darkMode} 
-            onChange={() => handleToggle('darkMode')} 
-          />
-          <Toggle 
-            label="Compact Density" 
-            description="Show more rows in shift rosters and resident lists by reducing padding."
-            checked={settings.compactMode} 
-            onChange={() => handleToggle('compactMode')} 
-          />
-        </div>
-      </Section>
-
-      {/* 4. Notifications */}
-      <Section icon={Bell} title="Notifications & Alerts" description="Control how and when you receive updates.">
-        <div className="space-y-4 mb-4">
-          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-            <Check className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-blue-800 font-medium leading-relaxed">
-              <strong>Mandatory Alerts:</strong> Critical health alerts (e.g., patient fall detection, missed critical medication) are always enabled for on-duty staff and cannot be turned off.
-            </p>
-          </div>
-        </div>
-        
-        <div className="divide-y divide-slate-100">
-          <Toggle 
-            label="Email Summaries" 
-            description="Receive daily shift handover reports and task summaries via email."
-            checked={settings.emailAlerts} 
-            onChange={() => handleToggle('emailAlerts')} 
-          />
-          <Toggle 
-            label="SMS Alerts" 
-            description="Receive text messages for urgent staffing requests or immediate shift changes."
-            checked={settings.smsAlerts} 
-            onChange={() => handleToggle('smsAlerts')} 
-          />
-          <Toggle 
-            label="Push Notifications" 
-            description="Real-time browser notifications for new task assignments and messages."
-            checked={settings.pushNotifs} 
-            onChange={() => handleToggle('pushNotifs')} 
-          />
-        </div>
-      </Section>
 
       {/* 5. Security */}
       <Section icon={ShieldCheck} title="Security & Compliance" description="Manage access to your account and health data privacy.">
-        <div className="divide-y divide-slate-100">
-          <Toggle 
-            label="Two-Factor Authentication (2FA)" 
-            description="Require a secondary code when logging in from a new or unrecognized device."
-            checked={settings.mfaEnabled} 
-            onChange={() => handleToggle('mfaEnabled')} 
-          />
-          <Toggle 
-            label="HIPAA Auto-Logout" 
-            description="Automatically log out of the portal after 15 minutes of inactivity."
-            checked={settings.autoLogout} 
-            onChange={() => handleToggle('autoLogout')} 
-          />
-          <Toggle 
-            label="Analytics Data Sharing" 
-            description="Share anonymous usage data to help improve Snaptuki's performance."
-            checked={settings.dataSharing} 
-            onChange={() => handleToggle('dataSharing')} 
-          />
-        </div>
+        
         
         <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
             <button className="flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-sm font-bold transition-colors">

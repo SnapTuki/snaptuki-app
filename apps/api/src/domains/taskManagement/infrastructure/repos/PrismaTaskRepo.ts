@@ -24,20 +24,64 @@ export class PrismaTaskRepo implements ITaskRepo {
   async list(params?: {
     take?: number; skip?: number; search?: string | null;
     status?: string | null; caregiverId?: string | null; residentId?: string | null;
-    fromDueAt?: Date | null; toDueAt?: Date | null;
+    startDate?: Date | null; endDate?: Date | null;
   }): Promise<Task[]> {
-    const { take = 50, skip = 0, search, status, caregiverId, residentId, fromDueAt, toDueAt } = params ?? {};
+    const { 
+      take = 50, 
+      skip = 0, 
+      search, 
+      status, 
+      caregiverId, 
+      residentId, 
+      startDate, 
+      endDate 
+    } = params ?? {};
+
+    // Build the dynamic filter object
+    const where: any = {
+      AND: [
+        // Filter by specific resident or caregiver IDs if provided
+        residentId ? { residentId } : {},
+        caregiverId ? { assignedCaregiverId: caregiverId } : {},
+        
+        // Filter by Task Status (e.g., PENDING, COMPLETED)
+        status ? { status } : {},
+
+        // Date Range Filtering: Essential for "Today" and "Tomorrow" views
+        startDate || endDate ? {
+          dueAt: {
+            ...(startDate && { gte: startDate }),
+            ...(endDate && { lte: endDate }),
+          }
+        } : {},
+
+        // Full-text search across Title or Description
+        search ? {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ]
+        } : {},
+      ]
+    };
+
     const rows = await this.prisma.task.findMany({
+      where,
+      take,
+      skip,
       orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
       include: {
-        checklist: true, resident: true, assignedCaregiver: {
+        checklist: true, 
+        resident: true, 
+        assignedCaregiver: {
           include: {
             user: true
           }
         }
       },
     });
-    console.log("From Repo: ", rows);
+
+    console.log(`Repo found ${rows.length} tasks matching criteria.`);
     return rows.map(TaskMap.toDomain);
   }
 

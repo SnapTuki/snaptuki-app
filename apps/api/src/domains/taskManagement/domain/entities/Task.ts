@@ -179,9 +179,8 @@ export class Task {
     this.touch();
   }
 
-  cancel(reason: string[], now: Date = new Date()) {
+  cancel(reason: string, now: Date = new Date()) {
     this.props.status = "CANCELLED";
-    this.props.completionNotes = reason;
     this.touch();
   }
 

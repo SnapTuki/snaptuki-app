@@ -103,3 +103,35 @@ export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
     }
   }
 `;
+
+// --- QUERIES ---
+export const GET_TASK_LIST: TypedDocumentNode<Query> = gql`
+  query GetTaskListResident($residentId: String, $startDate: DateTime, $endDate: DateTime, $status: String) {
+    taskList(residentId: $residentId, startDate: $startDate, endDate: $endDate, status: $status) {
+      id
+      title
+      description
+      status
+      priority
+      dueAt
+      assignedCaregiver {
+        firstName
+        lastName
+      }
+      checklist{
+        id
+        label
+      }
+    }
+  }
+`;
+
+export const SEARCH_CAREGIVERS: TypedDocumentNode<Query> = gql`
+  query SearchCaregivers($search: String) {
+    caregiverList(search: $search) {
+      id
+      firstName
+      lastName
+    }
+  }
+`;

@@ -9,15 +9,24 @@ import {
 } from "lucide-react";
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
+
 import { GET_TASK_LIST, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
-import { CREATE_ADHOC_TASK } from '../../features/taskCenter/graphql/mutations';
-import { UPDATE_TASK } from '../../features/taskCenter/graphql/mutations';
+import { 
+  CREATE_ADHOC_TASK, 
+  UPDATE_TASK,
+  CANCEL_TASK_MUTATION,
+  COMPLETE_TASK_MUTATION
+} from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
+
 export default function TaskCenter() {
   const [activeTab, setActiveTab] = useState('Today'); // Today, Performance, History
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
+
+  // --- NEW: Schedule View State ---
+  const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
 
   // Filtering states for Today Tab
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -32,14 +41,27 @@ export default function TaskCenter() {
 
   const allTasks = data?.taskList || [];
 
-  // Filtered tasks for Today View
+  // Filtered tasks for Today View (Now with Date filtering)
   const filteredTasks = useMemo(() => {
+    // Calculate date boundaries
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const tomorrowStart = todayStart + 86400000; // +1 day (24h)
+    const dayAfterTomorrowStart = tomorrowStart + 86400000;
+
     return allTasks.filter((t: any) => {
       const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
       const matchesPriority = priorityFilter === 'ALL' || t.priority === priorityFilter;
-      return matchesStatus && matchesPriority;
+      
+      // Check if task falls within selected date
+      const taskTime = new Date(t.dueAt).getTime();
+      const matchesDate = scheduleView === 'Today' 
+        ? (taskTime >= todayStart && taskTime < tomorrowStart)
+        : (taskTime >= tomorrowStart && taskTime < dayAfterTomorrowStart);
+
+      return matchesStatus && matchesPriority && matchesDate;
     });
-  }, [allTasks, statusFilter, priorityFilter]);
+  }, [allTasks, statusFilter, priorityFilter, scheduleView]);
 
   const completionRate = Math.round((allTasks.filter((t: any) => t.status === "COMPLETED").length / allTasks.length) * 100) || 0;
 
@@ -82,7 +104,7 @@ export default function TaskCenter() {
 
           {/* TAB NAVIGATION */}
           <div className="flex items-center gap-8 mt-2">
-            <TabItem label="Today" active={activeTab === 'Today'} onClick={() => setActiveTab('Today')} icon={<Clock className="w-4 h-4" />} />
+            <TabItem label="Schedule" active={activeTab === 'Today'} onClick={() => setActiveTab('Today')} icon={<Clock className="w-4 h-4" />} />
             <TabItem label="Performance" active={activeTab === 'Performance'} onClick={() => setActiveTab('Performance')} icon={<BarChart3 className="w-4 h-4" />} />
             <TabItem label="History" active={activeTab === 'History'} onClick={() => setActiveTab('History')} icon={<HistoryIcon className="w-4 h-4" />} />
           </div>
@@ -98,7 +120,24 @@ export default function TaskCenter() {
             {/* LEFT SIDE: FILTERABLE LIST */}
             <section className="w-[450px] shrink-0 border-r border-slate-200 bg-white flex flex-col">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
-                <div className="flex items-center justify-between">
+                
+                {/* --- NEW: TODAY / TOMORROW TOGGLE --- */}
+                <div className="flex bg-slate-200/60 p-1 rounded-xl mb-2">
+                  <button
+                    onClick={() => setScheduleView('Today')}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${scheduleView === 'Today' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => setScheduleView('Tomorrow')}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${scheduleView === 'Tomorrow' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Tomorrow
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
                   <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                     <Filter className="w-3 h-3" /> Live Filters
                   </h2>
@@ -128,14 +167,21 @@ export default function TaskCenter() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-white">
-                {filteredTasks.map((task: any) => (
-                  <StreamItem
-                    key={task.id}
-                    task={task}
-                    active={selectedTask?.id === task.id}
-                    onClick={() => setSelectedTask(task)}
-                  />
-                ))}
+                {filteredTasks.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400">
+                    <Inbox className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-xs font-bold uppercase tracking-widest">No tasks for {scheduleView}</p>
+                  </div>
+                ) : (
+                  filteredTasks.map((task: any) => (
+                    <StreamItem
+                      key={task.id}
+                      task={task}
+                      active={selectedTask?.id === task.id}
+                      onClick={() => setSelectedTask(task)}
+                    />
+                  ))
+                )}
               </div>
             </section>
 
@@ -179,7 +225,6 @@ export default function TaskCenter() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {/* Logic for history tasks based on date would go here */}
               <p className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest border-2 border-dashed border-slate-200 rounded-[40px]">
                 Showing records for {new Date(historyDate).toLocaleDateString()}
               </p>
@@ -213,6 +258,7 @@ export default function TaskCenter() {
 // =========================================
 // HELPER COMPONENTS
 // =========================================
+import { Inbox } from 'lucide-react'; // Make sure to add this to the top imports
 
 function TabItem({ label, active, onClick, icon }: any) {
   return (
@@ -246,10 +292,10 @@ function StreamItem({ task, active, onClick }: any) {
         }`}
     >
       <div className={`flex justify-between mb-3 text-[9px] font-black uppercase tracking-widest ${active ? 'text-slate-400' : 'text-slate-500'}`}>
-        <span>{task.status}</span>
-        <span>10:30 AM</span>
+        <span className={`${task.status === 'CANCELLED' ? 'text-rose-400' : ''}`}>{task.status}</span>
+        <span>{new Date(task.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
-      <h4 className={`text-sm font-black mb-2 leading-snug ${active ? 'text-white' : 'text-slate-800'}`}>
+      <h4 className={`text-sm font-black mb-2 leading-snug ${active ? 'text-white' : 'text-slate-800'} ${task.status === 'CANCELLED' ? 'line-through opacity-70' : ''}`}>
         {task.title}
       </h4>
       <div className={`flex items-center gap-2 text-[10px] font-bold ${active ? 'text-indigo-400' : 'text-slate-500'}`}>
@@ -265,23 +311,23 @@ function StreamItem({ task, active, onClick }: any) {
   );
 }
 
-function TaskDetailView({ task, onUpdate }: any) {
-  const [cgSearch, setCgSearch] = useState('');
+// ... [The rest of the file: TaskDetailView, CaregiverSelect, PrioritySelect, DispatchDrawer stay exactly the same]
+// (Ensure you append the rest of the code as it was in the previous turn)
 
+function TaskDetailView({ task, onUpdate }: any) {
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [updateTask, { loading }] = useMutation(UPDATE_TASK, {
+  const isPending = task.status === 'PENDING';
+  const isCancelled = task.status === 'CANCELLED';
+  const canEdit = isPending; 
+  const canRetask = isCancelled && new Date(task.dueAt).getTime() > Date.now() + 15 * 60000;
+
+  const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
-
-      // 1. Trigger the refetch in the parent immediately
       if (onUpdate) onUpdate();
-
-      // 2. Clear the success message after 3 seconds
-      setTimeout(() => {
-        setMutationStatus('IDLE');
-      }, 3000);
+      setTimeout(() => setMutationStatus('IDLE'), 3000);
     },
     onError: (error) => {
       setMutationStatus('ERROR');
@@ -289,18 +335,57 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   });
 
-  // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
-  const formatInitialDate = (date: any) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16);
+  const [cancelTaskMutation] = useMutation(CANCEL_TASK_MUTATION, {
+    onCompleted: () => {
+      setMutationStatus('SUCCESS');
+      if (onUpdate) onUpdate();
+      setTimeout(() => setMutationStatus('IDLE'), 3000);
+    },
+    onError: (error) => {
+      setMutationStatus('ERROR');
+      setErrorMessage(error.message || "Failed to cancel task.");
+    }
+  });
+
+  const [completeTaskMutation] = useMutation(COMPLETE_TASK_MUTATION, {
+    onCompleted: () => {
+      setMutationStatus('SUCCESS');
+      if (onUpdate) onUpdate();
+      setTimeout(() => setMutationStatus('IDLE'), 3000);
+    },
+    onError: (error) => {
+      setMutationStatus('ERROR');
+      setErrorMessage(error.message || "Failed to complete task.");
+    }
+  });
+
+  const handleCancel = () => {
+    const reason = window.prompt("Please provide a reason for cancelling this task:");
+    if (reason !== null && reason.trim() !== "") {
+      cancelTaskMutation({ variables: { id: task.id, reason } });
+    } else if (reason !== null) {
+      alert("A reason is required to cancel a task.");
+    }
+  };
+
+  const handleForceComplete = () => {
+    const reason = window.prompt("Please provide a reason for force completing this task:");
+    if (reason !== null && reason.trim() !== "") {
+      completeTaskMutation({ variables: { input: { id: task.id, reason } } });
+    } else if (reason !== null) {
+      alert("A reason is required to force complete.");
+    }
+  };
+
+  const handleRetask = () => {
+    if (window.confirm("Are you sure you want to bring this task back to life?")) {
+      updateTask({ variables: { input: { id: task.id, status: 'PENDING' } } });
+    }
   };
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
-      {/* 2. ERROR BADGE (Pinned to top if error occurs) */}
+    <div className="h-full flex flex-col bg-white overflow-hidden relative">
+      
       {/* SUCCESS NOTIFICATION OVERLAY */}
       {mutationStatus === 'SUCCESS' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-500">
@@ -328,6 +413,7 @@ function TaskDetailView({ task, onUpdate }: any) {
           </button>
         </div>
       )}
+      
       <Formik
         initialValues={{
           id: task.id,
@@ -353,8 +439,7 @@ function TaskDetailView({ task, onUpdate }: any) {
         }}
         enableReinitialize
         onSubmit={async (values) => {
-          // 2. Prepare the payload
-          // Ensure we don't send UI-specific fields like 'caregiverName'
+          if (!canEdit) return; // safety check
           const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, ...cleanPayload } = values;
           if (!dueAt) {
             setMutationStatus('ERROR');
@@ -365,7 +450,6 @@ function TaskDetailView({ task, onUpdate }: any) {
             variables: {
               input: {
                 ...cleanPayload,
-                // Ensure the date is a proper ISO string for the backend
                 dueAt: new Date(values.dueAt).toISOString()
               }
             }
@@ -379,11 +463,15 @@ function TaskDetailView({ task, onUpdate }: any) {
             <header className="px-10 py-8 border-b border-slate-100 bg-white">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <div className={`p-3 rounded-xl ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
                     <Briefcase className="w-6 h-6" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Task Editor</h1>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                      Task Editor
+                      {isCancelled && <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded text-[10px] uppercase tracking-widest font-bold">Cancelled</span>}
+                      {!canEdit && !isCancelled && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] uppercase tracking-widest font-bold">Read Only</span>}
+                    </h1>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
                       System Reference: {task.id?.slice(-8)}
                     </p>
@@ -391,13 +479,19 @@ function TaskDetailView({ task, onUpdate }: any) {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Due Date Editor */}
-                  <ClinicalScheduler
-                    value={values.dueAt}
-                    onChange={(iso) => setFieldValue('dueAt', iso)}
-                  />
+                  <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
+                    <ClinicalScheduler
+                      value={values.dueAt}
+                      onChange={(iso) => setFieldValue('dueAt', iso)}
+                    />
+                  </div>
 
-                  <Field as="select" name="priority" className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none">
+                  <Field 
+                    as="select" 
+                    name="priority" 
+                    disabled={!canEdit}
+                    className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
@@ -408,7 +502,8 @@ function TaskDetailView({ task, onUpdate }: any) {
 
               <Field
                 name="title"
-                className="w-full text-4xl font-black text-slate-900 placeholder:text-slate-200 outline-none border-none p-0 focus:ring-0 bg-transparent"
+                disabled={!canEdit}
+                className="w-full text-4xl font-black text-slate-900 placeholder:text-slate-200 outline-none border-none p-0 focus:ring-0 bg-transparent disabled:opacity-70"
                 placeholder="Enter Task Title..."
               />
             </header>
@@ -442,33 +537,16 @@ function TaskDetailView({ task, onUpdate }: any) {
                 {/* Status & Caregiver Selector */}
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Caregiver & Status
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Assignments
                   </h3>
 
                   <div className="space-y-4">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase mb-2 ml-1">Lifecycle State</p>
-                      <Field
-                        as="select"
-                        name="status"
-                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-black uppercase tracking-widest outline-none"
-                      >
-                        <option value="PENDING">Pending</option>
-                        <option value="ASSIGNED">Assigned</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="CANCELLED">Cancelled</option>
-                      </Field>
-                    </div>
-
-                    <div className="relative group">
-
+                    <div className="relative group mt-5">
                       <CaregiverSelect
-                        value={values.assignedCaregiver} // Pass the object from Formik
+                        disabled={!canEdit}
+                        value={values.assignedCaregiver} 
                         onChange={(cg: any) => {
-                          // Update the ID for the API
                           setFieldValue('assignedCaregiverId', cg?.id || '');
-                          // Update the Object for this component's display
                           setFieldValue('assignedCaregiver', cg ? {
                             id: cg.id,
                             firstName: cg.firstName,
@@ -489,12 +567,13 @@ function TaskDetailView({ task, onUpdate }: any) {
                 <Field
                   as="textarea"
                   name="description"
-                  className="w-full min-h-[120px] p-8 bg-slate-50 border border-slate-100 rounded-[32px] text-base font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none leading-relaxed"
+                  disabled={!canEdit}
+                  className="w-full min-h-[120px] p-8 bg-slate-50 border border-slate-100 rounded-[32px] text-base font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none leading-relaxed disabled:opacity-70 disabled:cursor-not-allowed"
                   placeholder="No description provided..."
                 />
               </div>
 
-              {/* Checklist Section (Editable) */}
+              {/* Checklist Section */}
               <div className="space-y-6 pb-10">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Execution Checklist</h3>
@@ -512,26 +591,31 @@ function TaskDetailView({ task, onUpdate }: any) {
                           <Field
                             name={`checklist.${index}.label`}
                             placeholder="Instruction step..."
-                            className="flex-1 bg-transparent border-none text-sm font-bold text-slate-700 outline-none p-0 focus:ring-0"
+                            disabled={!canEdit}
+                            className="flex-1 bg-transparent border-none text-sm font-bold text-slate-700 outline-none p-0 focus:ring-0 disabled:opacity-70"
                           />
 
-                          <button
-                            type="button"
-                            onClick={() => remove(index)}
-                            className="opacity-0 group-hover:opacity-100 p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="opacity-0 group-hover:opacity-100 p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       ))}
 
-                      <button
-                        type="button"
-                        onClick={() => push({ id: `new-${Date.now()}`, label: '', required: true, done: false })}
-                        className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" /> Add Protocol Step
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => push({ id: `new-${Date.now()}`, label: '', required: true, done: false })}
+                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" /> Add Protocol Step
+                        </button>
+                      )}
                     </div>
                   )}
                 </FieldArray>
@@ -541,22 +625,50 @@ function TaskDetailView({ task, onUpdate }: any) {
             {/* 3. FOOTER ACTIONS */}
             <footer className="p-10 border-t border-slate-100 bg-white flex items-center justify-between">
               <div className="flex gap-4">
-                {/* Cancel/Discard buttons */}
+                {task.status !== 'CANCELLED' && task.status !== 'COMPLETED' && (
+                  <>
+                    <button type="button" onClick={handleCancel} className="text-rose-500 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-rose-50 rounded-lg transition-colors">
+                      Cancel Task
+                    </button>
+                    <button type="button" onClick={handleForceComplete} className="text-emerald-600 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-emerald-50 rounded-lg transition-colors">
+                      Force Complete
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-6">
-                {dirty && mutationStatus === 'IDLE' && (
+                {dirty && mutationStatus === 'IDLE' && canEdit && (
                   <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
                     <AlertCircle className="w-3 h-3" /> Unsaved Changes
                   </span>
                 )}
-                <button
-                  type="submit"
-                  disabled={!dirty || loading}
-                  className="px-12 py-4 bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 flex items-center gap-3"
-                >
-                  {loading ? <Loader2 className="animate-spin w-4 h-4" /> : <><Save className="w-4 h-4" /> Save Updates</>}
-                </button>
+                
+                {isCancelled ? (
+                  canRetask ? (
+                    <button
+                      type="button"
+                      onClick={handleRetask}
+                      className="px-10 py-4 bg-indigo-600 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
+                    >
+                      Retask
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Deadline Elapsed (Cannot Retask)
+                    </span>
+                  )
+                ) : (
+                  canEdit && (
+                    <button
+                      type="submit"
+                      disabled={!dirty || updateLoading}
+                      className="px-12 py-4 bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 flex items-center gap-3"
+                    >
+                      {updateLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <><Save className="w-4 h-4" /> Save Updates</>}
+                    </button>
+                  )
+                )}
               </div>
             </footer>
 
@@ -566,7 +678,8 @@ function TaskDetailView({ task, onUpdate }: any) {
     </div>
   );
 }
-function CaregiverSelect({ value, onChange }: any) {
+
+function CaregiverSelect({ value, onChange, disabled }: any) {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [open, setOpen] = useState(false);
@@ -574,7 +687,6 @@ function CaregiverSelect({ value, onChange }: any) {
 
   const [searchCaregivers, { data, loading }] = useLazyQuery(SEARCH_CAREGIVERS);
 
-  // Debounce search
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (query.trim() && isFocused) {
@@ -584,7 +696,6 @@ function CaregiverSelect({ value, onChange }: any) {
     return () => clearTimeout(timeout);
   }, [query, isFocused]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -605,35 +716,38 @@ function CaregiverSelect({ value, onChange }: any) {
         Assigned Provider
       </label>
 
-      {/* TOGGLE VIEW: LABEL OR INPUT */}
       {!isFocused && value ? (
-        /* --- VIEW MODE: LABEL TEXT --- */
         <div
-          onClick={() => setIsFocused(true)}
-          className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-white hover:border-indigo-200 transition-all group"
+          onClick={() => !disabled && setIsFocused(true)}
+          className={`flex items-center justify-between p-3 border rounded-xl transition-all group ${disabled ? 'bg-slate-100 border-slate-200 opacity-80 cursor-not-allowed' : 'bg-slate-50 border-slate-100 cursor-pointer hover:bg-white hover:border-indigo-200'}`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white shadow-sm">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-sm ${disabled ? 'bg-slate-400' : 'bg-indigo-600'}`}>
               {value.firstName[0]}{value.lastName[0]}
             </div>
             <div>
               <p className="text-xs font-bold text-slate-700">{value.firstName} {value.lastName}</p>
-              <p className="text-[9px] font-bold text-emerald-500 uppercase">Active Assignment</p>
+              <p className={`text-[9px] font-bold uppercase ${disabled ? 'text-slate-500' : 'text-emerald-500'}`}>
+                {disabled ? 'Assigned' : 'Active Assignment'}
+              </p>
             </div>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onChange(null); }}
-            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-md transition-all"
-          >
-            <X className="w-3.5 h-3.5 text-rose-400" />
-          </button>
+          {!disabled && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChange(null); }}
+              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-md transition-all"
+            >
+              <X className="w-3.5 h-3.5 text-rose-400" />
+            </button>
+          )}
         </div>
       ) : (
-        /* --- EDIT MODE: INPUT FIELD --- */
         <div className="relative animate-in fade-in duration-200">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isFocused ? 'text-indigo-500' : 'text-slate-400'}`} />
           <input
             autoFocus={isFocused}
+            disabled={disabled}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -644,7 +758,7 @@ function CaregiverSelect({ value, onChange }: any) {
               setOpen(true);
             }}
             placeholder={value ? `${value.firstName} ${value.lastName}` : "Search caregiver..."}
-            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none ring-4 ring-transparent focus:ring-indigo-500/5 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none ring-4 ring-transparent focus:ring-indigo-500/5 focus:border-indigo-500 transition-all placeholder:text-slate-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
           />
           {loading && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 animate-spin" />
@@ -652,8 +766,7 @@ function CaregiverSelect({ value, onChange }: any) {
         </div>
       )}
 
-      {/* DROPDOWN RESULTS */}
-      {open && isFocused && (query.length > 0 || caregivers.length > 0) && (
+      {open && isFocused && !disabled && (query.length > 0 || caregivers.length > 0) && (
         <div className="absolute z-[70] mt-2 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 max-h-64 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
           {caregivers.length === 0 && !loading ? (
             <div className="px-5 py-4 text-xs font-bold text-slate-400 italic">
@@ -663,6 +776,7 @@ function CaregiverSelect({ value, onChange }: any) {
             caregivers.map((cg: any) => (
               <button
                 key={cg.id}
+                type="button"
                 onClick={() => {
                   onChange(cg);
                   setQuery("");
@@ -681,12 +795,10 @@ function CaregiverSelect({ value, onChange }: any) {
     </div>
   );
 }
+
 // =========================================
 // HELPER COMPONENTS
 // =========================================
-
-
-// --- Sub-Components ---
 
 interface PrioritySelectProps {
   value: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -697,7 +809,6 @@ function PrioritySelect({ value, onChange }: PrioritySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -722,7 +833,6 @@ function PrioritySelect({ value, onChange }: PrioritySelectProps) {
         Task Priority
       </label>
 
-      {/* --- VIEW MODE: CLINICAL BADGE --- */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all group ${isOpen ? 'bg-white border-indigo-200 ring-4 ring-indigo-500/5' : `${current.bg} border-slate-100`
@@ -737,7 +847,6 @@ function PrioritySelect({ value, onChange }: PrioritySelectProps) {
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* --- DROPDOWN SELECTION --- */}
       {isOpen && (
         <div className="absolute z-[70] mt-2 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
           {options.map((option) => (
@@ -766,7 +875,7 @@ function PrioritySelect({ value, onChange }: PrioritySelectProps) {
   );
 }
 
-// Validation Schema to ensure clinical data integrity
+// Validation Schema
 const DispatchSchema = Yup.object().shape({
   title: Yup.string().min(3, 'Title too short').required('Required'),
   residentId: Yup.string().required('Please select a resident'),
@@ -777,7 +886,6 @@ const DispatchSchema = Yup.object().shape({
 
 function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
   const [residentSearch, setResidentSearch] = useState('');
-  // 💡 Caregiver search state/queries are no longer needed here as CaregiverSelect handles them internally
 
   const { data: resData } = useQuery(SEARCH_RESIDENTS, {
     variables: { search: residentSearch },
@@ -799,16 +907,14 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
           residentId: '',
           residentName: '',
           assignedCaregiverId: '',
-          assignedCaregiver: null, // Full object for the CaregiverSelect badge
+          assignedCaregiver: null, 
           category: 'CARE',
           priority: 'MEDIUM',
-          // Set initial default to Now + 30 mins in ISO format
           dueAt: new Date(Date.now() + 30 * 60000).toISOString(),
           steps: ['Initial assessment']
         }}
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
-          // Construct the domain-ready checklist
           const checklistInput = values.steps.map(label => ({
             id: crypto.randomUUID(), 
             label,
@@ -826,7 +932,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                   priority: values.priority,
                   residentId: values.residentId,
                   assignedCaregiverId: values.assignedCaregiverId || null,
-                  // Use the ISO string directly from Formik state
                   dueAt: values.dueAt, 
                   checklist: checklistInput,
                   status: values.assignedCaregiverId ? 'ASSIGNED' : 'PENDING'
@@ -913,7 +1018,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                 <div className="space-y-8">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
 
-                  {/* Resident Selection */}
                   <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resident</label>
                     {values.residentId ? (
@@ -967,7 +1071,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                   />
                 </div>
 
-                {/* TIMELINE & PRIORITY */}
                 <div className="space-y-8 pt-8 border-t border-slate-100">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
                   
@@ -998,7 +1101,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
               </section>
             </div>
 
-            {/* FOOTER */}
             <div className="p-10 border-t border-slate-100 bg-white flex justify-end items-center gap-6 shrink-0">
               <button 
                 type="button" 

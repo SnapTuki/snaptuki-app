@@ -220,6 +220,7 @@ export type Mutation = {
   assignPrimaryCaregiver: ResidentType;
   assignRole: User;
   authenticateUser: AuthResultGql;
+  cancelTask: Task;
   changePassword: Scalars['Boolean']['output'];
   completeTask: Task;
   createTask: Task;
@@ -268,6 +269,12 @@ export type MutationAssignRoleArgs = {
 
 export type MutationAuthenticateUserArgs = {
   input: AuthenticateInput;
+};
+
+
+export type MutationCancelTaskArgs = {
+  id: Scalars['String']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -376,9 +383,11 @@ export type QueryTaskByIdArgs = {
 
 export type QueryTaskListArgs = {
   caregiverId?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
   residentId?: InputMaybe<Scalars['String']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
   skip?: InputMaybe<Scalars['Float']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
   status?: InputMaybe<Scalars['String']['input']>;
   take?: InputMaybe<Scalars['Float']['input']>;
 };
@@ -656,6 +665,35 @@ export type UpdateEmergencyContactsMutationVariables = Exact<{
 
 export type UpdateEmergencyContactsMutation = { __typename?: 'Mutation', updateEmergencyContacts: { __typename?: 'ResidentType', residentId: string, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', name: string, relation: string, phone: string }> } };
 
+export type CompleteTaskMutationVariables = Exact<{
+  input: CompleteTaskInputGql;
+}>;
+
+
+export type CompleteTaskMutation = { __typename?: 'Mutation', completeTask: { __typename?: 'Task', id: string, status: TaskStatus } };
+
+export type CancelTaskMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CancelTaskMutation = { __typename?: 'Mutation', cancelTask: { __typename?: 'Task', id: string, status: TaskStatus } };
+
+export type UpdateTaskMutationVariables = Exact<{
+  input: UpdateTaskInput;
+}>;
+
+
+export type UpdateTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
+
+export type CreateAdHocTaskMutationVariables = Exact<{
+  input: CreateTaskInput;
+}>;
+
+
+export type CreateAdHocTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string, status: TaskStatus, priority: TaskPriority } };
+
 export type ResidentListQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
 }>;
@@ -670,19 +708,22 @@ export type GetResidentByIdQueryVariables = Exact<{
 
 export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }>, taskAssignments: Array<{ __typename?: 'TaskAssignmentType', id: number, isActive: boolean, taskTemplate: { __typename?: 'TaskTemplateType', id: number, name: string, category: TaskCategory, priority: TaskPriority } }>, tasks: Array<{ __typename?: 'ResidentTask', id: string, status: TaskStatus, priority: TaskPriority, category: TaskCategory, dueAt: any, completedAt?: any | null, completionNotes?: string | null, checklist: Array<{ __typename?: 'ResidentChecklistItem', id: string, label: string, isCompleted: boolean, completedAt?: any | null }>, actionRecords: Array<{ __typename?: 'ActionRecordType', id: number, value?: any | null, notes?: string | null, createdAt: any }> }> } | null };
 
-export type CreateAdHocTaskMutationVariables = Exact<{
-  input: CreateTaskInput;
+export type GetTaskListResidentQueryVariables = Exact<{
+  residentId?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type CreateAdHocTaskMutation = { __typename?: 'Mutation', createTask: { __typename?: 'Task', id: string, status: TaskStatus, priority: TaskPriority } };
+export type GetTaskListResidentQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueAt?: any | null, assignedCaregiver?: { __typename?: 'TaskTypeCaregiverProfile', firstName: string, lastName: string } | null }> };
 
-export type UpdateTaskMutationVariables = Exact<{
-  input: UpdateTaskInput;
+export type SearchCaregiversQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UpdateTaskMutation = { __typename?: 'Mutation', updateTask: { __typename?: 'Task', id: string } };
+export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string }> };
 
 export type GetTaskListQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -699,13 +740,6 @@ export type SearchResidentsQueryVariables = Exact<{
 
 
 export type SearchResidentsQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, firstName: string, lastName: string }> };
-
-export type SearchCaregiversQueryVariables = Exact<{
-  search?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string }> };
 
 
 export const AuthenticateUserDocument = gql`
@@ -938,6 +972,143 @@ export function useUpdateEmergencyContactsMutation(baseOptions?: Apollo.Mutation
 export type UpdateEmergencyContactsMutationHookResult = ReturnType<typeof useUpdateEmergencyContactsMutation>;
 export type UpdateEmergencyContactsMutationResult = Apollo.MutationResult<UpdateEmergencyContactsMutation>;
 export type UpdateEmergencyContactsMutationOptions = Apollo.BaseMutationOptions<UpdateEmergencyContactsMutation, UpdateEmergencyContactsMutationVariables>;
+export const CompleteTaskDocument = gql`
+    mutation CompleteTask($input: CompleteTaskInputGql!) {
+  completeTask(input: $input) {
+    id
+    status
+  }
+}
+    `;
+export type CompleteTaskMutationFn = Apollo.MutationFunction<CompleteTaskMutation, CompleteTaskMutationVariables>;
+
+/**
+ * __useCompleteTaskMutation__
+ *
+ * To run a mutation, you first call `useCompleteTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCompleteTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [completeTaskMutation, { data, loading, error }] = useCompleteTaskMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCompleteTaskMutation(baseOptions?: Apollo.MutationHookOptions<CompleteTaskMutation, CompleteTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CompleteTaskMutation, CompleteTaskMutationVariables>(CompleteTaskDocument, options);
+      }
+export type CompleteTaskMutationHookResult = ReturnType<typeof useCompleteTaskMutation>;
+export type CompleteTaskMutationResult = Apollo.MutationResult<CompleteTaskMutation>;
+export type CompleteTaskMutationOptions = Apollo.BaseMutationOptions<CompleteTaskMutation, CompleteTaskMutationVariables>;
+export const CancelTaskDocument = gql`
+    mutation CancelTask($id: String!, $reason: String) {
+  cancelTask(id: $id, reason: $reason) {
+    id
+    status
+  }
+}
+    `;
+export type CancelTaskMutationFn = Apollo.MutationFunction<CancelTaskMutation, CancelTaskMutationVariables>;
+
+/**
+ * __useCancelTaskMutation__
+ *
+ * To run a mutation, you first call `useCancelTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCancelTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [cancelTaskMutation, { data, loading, error }] = useCancelTaskMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      reason: // value for 'reason'
+ *   },
+ * });
+ */
+export function useCancelTaskMutation(baseOptions?: Apollo.MutationHookOptions<CancelTaskMutation, CancelTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CancelTaskMutation, CancelTaskMutationVariables>(CancelTaskDocument, options);
+      }
+export type CancelTaskMutationHookResult = ReturnType<typeof useCancelTaskMutation>;
+export type CancelTaskMutationResult = Apollo.MutationResult<CancelTaskMutation>;
+export type CancelTaskMutationOptions = Apollo.BaseMutationOptions<CancelTaskMutation, CancelTaskMutationVariables>;
+export const UpdateTaskDocument = gql`
+    mutation UpdateTask($input: UpdateTaskInput!) {
+  updateTask(input: $input) {
+    id
+  }
+}
+    `;
+export type UpdateTaskMutationFn = Apollo.MutationFunction<UpdateTaskMutation, UpdateTaskMutationVariables>;
+
+/**
+ * __useUpdateTaskMutation__
+ *
+ * To run a mutation, you first call `useUpdateTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateTaskMutation, { data, loading, error }] = useUpdateTaskMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateTaskMutation(baseOptions?: Apollo.MutationHookOptions<UpdateTaskMutation, UpdateTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateTaskMutation, UpdateTaskMutationVariables>(UpdateTaskDocument, options);
+      }
+export type UpdateTaskMutationHookResult = ReturnType<typeof useUpdateTaskMutation>;
+export type UpdateTaskMutationResult = Apollo.MutationResult<UpdateTaskMutation>;
+export type UpdateTaskMutationOptions = Apollo.BaseMutationOptions<UpdateTaskMutation, UpdateTaskMutationVariables>;
+export const CreateAdHocTaskDocument = gql`
+    mutation CreateAdHocTask($input: CreateTaskInput!) {
+  createTask(input: $input) {
+    id
+    status
+    priority
+  }
+}
+    `;
+export type CreateAdHocTaskMutationFn = Apollo.MutationFunction<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>;
+
+/**
+ * __useCreateAdHocTaskMutation__
+ *
+ * To run a mutation, you first call `useCreateAdHocTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateAdHocTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createAdHocTaskMutation, { data, loading, error }] = useCreateAdHocTaskMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateAdHocTaskMutation(baseOptions?: Apollo.MutationHookOptions<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>(CreateAdHocTaskDocument, options);
+      }
+export type CreateAdHocTaskMutationHookResult = ReturnType<typeof useCreateAdHocTaskMutation>;
+export type CreateAdHocTaskMutationResult = Apollo.MutationResult<CreateAdHocTaskMutation>;
+export type CreateAdHocTaskMutationOptions = Apollo.BaseMutationOptions<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>;
 export const ResidentListDocument = gql`
     query ResidentList($search: String) {
   residentList(search: $search) {
@@ -1099,74 +1270,111 @@ export type GetResidentByIdQueryHookResult = ReturnType<typeof useGetResidentByI
 export type GetResidentByIdLazyQueryHookResult = ReturnType<typeof useGetResidentByIdLazyQuery>;
 export type GetResidentByIdSuspenseQueryHookResult = ReturnType<typeof useGetResidentByIdSuspenseQuery>;
 export type GetResidentByIdQueryResult = Apollo.QueryResult<GetResidentByIdQuery, GetResidentByIdQueryVariables>;
-export const CreateAdHocTaskDocument = gql`
-    mutation CreateAdHocTask($input: CreateTaskInput!) {
-  createTask(input: $input) {
+export const GetTaskListResidentDocument = gql`
+    query GetTaskListResident($residentId: String, $startDate: DateTime, $endDate: DateTime, $status: String) {
+  taskList(
+    residentId: $residentId
+    startDate: $startDate
+    endDate: $endDate
+    status: $status
+  ) {
     id
+    title
+    description
     status
     priority
+    dueAt
+    assignedCaregiver {
+      firstName
+      lastName
+    }
   }
 }
     `;
-export type CreateAdHocTaskMutationFn = Apollo.MutationFunction<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>;
 
 /**
- * __useCreateAdHocTaskMutation__
+ * __useGetTaskListResidentQuery__
  *
- * To run a mutation, you first call `useCreateAdHocTaskMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useCreateAdHocTaskMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
+ * To run a query within a React component, call `useGetTaskListResidentQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetTaskListResidentQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
  *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const [createAdHocTaskMutation, { data, loading, error }] = useCreateAdHocTaskMutation({
+ * const { data, loading, error } = useGetTaskListResidentQuery({
  *   variables: {
- *      input: // value for 'input'
+ *      residentId: // value for 'residentId'
+ *      startDate: // value for 'startDate'
+ *      endDate: // value for 'endDate'
+ *      status: // value for 'status'
  *   },
  * });
  */
-export function useCreateAdHocTaskMutation(baseOptions?: Apollo.MutationHookOptions<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>) {
+export function useGetTaskListResidentQuery(baseOptions?: Apollo.QueryHookOptions<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>(CreateAdHocTaskDocument, options);
+        return Apollo.useQuery<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>(GetTaskListResidentDocument, options);
       }
-export type CreateAdHocTaskMutationHookResult = ReturnType<typeof useCreateAdHocTaskMutation>;
-export type CreateAdHocTaskMutationResult = Apollo.MutationResult<CreateAdHocTaskMutation>;
-export type CreateAdHocTaskMutationOptions = Apollo.BaseMutationOptions<CreateAdHocTaskMutation, CreateAdHocTaskMutationVariables>;
-export const UpdateTaskDocument = gql`
-    mutation UpdateTask($input: UpdateTaskInput!) {
-  updateTask(input: $input) {
+export function useGetTaskListResidentLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>(GetTaskListResidentDocument, options);
+        }
+// @ts-ignore
+export function useGetTaskListResidentSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>): Apollo.UseSuspenseQueryResult<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>;
+export function useGetTaskListResidentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>): Apollo.UseSuspenseQueryResult<GetTaskListResidentQuery | undefined, GetTaskListResidentQueryVariables>;
+export function useGetTaskListResidentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>(GetTaskListResidentDocument, options);
+        }
+export type GetTaskListResidentQueryHookResult = ReturnType<typeof useGetTaskListResidentQuery>;
+export type GetTaskListResidentLazyQueryHookResult = ReturnType<typeof useGetTaskListResidentLazyQuery>;
+export type GetTaskListResidentSuspenseQueryHookResult = ReturnType<typeof useGetTaskListResidentSuspenseQuery>;
+export type GetTaskListResidentQueryResult = Apollo.QueryResult<GetTaskListResidentQuery, GetTaskListResidentQueryVariables>;
+export const SearchCaregiversDocument = gql`
+    query SearchCaregivers($search: String) {
+  caregiverList(search: $search) {
     id
+    firstName
+    lastName
   }
 }
     `;
-export type UpdateTaskMutationFn = Apollo.MutationFunction<UpdateTaskMutation, UpdateTaskMutationVariables>;
 
 /**
- * __useUpdateTaskMutation__
+ * __useSearchCaregiversQuery__
  *
- * To run a mutation, you first call `useUpdateTaskMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateTaskMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
+ * To run a query within a React component, call `useSearchCaregiversQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchCaregiversQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
  *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const [updateTaskMutation, { data, loading, error }] = useUpdateTaskMutation({
+ * const { data, loading, error } = useSearchCaregiversQuery({
  *   variables: {
- *      input: // value for 'input'
+ *      search: // value for 'search'
  *   },
  * });
  */
-export function useUpdateTaskMutation(baseOptions?: Apollo.MutationHookOptions<UpdateTaskMutation, UpdateTaskMutationVariables>) {
+export function useSearchCaregiversQuery(baseOptions?: Apollo.QueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<UpdateTaskMutation, UpdateTaskMutationVariables>(UpdateTaskDocument, options);
+        return Apollo.useQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
       }
-export type UpdateTaskMutationHookResult = ReturnType<typeof useUpdateTaskMutation>;
-export type UpdateTaskMutationResult = Apollo.MutationResult<UpdateTaskMutation>;
-export type UpdateTaskMutationOptions = Apollo.BaseMutationOptions<UpdateTaskMutation, UpdateTaskMutationVariables>;
+export function useSearchCaregiversLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
+        }
+// @ts-ignore
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery | undefined, SearchCaregiversQueryVariables>;
+export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
+        }
+export type SearchCaregiversQueryHookResult = ReturnType<typeof useSearchCaregiversQuery>;
+export type SearchCaregiversLazyQueryHookResult = ReturnType<typeof useSearchCaregiversLazyQuery>;
+export type SearchCaregiversSuspenseQueryHookResult = ReturnType<typeof useSearchCaregiversSuspenseQuery>;
+export type SearchCaregiversQueryResult = Apollo.QueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;
 export const GetTaskListDocument = gql`
     query GetTaskList($search: String, $status: String, $residentId: String) {
   taskList(search: $search, status: $status, residentId: $residentId) {
@@ -1275,48 +1483,3 @@ export type SearchResidentsQueryHookResult = ReturnType<typeof useSearchResident
 export type SearchResidentsLazyQueryHookResult = ReturnType<typeof useSearchResidentsLazyQuery>;
 export type SearchResidentsSuspenseQueryHookResult = ReturnType<typeof useSearchResidentsSuspenseQuery>;
 export type SearchResidentsQueryResult = Apollo.QueryResult<SearchResidentsQuery, SearchResidentsQueryVariables>;
-export const SearchCaregiversDocument = gql`
-    query SearchCaregivers($search: String) {
-  caregiverList(search: $search) {
-    id
-    firstName
-    lastName
-  }
-}
-    `;
-
-/**
- * __useSearchCaregiversQuery__
- *
- * To run a query within a React component, call `useSearchCaregiversQuery` and pass it any options that fit your needs.
- * When your component renders, `useSearchCaregiversQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useSearchCaregiversQuery({
- *   variables: {
- *      search: // value for 'search'
- *   },
- * });
- */
-export function useSearchCaregiversQuery(baseOptions?: Apollo.QueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
-      }
-export function useSearchCaregiversLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
-        }
-// @ts-ignore
-export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;
-export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>): Apollo.UseSuspenseQueryResult<SearchCaregiversQuery | undefined, SearchCaregiversQueryVariables>;
-export function useSearchCaregiversSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchCaregiversQuery, SearchCaregiversQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<SearchCaregiversQuery, SearchCaregiversQueryVariables>(SearchCaregiversDocument, options);
-        }
-export type SearchCaregiversQueryHookResult = ReturnType<typeof useSearchCaregiversQuery>;
-export type SearchCaregiversLazyQueryHookResult = ReturnType<typeof useSearchCaregiversLazyQuery>;
-export type SearchCaregiversSuspenseQueryHookResult = ReturnType<typeof useSearchCaregiversSuspenseQuery>;
-export type SearchCaregiversQueryResult = Apollo.QueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;

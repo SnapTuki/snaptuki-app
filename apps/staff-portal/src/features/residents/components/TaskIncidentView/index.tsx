@@ -18,7 +18,7 @@ import {
 import CareTaskView from './CareTaskView';
 import IncidentView from './IncidentView';
 
-const TaskIncidentView = () => {
+const TaskIncidentView = ({residentId}: {residentId: string | null}) => {
     const [filterType, setFilterType] = useState('ALL');
     const [activeSidebarTab, setActiveSidebarTab] = useState('tasks'); // Default to tasks
 
@@ -82,7 +82,7 @@ const TaskIncidentView = () => {
                 {/* DYNAMIC VIEW CONTENT */}
                 <div className="flex-1 overflow-hidden">
                     {activeSidebarTab === 'tasks' ? (
-                        <CareTaskView />
+                        <CareTaskView residentId={residentId}/>
                     ) : activeSidebarTab === 'incidents' ? (<IncidentView />) : 
                     activeSidebarTab === 'insights' ?(
                         /* Standard Incident/History Ledger View */

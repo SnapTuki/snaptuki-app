@@ -9,8 +9,8 @@ export interface ITaskRepo {
     status?: string | null;
     caregiverId?: string | null;
     residentId?: string | null;
-    fromDueAt?: Date | null;
-    toDueAt?: Date | null;
+    startDate?: Date | null;
+    endDate?: Date | null;
   }): Promise<Task[]>;
   create(task: Task): Promise<void>;
   save(task: Task): Promise<void>;

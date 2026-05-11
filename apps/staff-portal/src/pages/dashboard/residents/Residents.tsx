@@ -192,7 +192,7 @@ export function Residents() {
               key={selectedResidentId}
               residentId={selectedResidentId} />
             )}
-            {activeTab === 'actions' && <TaskIncidentView />}
+            {activeTab === 'actions' && <TaskIncidentView residentId={selectedResidentId}/>}
             {activeTab === 'medication' && <MedicationManager />}
           </main>
         )}

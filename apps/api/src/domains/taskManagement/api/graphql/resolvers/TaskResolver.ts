@@ -16,27 +16,39 @@ import { ToggleChecklistItemUseCase } from "../../../../taskManagement/applicati
 import { GraphQLContext } from "../../../../../lib/graphqlContext";
 import { UpdateTaskInput } from "../inputs/TaskInputs";
 import { UpdateTaskUseCase } from "../../../application/useCases/UpdateTaskUseCase";
+import { FindAllTasksUseCase } from "../../../application/useCases/FindAllTasksUseCase";
+import { CancelTaskUseCase } from "../../../application/useCases/CancleUseCase";
 @Resolver(() => TaskType)
 export class TaskResolver {
 
   @Query(() => [TaskType])
   async taskList(
     @Ctx() ctx: GraphQLContext,
-    @Arg("search", () => String,{ nullable: true }) search?: string,
+    @Arg("search", () => String, { nullable: true }) search?: string,
     @Arg("status", () => String, { nullable: true }) status?: string,
     @Arg("caregiverId", () => String, { nullable: true }) caregiverId?: string,
-    @Arg("residentId", () => String,{ nullable: true }) residentId?: string,
-    @Arg("skip", () => Number,{ nullable: true }) skip?: number,
-    @Arg("take", () => Number,{ nullable: true }) take?: number,
-    
+    @Arg("residentId", () => String, { nullable: true }) residentId?: string,
+    @Arg("skip", () => Number, { nullable: true }) skip?: number,
+    @Arg("take", () => Number, { nullable: true }) take?: number,
+    @Arg("startDate", () => Date, { nullable: true }) startDate?: Date,
+    @Arg("endDate", () => Date, { nullable: true }) endDate?: Date,
+
   ) {
-    const tasks = await ctx.taskManagement.repo.list({
-      search: search ?? null,
-      status: status ?? null,
-      caregiverId: caregiverId ?? null,
-      residentId: residentId ?? null,
-      skip, take
+    const useCase = new FindAllTasksUseCase(ctx.taskManagement.repo);
+
+    // 2. Execute the Use Case with all provided arguments
+    const tasks = await useCase.execute({
+      search,
+      status,
+      caregiverId,
+      residentId,
+      startDate,
+      endDate,
+      skip,
+      take
     });
+
+    // 3. Map the Domain Entities back to DTOs for GraphQL
     return tasks.map(TaskMap.toDTO) as any;
   }
 
@@ -95,7 +107,7 @@ export class TaskResolver {
 
   @Mutation(() => TaskType)
   async updateTask(
-    @Arg("input", () => UpdateTaskInput) input: UpdateTaskInput, 
+    @Arg("input", () => UpdateTaskInput) input: UpdateTaskInput,
     @Ctx() ctx: GraphQLContext
   ) {
     // 1. Initialize the Use Case
@@ -115,7 +127,19 @@ export class TaskResolver {
 
     // 3. Map back to the DTO for the frontend
     // This TaskMap.toDTO is what ensures assignedCaregiver is an object, not a string!
-    
+
     return TaskMap.toDTO(task) as any;
+  }
+
+  @Mutation(() => TaskType)
+  async cancelTask(
+    @Arg("id", () => String) id: string,
+    @Arg("reason", () => String,{ nullable: true }) reason: string,
+    @Ctx() ctx: GraphQLContext
+  ) {
+    // Use a dedicated CancelTaskUseCase
+    const useCase = new CancelTaskUseCase(ctx.taskManagement.repo);
+    const task = await useCase.execute({ id, reason });
+    return TaskMap.toDTO(task);
   }
 }
