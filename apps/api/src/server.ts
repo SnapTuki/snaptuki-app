@@ -21,6 +21,8 @@ import { createCaregiverManagementContainer } from "./domains/caregiverManagemen
 import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure";
 import { createTaskManagementContainer } from "./domains/taskManagement/infrastructure";
 import { config } from "./config";
+import { initializeTaskScheduler } from "./domains/taskManagement/infrastructure/schedulers/TaskSchedulers";
+
 
 async function buildApplicationSchema() {
     return await buildSchema({
@@ -113,5 +115,8 @@ export async function startGatewayServer() {
     const PORT = config.serverPort || 4000;
     app.listen(PORT, () => {
         console.log(`🚀 Gateway server running at http://localhost:${PORT}/graphql`);
+
+        console.log('⏳ Booting up background services...');
+        initializeTaskScheduler();
     })
 }

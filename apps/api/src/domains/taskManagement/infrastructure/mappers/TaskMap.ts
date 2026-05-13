@@ -43,14 +43,14 @@ export class TaskMap {
       startedAt: row.startedAt ?? null,
       completedAt: row.completedAt ?? null,
       completedByCaregiverId: null,
-      checklist: row.checklist.map(ci => ChecklistItem.create({
+      checklist: row.checklist ? row.checklist.map(ci => ChecklistItem.create({
         id: ci.id,
         label: ci.label,
         required: ci.isRequired, // Schema: isRequired
         done: ci.isCompleted,    // Schema: isCompleted
         doneAt: ci.completedAt ?? null, // Schema: completedAt
         doneByCaregiverId: null  // Not in your Prisma ChecklistItem model
-      })),
+      })) : [],
       // Schema doesn't have createdByUserId on Task; consider adding it to Prisma or mapping from Audit
       createdByUserId: "system",
       createdAt: row.createdAt,

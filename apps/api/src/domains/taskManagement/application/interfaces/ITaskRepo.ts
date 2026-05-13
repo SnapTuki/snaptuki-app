@@ -15,4 +15,10 @@ export interface ITaskRepo {
   create(task: Task): Promise<void>;
   save(task: Task): Promise<void>;
   delete(id: string): Promise<void>;
+
+  findImpendingTasks(targetTime: Date, currentTime: Date): Promise<Task[]>;
+  markPreDeadlineAlertSent(taskId: string): Promise<void>;
+  
+  findMissedTasks(currentTime: Date): Promise<Task[]>;
+  markTaskAsMissed(taskId: string): Promise<void>;
 }

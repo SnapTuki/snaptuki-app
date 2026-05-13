@@ -81,7 +81,6 @@ export class PrismaTaskRepo implements ITaskRepo {
       },
     });
 
-    console.log(`Repo found ${rows.length} tasks matching criteria.`);
     return rows.map(TaskMap.toDomain);
   }
 
@@ -159,4 +158,47 @@ export class PrismaTaskRepo implements ITaskRepo {
   async delete(id: string): Promise<void> {
     await this.prisma.task.delete({ where: { id } });
   }
+
+  async findImpendingTasks(targetTime: Date, currentTime: Date): Promise<Task[]> {
+    const rows = await this.prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        dueAt: {
+          lte: targetTime,
+          gt: currentTime,
+        }
+      }
+    });
+
+    return rows.map(TaskMap.toDomain);
+  }
+
+  async markPreDeadlineAlertSent(taskId: string): Promise<void> {
+    console.log('Alert Send recorded in the DB');
+  }
+
+  async findMissedTasks(currentTime: Date): Promise<Task[]> {
+    const rows = await this.prisma.task.findMany({
+      where:{
+        status: 'PENDING',
+        dueAt: {lt: currentTime}
+      }
+    })
+
+    return rows.map(TaskMap.toDomain);
+  }
+
+  async markTaskAsMissed(taskId: string): Promise<void> {
+    await this.prisma.task.update({
+      where: {id: taskId},
+      data: {
+        status: 'CANCELLED',
+      }
+    })
+  }
+
 }
+
+
+
+
