@@ -4,7 +4,7 @@ import { DefaultPasswordPolicy } from "../../domain/services/passwordPolicy.serv
 import { Email } from "../../domain/valueObjects/email.vo";
 import { EmailAlreadyRegistered } from "../../domain/errors/errors";
 import { Role } from "../../domain/valueObjects/role.vo";
-import { toUserView } from "../dtos/userDTOs";
+import { UserMap } from "../../infrastructure/prisma/mappers/userMapper";
 import { User } from "../../domain/entities/user";
 
 export class RegisterUser {
@@ -19,8 +19,8 @@ export class RegisterUser {
             email: string;
             password: string;
             roles?: Role[];
-            firstName?: string;
-            lastName?: string;
+            firstName: string;
+            lastName: string;
             agencyId?: number;
         }
     ) {
@@ -33,7 +33,7 @@ export class RegisterUser {
             userId: crypto.randomUUID(),
             email: Email.create(input.email),
             passwordHash,
-            roles: input.roles?.length ? input.roles : ['AGENCY_STAFF'],
+            roles: input.roles,
             firstName: input.firstName,
             lastName: input.lastName,
             agencyId: input.agencyId,
@@ -42,6 +42,6 @@ export class RegisterUser {
 
         await this.repo.save(user);
 
-        return { user: toUserView({ ...user.snapshot() }) }
+        return { user: UserMap.toDTO(user) }
     }
 }

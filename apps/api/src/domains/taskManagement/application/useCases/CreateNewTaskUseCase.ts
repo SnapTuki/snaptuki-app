@@ -2,38 +2,45 @@
 
 import { ITaskRepo } from "../interfaces/ITaskRepo";
 import { Task } from "../../domain/entities/Task";
-import { Title } from "../../domain/valueObjects/Title";
-import { Description } from "../../domain/valueObjects/Description";
 import { ChecklistItem } from "../../domain/entities/ChecklistItem";
-import { CreateTaskDTO } from "../dtos/TaskDTO";
+import { TaskMap } from "../../infrastructure/mappers/TaskMap";
+import { CreateTaskDTO, TaskDTO } from "../dtos/TaskDTO";
 
 export class CreateNewTaskUseCase {
-  constructor(private repo: ITaskRepo) {}
+  constructor(private readonly repo: ITaskRepo) {}
 
-  public async execute(input: CreateTaskDTO): Promise<Task> {
-    // 1. Domain Object Construction
-    const task = Task.create({
-      title: Title.create(input.title),
-      description: input.description ? Description.create(input.description) : null,
+  public async execute(input: CreateTaskDTO): Promise<{ task: TaskDTO }> {
+    // 1. Generate Application-Level Identity
+    const taskId = crypto.randomUUID();
+
+    // 2. Delegate object construction to the strict Domain Factory
+    const task = Task.createNew({
+      id: taskId,
+      title: input.title, // Raw string; factory handles Value Object wrapping
+      description: input.description,
       category: input.category,
       priority: input.priority,
-      residentId: input.residentId ?? null,
-      assignedCaregiverId: input.assignedCaregiverId ?? null,
-      createdByUserId: input.createdByUserId, // Now correctly handled
-      completionNotes: [],
+      residentId: input.residentId,
       dueAt: input.dueAt,
-      // Map checklist items through their own domain factory
-      checklist: (input.checklist ?? []).map(item => ChecklistItem.create({
-        id: item.id,
+      createdByUserId: input.createdByUserId,
+      assignedCaregiverId: input.assignedCaregiverId,
+      // Map checklist items safely, generating IDs for them
+      checklist: (input.checklist ?? []).map(item => ChecklistItem.createNew({
+        id: crypto.randomUUID(), 
         label: item.label,
-        required: item.required ?? false
+        isRequired: item.required ?? false // Note: mapped to isRequired to match the entity
       })),
     });
 
-    // 2. Persistence
-    await this.repo.create(task);
+    // 3. Handle Auto-Assignment logic securely via domain behavior
+    if (input.assignedCaregiverId) {
+      task.assign(input.assignedCaregiverId);
+    }
 
-    // 3. Return the Entity
-    return task;
+    // 4. Persistence via the unified Upsert pattern
+    await this.repo.save(task);
+
+    // 5. Transform and safely return the presentation layer payload
+    return { task: TaskMap.toDTO(task) };
   }
 }

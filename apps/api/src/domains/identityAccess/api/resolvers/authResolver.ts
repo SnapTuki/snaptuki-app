@@ -2,7 +2,7 @@ import { Arg, Ctx, Mutation, Resolver } from 'type-graphql';
 import { AuthenticateInput } from '../inputs/authenticateInput';
 import { AuthResultGQL } from '../types/authGQL';
 import { RegisterUserInput } from '../inputs/registerUserInput';
-import { UserGQL } from '../types/userGQL';
+import { UserAuthData } from '../types/userAuthData';
 
 // Import use-cases (application layer)
 import { AuthenticateUser } from '../../application/useCases/authenticateUser';
@@ -27,27 +27,27 @@ export class AuthResolver {
             token: result.token,
             user: {
                 ...result.user,
-            } as unknown as UserGQL,
+            } as unknown as UserAuthData,
         };
     }
 
-    @Mutation(() => UserGQL)
+    @Mutation(() => UserAuthData)
     async registerUser(
         @Arg('input', () => RegisterUserInput) input: RegisterUserInput,
         @Ctx() ctx: GraphQLContext
-    ): Promise<UserGQL> {
+    ): Promise<UserAuthData> {
         const { repo, hasher } = ctx.identityAccess;
         const uc = new RegisterUser(repo, hasher);
 
         const { user } = await uc.execute({
             email: input.email,
             password: input.password,
-            roles: input.roles as any,
+            roles: input.roles,
             firstName: input.firstName,
             lastName: input.lastName,
             agencyId: input.agencyId,
         });
 
-        return user as unknown as UserGQL;
+        return user as unknown as UserAuthData;
     }
 }

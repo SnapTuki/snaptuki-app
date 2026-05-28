@@ -1,31 +1,38 @@
-import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { Resident } from "../../domain/entities/Resident";
-import { MobilityLevel } from "../../domain/entities/Resident";
+// src/domains/residentManagement/application/useCases/UpdateResidentPlacementUseCase.ts
 
-interface UpdatePlacementRequest {
+import { IResidentRepo } from "../interfaces/IResidentRepo";
+import { MobilityLevel } from "../../domain/entities/Resident";
+import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentDTO } from "../dtos/ResidentDTO";
+
+export interface UpdatePlacementRequest {
     id: string;
     room?: string;
     mobilityLevel?: MobilityLevel;
-    admissionDate?: string;
+    // Keep this commented out or remove completely since it's not part of ResidentProps yet
+    // admissionDate?: string; 
 }
 
 export class UpdateResidentPlacementUseCase {
-    constructor(private repo: IResidentRepo) {};
+    constructor(private readonly repo: IResidentRepo) {}
 
-    public async execute(request: UpdatePlacementRequest): Promise<Resident> {
+    public async execute(request: UpdatePlacementRequest): Promise<{ resident: ResidentDTO }> {
+        // 1. Fetch the Aggregate Root
         const resident = await this.repo.getById(request.id);
+        if (!resident) {
+            throw new Error("Resident not found");
+        }
 
-        if (!resident) throw new Error('Resident not found');
-
-        // Logic here might include checking if the room is available 
-        // or triggering a room-change log in a real system.
+        // 2. Delegate the room/mobility change to the domain to assert invariants
         resident.updatePlacement({
             room: request.room,
             mobilityLevel: request.mobilityLevel,
-            //admissionDate: request.admissionDate
         });
 
+        // 3. Persist the updated aggregate state
         await this.repo.save(resident);
-        return resident;
+
+        // 4. Safely map and return the flat presentation payload
+        return { resident: ResidentMap.toDTO(resident) };
     }
 }

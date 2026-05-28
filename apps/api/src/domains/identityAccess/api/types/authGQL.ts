@@ -1,11 +1,11 @@
 import { Field, ObjectType } from 'type-graphql';
-import { UserGQL } from './userGQL';
+import { UserAuthData } from './userAuthData';
 
 @ObjectType()
 export class AuthResultGQL {
   @Field(()=>String)
   token!: string;
 
-  @Field(() => UserGQL)
-  user!: UserGQL;
+  @Field(() => UserAuthData)
+  user!: UserAuthData;
 }

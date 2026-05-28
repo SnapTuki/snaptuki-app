@@ -1,6 +1,5 @@
 import { Field, InputType } from 'type-graphql';
-import { RoleGQL } from '../types/roleGQL';
-
+import { UserRole } from '../types/userAuthData';
 @InputType()
 export class RegisterUserInput {
   @Field(() => String)
@@ -9,14 +8,14 @@ export class RegisterUserInput {
   @Field(()=>String)
   password!: string;
 
-  @Field(() => [RoleGQL], { nullable: true })
-  roles?: RoleGQL[];
+  @Field(() => [UserRole])
+  roles!: UserRole[];
 
-  @Field(() => String, { nullable: true })
-  firstName?: string;
+  @Field(() => String) 
+  firstName!: string;
 
-  @Field(() => String, { nullable: true })
-  lastName?: string;
+  @Field(() => String)
+  lastName!: string;
 
   @Field(() => Number, { nullable: true })
   agencyId?: number;

@@ -1,13 +1,15 @@
 // src/domains/residentManagement/api/graphql/inputs/ResidentInputs.ts
-import { InputType, Field, ID, registerEnumType } from "type-graphql";
-import { AllergySeverity } from "../../../../../generated/prisma";
-import { Gender, MobilityLevel } from "../../../domain/entities/Resident";
+
+import { InputType, Field, ID, Int } from "type-graphql";
 import { GraphQLDateTime } from "graphql-scalars";
 
+// Import types exclusively from the domain boundaries
+import { Gender, MobilityLevel } from "../../../domain/entities/Resident";
+import { AllergySeverity } from "../../../domain/entities/Allergy";
 
 @InputType()
 export class RegisterResidentInput {
-  @Field(() => Number) agencyId!: number;
+  @Field(() => Int) agencyId!: number; // Fixed type to map Int scalar properly
   @Field(() => String) mrn!: string;
   @Field(() => String) firstName!: string;
   @Field(() => String) lastName!: string;
@@ -15,22 +17,6 @@ export class RegisterResidentInput {
   @Field(() => Gender) gender!: Gender;
   @Field(() => String, { nullable: true }) email?: string | null;
   @Field(() => String, { nullable: true }) phone?: string | null;
-  @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
-  @Field(() => String, { nullable: true }) room?: string | null;
-}
-
-@InputType()
-export class UpdateResidentContactInput {
-  @Field(() => ID) id!: string;
-  @Field(() => String, { nullable: true }) email?: string | null;
-  @Field(() => String, { nullable: true }) phone?: string | null;
-}
-
-
-
-@InputType()
-export class UpdateResidentMedicalProfileInput {
-  @Field(() => ID) id!: string;
   @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room?: string | null;
 }
@@ -44,7 +30,7 @@ export class AssignPrimaryCaregiverInput {
 @InputType()
 export class AddResidentAllergyInput {
   @Field(() => ID) residentId!: string;
-  @Field(() => ID) id!: string;
+  // REMOVED: id field. Managed by UseCase lifecycle.
   @Field(() => String) name!: string;
   @Field(() => String) reaction!: string;
   @Field(() => AllergySeverity) severity!: AllergySeverity;
@@ -54,75 +40,45 @@ export class AddResidentAllergyInput {
 @InputType()
 export class AddResidentMedicationInput {
   @Field(() => ID) residentId!: string;
-  @Field(() => ID) id!: string;
+  // REMOVED: id field. Managed by UseCase lifecycle.
   @Field(() => String) name!: string;
   @Field(() => String) dosage!: string;
   @Field(() => String) frequency!: string;
   @Field(() => GraphQLDateTime) startDate!: Date;
-  @Field(() => GraphQLDateTime,{ nullable: true }) endDate?: Date | null;
-  @Field(() => String,{ nullable: true }) prescribedBy?: string | null;
+  @Field(() => GraphQLDateTime, { nullable: true }) endDate?: Date | null;
+  @Field(() => String, { nullable: true }) prescribedBy?: string | null;
 }
 
 @InputType()
 export class UpdateResidentIdentityInput {
-  @Field(() => ID)
-  residentId: string;
-
-  @Field(() => String,{ nullable: true })
-  firstName?: string;
-
-  @Field(() => String, { nullable: true })
-  lastName?: string;
-
-  @Field(() => GraphQLDateTime, { nullable: true })
-  birthDate?: Date | String;
-
-  @Field(() => Gender, { nullable: true })
-  gender?: Gender; 
-
-  @Field(() => String, { nullable: true })
-  ssn?: string; // Social Security Number
+  @Field(() => ID) residentId!: string;
+  @Field(() => String, { nullable: true }) firstName?: string;
+  @Field(() => String, { nullable: true }) lastName?: string;
+  @Field(() => GraphQLDateTime, { nullable: true }) birthDate?: Date; // FIXED: Removed string type union
+  @Field(() => Gender, { nullable: true }) gender?: Gender; 
+  // REMOVED: ssn (Not present in domain props)
 }
 
 @InputType()
 export class UpdateResidentPlacementInput {
-  @Field(() => ID)
-  residentId: string;
-
-  @Field(() => String, { nullable: true })
-  room?: string;
-
-  @Field(() => MobilityLevel, { nullable: true })
-  mobilityLevel?: MobilityLevel; // e.g., 'INDEPENDENT' | 'ASSISTED' | 'MEMORY'
-
-  @Field(() => GraphQLDateTime, { nullable: true })
-  admissionDate?: Date;
+  @Field(() => ID) residentId!: string; // Renamed 'id' to 'residentId' to match use case input key
+  @Field(() => String, { nullable: true }) room?: string;
+  @Field(() => MobilityLevel, { nullable: true }) mobilityLevel?: MobilityLevel;
+  // REMOVED: admissionDate (Not present in domain props)
 }
-
 
 @InputType()
 export class EmergencyContactInput {
-  @Field(() => ID, { nullable: true })
-  id?: string; // If null, the UseCase knows to create a new one
-
-  @Field(() => String)
-  name: string;
-
-  @Field(() => String)
-  relation: string;
-
-  @Field(() => String)
-  phone: string;
-
-  @Field(() => Boolean, { defaultValue: false })
-  isPrimary: boolean;
+  @Field(() => ID, { nullable: true }) id?: string | null;
+  @Field(() => String) name!: string;
+  @Field(() => String) relation!: string;
+  @Field(() => String) phone!: string;
+  @Field(() => String, { nullable: true }) email?: string | null; // Added missing email field to support your entities
+  @Field(() => Boolean, { defaultValue: false }) isPrimary!: boolean;
 }
 
 @InputType()
 export class UpdateResidentContactsInput {
-  @Field(() => ID)
-  residentId: string;
-
-  @Field(() => [EmergencyContactInput])
-  contacts: EmergencyContactInput[];
+  @Field(() => ID) residentId!: string;
+  @Field(() => [EmergencyContactInput]) contacts!: EmergencyContactInput[];
 }

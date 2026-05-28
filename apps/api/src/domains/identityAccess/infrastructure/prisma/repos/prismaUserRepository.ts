@@ -1,7 +1,9 @@
+// apps/backend/src/domains/identityAccess/infrastructure/prisma/repositories/PrismaUserRepository.ts
+
 import { PrismaClient } from "../../../../../generated/prisma";
 import { UserRepository } from "../../../application/interfaces/userRepository";
 import { User } from "../../../domain/entities/user";
-import { toDomain, toPrisma } from "../mappers/userMapper";
+import { UserMap } from "../mappers/userMapper";
 
 export class PrismaUserRepository implements UserRepository {
     constructor(private readonly prisma: PrismaClient) { }
@@ -10,16 +12,18 @@ export class PrismaUserRepository implements UserRepository {
         const row = await this.prisma.user.findUnique({
             where: { userId: id }
         });
-        return toDomain(row);
+        return UserMap.toDomain(row);
     }
 
     async findByEmail(email: string): Promise<User | null> {
-        const row = await this.prisma.user.findUnique({ where: { email } });
-        return toDomain(row);
+        const row = await this.prisma.user.findUnique({ 
+            where: { email } 
+        });
+        return UserMap.toDomain(row);
     }
 
     async save(user: User): Promise<void> {
-        const data = toPrisma(user);
+        const data = UserMap.toPrisma(user);
 
         await this.prisma.user.upsert({
             where: { userId: data.userId },
@@ -32,8 +36,8 @@ export class PrismaUserRepository implements UserRepository {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 agencyId: data.agencyId,
-                ...(data.createdAt ? { createdAt: data.createdAt } : {}),
-                // updatedAt handled by @updatedAt
+                createdAt: data.createdAt, 
+                updatedAt: data.updatedAt, // Trust the domain's initial creation time
             },
             update: {
                 email: data.email,
@@ -43,9 +47,8 @@ export class PrismaUserRepository implements UserRepository {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 agencyId: data.agencyId,
-                updatedAt: new Date(),
+                updatedAt: data.updatedAt, // Trust the domain's mutation time!
             },
         });
-
     }
 }

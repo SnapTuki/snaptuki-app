@@ -23,22 +23,19 @@ enum Gender {
 
 enum ROLE {
   SUPER_ADMIN
-  AGENCY_STAFF
-  SUPERVISOR
-  CAREGIVER
+  COORDINATOR
+  DOCTOR
+  HEAD_NURSE
+  NURSE
+  PRACTICAL_NURSE
 }
 
-enum CaregiverRole {
-  PRACTICAL_NURSE
-  DOCTOR
-  NURSE
-  HEAD_NURSE
-}
 enum VisitStatus {
   PLANNED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  MISSED
 }
 
 enum TaskFrequency {
@@ -56,10 +53,10 @@ enum TaskPriority {
 
 enum TaskStatus {
   PENDING
-  ASSIGNED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  MISSED
 }
 
 enum TaskCategory {
@@ -81,11 +78,6 @@ enum ResidentStatus {
   DISCHARGED
 }
 
-enum CaregiverStatus {
-  ACTIVE
-  IN_ACTIVE
-  SUSPENDED
-}
 
 enum EmploymentType {
   FULL_TIME
@@ -112,7 +104,7 @@ model CareHomeAgency {
 }
 
 model User {
-  userId       String  @id @map("user_id") @default(cuid())
+  userId       String  @id @default(cuid()) @map("user_id")
   email        String  @unique
   passwordHash String  @map("password_hash")
   firstName    String  @map("first_name")
@@ -122,9 +114,6 @@ model User {
 
   agencyId Int?            @map("agency_id")
   agency   CareHomeAgency? @relation(fields: [agencyId], references: [id])
-
-  caregiverProfile Caregiver? 
-  staffProfile     StaffProfile?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -137,26 +126,29 @@ model User {
 // PROFILES (CAREGIVER & STAFF)
 // -----------------------------------------------------------------------------
 
-model Caregiver {
-  id        String   @id @default(cuid())
-  userId    String   @unique @map("user_id")
-  user      User     @relation(fields: [userId], references: [userId])
+model Staff {
+  id     String @id @map("user_id")
 
-  phone          String?
-  role    CaregiverRole
-  status         CaregiverStatus @default(ACTIVE)
-  employmentType EmploymentType  @map("employment_type")
-  hireDate       DateTime        @map("hire_date")
+  firstName String
+  lastName String
+  email String @unique
+  role ROLE
+  birthDate DateTime? @map("birth_date")
+
+  phone          String
+  employmentType EmploymentType @map("employment_type")
+  hireDate       DateTime       @map("hire_date")
+
+  department String?
+  title      String?
 
   certifications Certification[]
-  visits         Visit[]
-  actionRecords  ActionRecord[]
-  assignedTasks  Task[] @relation("CaregiverAssignments")
+  assignedTasks  Task[]          @relation("CaregiverAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("caregivers")
+  @@map("staffs")
 }
 
 model Certification {
@@ -165,26 +157,12 @@ model Certification {
   issuer      String
   validFrom   DateTime  @map("valid_from")
   validTo     DateTime? @map("valid_to")
-  caregiverId String    @map("caregiver_id")
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  staffId String    @map("staff_id")
+  staff   Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@map("certifications")
 }
 
-model StaffProfile {
-  id     String @id @default(cuid())
-  userId String @unique @map("user_id")
-  user   User   @relation(fields: [userId], references: [userId])
-
-  department     String?
-  title          String?
-  canAssignTasks Boolean @default(false) @map("can_assign_tasks")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("staff_profiles")
-}
 
 // -----------------------------------------------------------------------------
 // RESIDENTS
@@ -203,28 +181,27 @@ enum AllergySeverity {
 }
 
 model Resident {
-  residentId String   @id @default(cuid()) @map("resident_id")
-  mrn        String   @unique
-  firstName  String   @map("first_name")
-  lastName   String   @map("last_name")
-  birthDate  DateTime @map("birth_date")
+  residentId String         @id @default(cuid()) @map("resident_id")
+  mrn        String         @unique
+  firstName  String         @map("first_name")
+  lastName   String         @map("last_name")
+  birthDate  DateTime       @map("birth_date")
   gender     Gender
   status     ResidentStatus @default(ACTIVE)
-  
-  room       String?
-  phone      String?
-  email      String?
+
+  room          String?
+  phone         String?
+  email         String?
   mobilityLevel MobilityLevel
 
-  agencyId   Int      @map("care_home_agency_id")
-  agency     CareHomeAgency @relation(fields: [agencyId], references: [id])
+  agencyId Int            @map("care_home_agency_id")
+  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
 
   allergies         Allergy[]
   medications       Medication[]
   emergencyContacts EmergencyContact[]
-  visits            Visit[]
   taskAssignments   ResidentTaskAssignment[]
-  tasks             Task[] @relation("ResidentAssignments")
+  tasks             Task[]                   @relation("ResidentAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -263,7 +240,6 @@ model EmergencyContact {
   name       String
   relation   String
   phone      String
-  isPrimary  Boolean  @default(false) @map("is_primary")
   residentId String
   resident   Resident @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
 
@@ -275,19 +251,19 @@ model EmergencyContact {
 // -----------------------------------------------------------------------------
 
 model TaskTemplate {
-  id            Int            @id @default(autoincrement())
-  name          String
-  description   String?
-  category      TaskCategory
-  frequency     TaskFrequency
-  priority      TaskPriority   @default(MEDIUM)
-  riskLevel     RiskLevel      @default(LOW)
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  category    TaskCategory
+  frequency   TaskFrequency
+  priority    TaskPriority  @default(MEDIUM)
+  riskLevel   RiskLevel     @default(LOW)
 
-  requiresInput Boolean        @default(false) @map("requires_input")
-  inputSchema   Json?          @map("input_schema")
+  requiresInput Boolean @default(false) @map("requires_input")
+  inputSchema   Json?   @map("input_schema")
 
-  agencyId      Int
-  agency        CareHomeAgency @relation(fields: [agencyId], references: [id])
+  agencyId Int
+  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
 
   defaultChecklist ChecklistTemplateItem[]
   assignments      ResidentTaskAssignment[]
@@ -324,36 +300,36 @@ model ResidentTaskAssignment {
 }
 
 model Task {
-  id              String       @id @default(cuid())
-  title           String
+  id         String        @id @default(cuid())
+  title      String
   // Link to template if scheduled, null if ad-hoc
-  templateId      Int?         @map("template_id")
-  template        TaskTemplate? @relation(fields: [templateId], references: [id])
+  templateId Int?          @map("template_id")
+  template   TaskTemplate? @relation(fields: [templateId], references: [id])
 
-  residentId      String       @map("resident_id")
-  resident        Resident     @relation("ResidentAssignments",fields: [residentId], references: [residentId])
+  residentId String   @map("resident_id")
+  resident   Resident @relation("ResidentAssignments", fields: [residentId], references: [residentId])
 
-  description     String?
+  description         String?
   // The foreign key field
-  assignedCaregiverId String?    @map("assigned_caregiver_id")
+  assignedStaffId String    @map("assigned_staff_id")
   // The relation field (points to the Caregiver model)
-  assignedCaregiver   Caregiver? @relation("CaregiverAssignments",fields: [assignedCaregiverId], references: [id])
-  
-  visitId         String?      @map("visit_id")
-  visit           Visit?       @relation(fields: [visitId], references: [visitId])
+  assignedStaff   Staff @relation("CaregiverAssignments", fields: [assignedStaffId], references: [id])
 
-  status          TaskStatus   @default(PENDING)
-  priority        TaskPriority
-  category        TaskCategory
-  
-  dueAt           DateTime     @map("due_at")
-  startedAt       DateTime?    @map("started_at")
-  completedAt     DateTime?    @map("completed_at")
-  
-  completionNotes String[]    @map("completion_notes")
-  
-  checklist       ChecklistItem[]
-  actionRecords   ActionRecord[]
+  visitId String? @map("visit_id")
+  visit   Visit?  @relation(fields: [visitId], references: [visitId])
+
+  status   TaskStatus   @default(PENDING)
+  priority TaskPriority
+  category TaskCategory
+
+  dueAt       DateTime  @map("due_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  completionNotes String[] @map("completion_notes")
+
+  checklist     ChecklistItem[]
+  actionRecords ActionRecord[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -380,11 +356,7 @@ model ChecklistItem {
 // -----------------------------------------------------------------------------
 
 model Visit {
-  visitId        String      @id @default(cuid()) @map("visit_id")
-  caregiverId    String      @map("caregiver_id")
-  caregiver      Caregiver   @relation(fields: [caregiverId], references: [id])
-  residentId     String      @map("resident_id")
-  resident       Resident    @relation(fields: [residentId], references: [residentId])
+  visitId     String    @id @default(cuid()) @map("visit_id")
 
   status         VisitStatus @default(PLANNED)
   scheduledStart DateTime    @map("scheduled_start")
@@ -392,7 +364,7 @@ model Visit {
   actualStart    DateTime?   @map("actual_start")
   actualEnd      DateTime?   @map("actual_end")
 
-  tasks          Task[]
+  tasks Task[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -404,11 +376,9 @@ model ActionRecord {
   id          Int       @id @default(autoincrement())
   taskId      String    @map("task_id")
   task        Task      @relation(fields: [taskId], references: [id])
-  caregiverId String    @map("caregiver_id")
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
 
-  value       Json?     // Stores clinical data (e.g. { bpm: 72 })
-  notes       String?
+  value Json? // Stores clinical data (e.g. { bpm: 72 })
+  notes String?
 
   createdAt DateTime @default(now()) @map("created_at")
 

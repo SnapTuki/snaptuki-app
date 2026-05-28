@@ -14,6 +14,7 @@ import {
   Mail,
   Smartphone
 } from 'lucide-react';
+import { useAuthStore } from '../../lib/store/authStore';
 
 /**
  * --- HELPER COMPONENTS ---
@@ -80,6 +81,7 @@ export default function SettingsPage() {
   });
 
   const [language, setLanguage] = useState('en');
+  const {user}  = useAuthStore();
 
   const handleToggle = (key: keyof typeof settings) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
@@ -119,24 +121,24 @@ export default function SettingsPage() {
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
-              <input type="text" defaultValue="Sarah Miller" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
+              <input type="text" value={user ? user.firstName + ' ' + user.lastName : 'Unknown' } className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Role / Title</label>
-              <input type="text" defaultValue="Head Nurse" disabled className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none font-medium text-sm text-slate-500 cursor-not-allowed" />
+              <input type="text" value={user?.roles ? user.roles : 'No Role'} disabled className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none font-medium text-sm text-slate-500 cursor-not-allowed" />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                <input type="email" defaultValue="sarah.m@snaptuki.care" className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
+                <input type="email" value={user?.email ? user.email : 'Unknown Email'} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
               </div>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Phone Number</label>
               <div className="relative">
                 <Smartphone className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                <input type="text" defaultValue="+358 40 123 4567" className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
+                <input type="text" value="+358 40 123 4567" className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-medium text-sm text-slate-900" />
               </div>
             </div>
           </div>

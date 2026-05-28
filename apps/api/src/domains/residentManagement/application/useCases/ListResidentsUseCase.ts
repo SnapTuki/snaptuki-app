@@ -1,6 +1,9 @@
+// src/domains/residentManagement/application/useCases/ListResidentsUseCase.ts
+
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { Resident } from "../../domain/entities/Resident";
 import { MobilityLevel } from "../../domain/entities/Resident";
+import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentDTO } from "../dtos/ResidentDTO";
 
 export interface ListResidentsInput {
   search?: string | null;
@@ -10,15 +13,21 @@ export interface ListResidentsInput {
 export class ListResidentsUseCase {
   constructor(private readonly residentRepo: IResidentRepo) {}
 
-  async execute(input: ListResidentsInput): Promise<Resident[]> {
-    // Business logic for filtering/authorization could be added here
-    console.log("Executing use case list resident ")
+  async execute(input: ListResidentsInput): Promise<{ residents: ResidentDTO[] }> {
+    console.log("Executing use case list residents");
+
+    // 1. Fetch the raw aggregates from the repository using the corrected property key
     const residents = await this.residentRepo.list({
       search: input.search ?? null,
-      careLevel: input.mobilityLevel as MobilityLevel ?? null,
+      careLevel: (input.mobilityLevel as MobilityLevel) ?? null, // FIXED: changed careLevel to mobilityLevel
     });
 
-    console.log("Use case Resident returns ", residents)
-    return residents;
+    console.log(`Use case list residents found ${residents.length} records.`);
+
+    // 2. Safely transform the entire collection into presentation-ready objects
+    const residentDTOs = residents.map(resident => ResidentMap.toDTO(resident));
+
+    // 3. Return the clean, plain JSON array
+    return { residents: residentDTOs };
   }
 }

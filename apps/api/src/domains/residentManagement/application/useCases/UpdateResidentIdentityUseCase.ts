@@ -1,24 +1,40 @@
+// src/domains/residentManagement/application/useCases/UpdateResidentIdentityUseCase.ts
+
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { Resident } from "../../domain/entities/Resident";
+import { Gender } from "../../domain/entities/Resident";
+import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentDTO } from "../dtos/ResidentDTO";
+
+export interface UpdateResidentIdentityInput {
+  residentId: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: Date;
+  gender?: Gender;
+}
 
 export class UpdateResidentIdentityUseCase {
-    constructor(private repo: IResidentRepo) {};
+  constructor(private readonly repo: IResidentRepo) {}
 
-    public async execute(request: any): Promise<Resident> {
-        const resident = await this.repo.getById(request.residentId);
-
-        if (!resident) throw new Error('Resident not found');
-
-        // Assuming your Resident entity has a method to update identity 
-        // to handle any business rules (e.g., preventing DOB changes after audit)
-        resident.updateIdentity({
-            firstName: request.firstName,
-            lastName: request.lastName,
-            birthDate: request.birthDate,
-            gender: request.gender
-        });
-
-        await this.repo.save(resident);
-        return resident;
+  public async execute(request: UpdateResidentIdentityInput): Promise<{ resident: ResidentDTO }> {
+    // 1. Fetch the Aggregate Root
+    const resident = await this.repo.getById(request.residentId);
+    if (!resident) {
+      throw new Error("Resident not found");
     }
+
+    // 2. Delegate mutation and business rule validation to the Aggregate Root
+    resident.updateIdentity({
+      firstName: request.firstName,
+      lastName: request.lastName,
+      birthDate: request.birthDate ? new Date(request.birthDate) : undefined,
+      gender: request.gender
+    });
+
+    // 3. Persist the updated aggregate state
+    await this.repo.save(resident);
+
+    // 4. Safely return the plain presentation data layer payload
+    return { resident: ResidentMap.toDTO(resident) };
+  }
 }

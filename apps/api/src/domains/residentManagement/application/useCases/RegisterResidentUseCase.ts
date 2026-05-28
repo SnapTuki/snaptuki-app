@@ -1,20 +1,21 @@
 // src/domains/residentManagement/application/useCases/RegisterResidentUseCase.ts
+
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { Resident } from "../../../residentManagement/domain/entities/Resident";
-import { MedicalRecordNumber } from "../../../residentManagement/domain/valueObjects/MedicalRecordNumber";
-import { Email } from "../../../residentManagement/domain/valueObjects/Email";
-import { PhoneNumber } from "../../../residentManagement/domain/valueObjects/PhoneNumber";
-import { Gender, MobilityLevel, ResidentStatus } from "../../../residentManagement/domain/entities/Resident";
+import { Resident, Gender, MobilityLevel } from "../../domain/entities/Resident";
+import { MedicalRecordNumber } from "../../domain/valueObjects/MedicalRecordNumber";
+import { Email } from "../../domain/valueObjects/Email";
+import { PhoneNumber } from "../../domain/valueObjects/PhoneNumber";
+import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentDTO } from "../dtos/ResidentDTO"; // Ensure this matches your DTO path
 
 export interface RegisterResidentInput {
   mrn: string;
   firstName: string;
   lastName: string;
-  mobilityLevel: MobilityLevel
+  mobilityLevel: MobilityLevel;
   birthDate: Date;
-  status: ResidentStatus;
   gender: Gender;
-  agencyId: number
+  agencyId: number;
   email?: string | null;
   phone?: string | null;
   room?: string | null;
@@ -22,37 +23,44 @@ export interface RegisterResidentInput {
 
 export class RegisterResidentUseCase {
   constructor(
-    private repo: IResidentRepo,
+    private readonly repo: IResidentRepo,
   ) {}
 
-  public async execute(input: RegisterResidentInput) {
+  public async execute(input: RegisterResidentInput): Promise<{ resident: ResidentDTO }> {
+    
+    // 1. Enforce Domain Rules / Uniqueness
     const exists = await this.repo.getByMRN(input.mrn);
-    if (exists) throw new Error("MRN already exists");
+    if (exists) {
+        throw new Error(`Resident with MRN ${input.mrn} already exists.`);
+    }
 
-   
-    const resident = Resident.create({
-      residentId: null,
+    // 2. Generate ID upfront (The Clean Architecture way)
+    const residentId = crypto.randomUUID();
+
+    // 3. Create the Aggregate Root
+    const resident = Resident.createNew({
+      residentId,
+      agencyId: input.agencyId,
       mrn: MedicalRecordNumber.create(input.mrn),
       firstName: input.firstName,
       lastName: input.lastName,
       birthDate: new Date(input.birthDate),
       gender: input.gender,
-      email: Email.create(input.email ?? null),
-      phone: PhoneNumber.create(input.phone ?? null),
       mobilityLevel: input.mobilityLevel,
       room: input.room ?? null,
-      agencyId: input.agencyId,
-      taskAssignments: [],
-      tasks: [],
-      status: ResidentStatus.Active,
-      allergies: [],
-      medications: [],
-      emergencyContacts: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      
+      // Safely instantiate Value Objects only if data is provided
+      email: input.email ? Email.create(input.email) : null,
+      phone: input.phone ? PhoneNumber.create(input.phone) : null,
+      
+      // Note: We omit tasks, status, and timestamps because the domain 
+      // factory (createNew) handles all of those defaults internally!
     });
 
-    await this.repo.create(resident);
-    return resident;
+    // 4. Persist using the unified upsert pattern
+    await this.repo.save(resident);
+
+    // 5. Return a safe Presentation DTO to the API/GraphQL layer
+    return { resident: ResidentMap.toDTO(resident) };
   }
 }

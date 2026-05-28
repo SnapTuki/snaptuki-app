@@ -1,12 +1,26 @@
 // src/domains/taskManagement/application/dtos/TaskDTO.ts
-import { TaskCategory, TaskPriority, TaskStatus } from "../../../../generated/prisma";
+
+// 1. Import Enums strictly from the Domain!
+import { TaskCategory, TaskPriority, TaskStatus } from "../../domain/entities/Task";
+
 export interface ChecklistItemDTO {
   id: string;
   label: string;
   required: boolean;
   done: boolean;
-  doneAt: string | null;
+  doneAt: Date | null; // Keep as Date for GraphQLDateTime compatibility
   doneByCaregiverId: string | null;
+}
+
+// Optional: Define strict nested types if you intend to return joined data
+export interface TaskResidentDTO {
+  firstName: string;
+  lastName: string;
+}
+
+export interface TaskCaregiverDTO {
+  firstName: string;
+  lastName: string;
 }
 
 export interface TaskDTO {
@@ -17,10 +31,13 @@ export interface TaskDTO {
   priority: TaskPriority;
   status: TaskStatus;
 
-  residentId: string | null;
-  assignedCaregiverId: string | null;
-  resident: any;
-  assignedCaregiver: any;
+  residentId: string;
+  assignedCaregiverId: string;
+  
+  // Replace 'any' with strict shapes (or remove them if the GraphQL resolver fetches them separately)
+  resident?: TaskResidentDTO | null;
+  assignedCaregiver?: TaskCaregiverDTO | null;
+  
   dueAt: Date | null;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -37,11 +54,15 @@ export interface TaskDTO {
 export interface CreateTaskDTO {
   title: string;
   description?: string | null;
-  category: any; // Use your aliased TaskCategory
-  priority: any; // Use your aliased TaskPriority
-  residentId?: string | null;
-  assignedCaregiverId?: string | null;
-  dueAt?: Date | null;
+  category?: TaskCategory; // Replaced 'any' with domain enum
+  priority?: TaskPriority; // Replaced 'any' with domain enum
+  residentId: string;
+  assignedCaregiverId: string;
+  dueAt: Date;
   createdByUserId: string;
-  checklist?: Array<{ id: string; label: string; required?: boolean }>;
+  checklist?: Array<{ 
+    // id is omitted here because the Use Case generates it securely!
+    label: string; 
+    required?: boolean; 
+  }>;
 }

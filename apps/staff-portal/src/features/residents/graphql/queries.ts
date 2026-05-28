@@ -62,44 +62,7 @@ export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
         phone
         isPrimary
       }
-
-      # 2. Care Plan (The "Rules")
-      taskAssignments {
-        id
-        isActive
-        taskTemplate {
-          id
-          name
-          category
-          priority
-        }
-      }
-
-      # 3. Care History (The "Results" from the Unified Task Table)
-      tasks {
-        id
-        status
-        priority
-        category
-        dueAt
-        completedAt
-        completionNotes
-        # Include checklist items for the audit trail
-        checklist {
-          id
-          label
-          isCompleted
-          completedAt
-        }
-        # Include specific clinical readings (BP, Glucose, etc)
-        actionRecords {
-          id
-          value
-          notes
-          createdAt
-          
-        }
-      }
+      
     }
   }
 `;

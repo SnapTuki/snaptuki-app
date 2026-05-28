@@ -15,9 +15,9 @@ import { UserResolver } from "./domains/identityAccess/api/resolvers/userResolve
 import { ResidentResolver } from "./domains/residentManagement/api/graphql/resolvers/ResidentResolvers";
 import { TaskResolver } from "./domains/taskManagement/api/graphql/resolvers/TaskResolver";
 // CaregiverManagement BC imports
-import { CaregiverResolver } from "./domains/caregiverManagement/api/resolvers/CaregiverResolvers";
+import { StaffResolvers } from "./domains/staffManagement/api/resolvers/StaffResolvers";
 
-import { createCaregiverManagementContainer } from "./domains/caregiverManagement/infrastructure";
+import { createCaregiverManagementContainer } from "./domains/staffManagement/infrastructure";
 import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure";
 import { createTaskManagementContainer } from "./domains/taskManagement/infrastructure";
 import { config } from "./config";
@@ -29,7 +29,7 @@ async function buildApplicationSchema() {
         resolvers: [
             AuthResolver,
             UserResolver, 
-            CaregiverResolver,
+            StaffResolvers,
             ResidentResolver,
             TaskResolver,
         ],

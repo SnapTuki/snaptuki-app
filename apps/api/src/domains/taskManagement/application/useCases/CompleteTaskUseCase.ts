@@ -1,6 +1,8 @@
 // src/domains/taskManagement/application/useCases/CompleteTaskUseCase.ts
+
 import { ITaskRepo } from "../interfaces/ITaskRepo";
-import { Task } from "../../../taskManagement/domain/entities/Task";
+import { TaskMap } from "../../infrastructure/mappers/TaskMap";
+import { TaskDTO } from "../dtos/TaskDTO";
 
 export interface CompleteTaskInput {
   id: string;
@@ -9,19 +11,24 @@ export interface CompleteTaskInput {
 }
 
 export class CompleteTaskUseCase {
-  constructor(private repo: ITaskRepo) {}
+  constructor(private readonly repo: ITaskRepo) {}
 
-  public async execute(input: CompleteTaskInput): Promise<Task> {
+  public async execute(input: CompleteTaskInput): Promise<{ task: TaskDTO }> {
+    // 1. Fetch the Aggregate Root
     const task = await this.repo.getById(input.id);
-    if (!task) throw new Error("Task not found");
-
-    // If not started yet, allow direct completion (real-world rule can differ)
-    if (task.status !== "IN_PROGRESS" && task.status !== "ASSIGNED") {
-      throw new Error("Only ASSIGNED or IN_PROGRESS tasks can be completed");
+    if (!task) {
+      throw new Error(`Task with ID ${input.id} not found.`);
     }
 
-    task.complete(input.completedByCaregiverId, input.notes ?? null);
+    // 2. Delegate to the Domain
+    // ALL business rules (including status checks and mandatory checklist validation) 
+    // are executed safely inside this method.
+    task.complete(input.completedByCaregiverId, input.notes ?? null, new Date());
+
+    // 3. Persist the mutated state using the unified repository pattern
     await this.repo.save(task);
-    return task;
+
+    // 4. Safely return the presentation layer payload
+    return { task: TaskMap.toDTO(task) };
   }
 }

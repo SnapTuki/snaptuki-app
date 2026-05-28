@@ -1,124 +1,134 @@
 // src/domains/taskManagement/infrastructure/mappers/TaskMap.ts
-import { Task } from "../../../taskManagement/domain/entities/Task";
-import { ChecklistItem } from "../../../taskManagement/domain/entities/ChecklistItem";
-import { Title } from "../../../taskManagement/domain/valueObjects/Title";
-import { Description } from "../../../taskManagement/domain/valueObjects/Description";
-import { TaskDTO } from "../../../taskManagement/application/dtos/TaskDTO";
-// Note: Adjusted imports to match your Prisma generated client
+
+import { Task } from "../../domain/entities/Task";
+import { ChecklistItem } from "../../domain/entities/ChecklistItem";
+import { TaskDTO } from "../../application/dtos/TaskDTO";
+
+// Domain Enums
+import { TaskCategory, TaskPriority, TaskStatus } from "../../domain/entities/Task";
+
 import type {
   Task as PrismaTask,
   ChecklistItem as PrismaChecklist,
-  TaskTemplate
 } from "../../../../generated/prisma";
 
-// Defining the inclusion type for Prisma
+// Define the inclusion type for Prisma
 type PrismaTaskWithRelations = PrismaTask & {
   checklist: PrismaChecklist[];
-  resident?: any;
-  assignedCaregiver:any;
-  template?: TaskTemplate | null; // Necessary to get the 'title/name'
 };
 
 export class TaskMap {
-  static toDomain(row: PrismaTaskWithRelations): Task {
-    return Task.create({
+  
+  /**
+   * 1. INFRASTRUCTURE -> DOMAIN (Read)
+   */
+  static toDomain(row: PrismaTaskWithRelations | null): Task | null {
+    if (!row) return null;
+
+    // Use the Rehydration Factory! Pass raw primitives.
+    return Task.restore({
       id: row.id,
-      title: Title.create(row.title),
-      description: row.description ? Description.create(row.description) : null,
-      category: row.category,
-      priority: row.priority,
-      status: row.status,
+      title: row.title,
+      description: row.description,
+      
+      // Cast Prisma enums to Domain enums
+      category: row.category as unknown as TaskCategory,
+      priority: row.priority as unknown as TaskPriority,
+      status: row.status as unknown as TaskStatus,
+      
       dueAt: row.dueAt,
       residentId: row.residentId,
-      resident: row.resident ? {
-        firstName: row.resident.firstName,
-        lastName: row.resident.lastName,
-      } : undefined,
+      assignedCaregiverId: row.assignedStaffId,
       
-      assignedCaregiverId: row.assignedCaregiverId,
-      assignedCaregiver: row.assignedCaregiver ? {
-        firstName: row.assignedCaregiver.user.firstName,
-        lastName: row.assignedCaregiver.user.lastName,
-      }: undefined,
-      startedAt: row.startedAt ?? null,
-      completedAt: row.completedAt ?? null,
-      completedByCaregiverId: null,
-      checklist: row.checklist ? row.checklist.map(ci => ChecklistItem.create({
+      startedAt: row.startedAt,
+      completedAt: row.completedAt,
+      completedByCaregiverId: row.assignedStaffId ?? null,
+      completionNotes: row.completionNotes ?? null,
+      
+      checklist: row.checklist.map(ci => ({
         id: ci.id,
         label: ci.label,
-        required: ci.isRequired, // Schema: isRequired
-        done: ci.isCompleted,    // Schema: isCompleted
-        doneAt: ci.completedAt ?? null, // Schema: completedAt
-        doneByCaregiverId: null  // Not in your Prisma ChecklistItem model
-      })) : [],
-      // Schema doesn't have createdByUserId on Task; consider adding it to Prisma or mapping from Audit
-      createdByUserId: "system",
+        isRequired: ci.isRequired, 
+        isCompleted: ci.isCompleted, 
+        completedAt: ci.completedAt, 
+      })),
+      
+      createdByUserId: "system", // Or map from Prisma if added later
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
   }
 
+  /**
+   * 2. DOMAIN -> INFRASTRUCTURE (Write)
+   */
   static toPersistence(task: Task) {
+    // ONE call to get the un-encapsulated state of the Aggregate
+    const state = task.snapshot();
+
     return {
-      // Note: Persistence usually handles the Task model. 
-      // If updating title, you'd likely update the associated Template or a custom field.
-      id: task.id,
-      title: task.title.value,
-      description: task.description.value,
-      category: task.category,
-      priority: task.priority,
-      status: task.status,
-      residentId: task.residentId,
-      dueAt: task.dueAt,
-      startedAt: task.startedAt,
-      completedAt: task.completedAt,
-      assignedCaregiverId: task.assignedCaregiverId,
-      completionNotes: task.completionNotes,
+      id: state.id,
+      title: state.title, 
+      description: state.description,
+      category: state.category,
+      priority: state.priority,
+      status: state.status,
+      residentId: state.residentId,
+      assignedCaregiverId: state.assignedCaregiverId,
+      dueAt: state.dueAt,
+      startedAt: state.startedAt,
+      completedAt: state.completedAt,
+      completedByCaregiverId: state.completedByCaregiverId,
+      completionNotes: state.completionNotes,
+      
+      // --- Nested Writes (The DDD Wipe & Replace Pattern) ---
       checklist: {
-        create: task.checklist.map(item => ({
+        deleteMany: {}, 
+        create: state.checklist.map(item => ({
           id: item.id,
           label: item.label,
-          // Change 'required' to 'isRequired' (or whatever your schema says)
-          isRequired: item.required,
-          done: item.done,
-          // ... other fields
+          isRequired: item.isRequired,
+          isCompleted: item.isCompleted,
+          completedAt: item.completedAt
         }))
       }
-      // visitId: task.visitId // You'll need this to link to a caregiver
     };
   }
 
+  /**
+   * 3. DOMAIN -> PRESENTATION (API/GraphQL)
+   */
   static toDTO(task: Task): TaskDTO {
+    const state = task.snapshot();
+
     return {
-      id: task.id,
-      title: task.title.value,
-      dueAt: task.dueAt ? task.dueAt : null,
-      description: task.description?.value ?? null,
-      category: task.category,
-      priority: task.priority,
-      status: task.status,
-      residentId: task.residentId,
-      resident: task.resident,
-      assignedCaregiverId: task.assignedCaregiverId,
-      assignedCaregiver: task.assignedCaregiver ? {
-      firstName: task.assignedCaregiver.firstName,
-      lastName:  task.assignedCaregiver.lastName,
-    } : null,
-      startedAt: task.startedAt ? task.startedAt : null,
-      completedAt: task.completedAt ? task.completedAt : null,
-      completedByCaregiverId: task.completedByCaregiverId,
-      completionNotes: task.completionNotes,
-      checklist: task.checklist.map(ci => ({
+      id: state.id,
+      title: state.title,
+      description: state.description,
+      category: state.category,
+      priority: state.priority,
+      status: state.status,
+      residentId: state.residentId,
+      assignedCaregiverId: state.assignedCaregiverId,
+      dueAt: state.dueAt,
+      startedAt: state.startedAt,
+      completedAt: state.completedAt,
+      completedByCaregiverId: state.completedByCaregiverId,
+      completionNotes: state.completionNotes,
+      
+      // State arrays already contain clean, plain objects!
+      checklist: state.checklist.map(ci => ({
         id: ci.id,
         label: ci.label,
-        required: ci.required,
-        done: ci.done,
-        doneAt: ci.doneAt ? ci.doneAt.toISOString() : null,
-        doneByCaregiverId: ci.doneByCaregiverId,
+        required: ci.isRequired,
+        done: ci.isCompleted,
+        doneAt: ci.completedAt,
+        doneByCaregiverId: ci.completedByCaregiverId,
       })),
-      createdByUserId: task.createdByUserId,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
+      
+      createdByUserId: state.createdByUserId,
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
     };
   }
 }

@@ -1,15 +1,26 @@
+// src/domains/residentManagement/application/useCases/DischargeResidentUseCase.ts
+
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { Resident } from "../../domain/entities/Resident";
+import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentDTO } from "../dtos/ResidentDTO";
+
 export class DischargeResidentUseCase {
-    constructor (private repo: IResidentRepo){};
+    constructor(private readonly repo: IResidentRepo) {}
 
-    public async execute(id: string): Promise<Resident>{
+    public async execute(id: string): Promise<{ resident: ResidentDTO }> {
+        // 1. Fetch the Aggregate Root
         const resident = await this.repo.getById(id);
+        if (!resident) {
+            throw new Error(`Resident with ID ${id} was not found.`);
+        }
 
-        if(!resident) throw new Error('Resident was not found');
-
+        // 2. Fire the domain lifecycle behavior
         resident.discharge();
+
+        // 3. Persist the updated aggregate state (saves status and deactivates care plan tasks)
         await this.repo.save(resident);
-        return resident;
+
+        // 4. Safely return the clean DTO data structure to the presentation layer
+        return { resident: ResidentMap.toDTO(resident) };
     }
 }

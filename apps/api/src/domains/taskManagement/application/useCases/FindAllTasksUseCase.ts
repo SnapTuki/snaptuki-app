@@ -1,9 +1,12 @@
-import { ITaskRepo } from "../interfaces/ITaskRepo";
-import { Task } from "../../domain/entities/Task";
+// src/domains/taskManagement/application/useCases/FindAllTasksUseCase.ts
 
-interface FindTasksRequest {
+import { ITaskRepo } from "../interfaces/ITaskRepo";
+import { TaskMap } from "../../infrastructure/mappers/TaskMap";
+import { TaskDTO } from "../dtos/TaskDTO";
+
+export interface FindTasksRequest {
   search?: string | null;
-  status?: string | null;
+  status?: string | null; // Could optionally be typed to TaskStatus enum
   caregiverId?: string | null;
   residentId?: string | null;
   startDate?: Date | null;
@@ -13,14 +16,20 @@ interface FindTasksRequest {
 }
 
 export class FindAllTasksUseCase {
-  constructor(private repo: ITaskRepo) {}
+  constructor(private readonly repo: ITaskRepo) {}
 
-  public async execute(request: FindTasksRequest): Promise<Task[]> {
-    // Business Logic: If a residentId is provided but no date range, 
-    // default to showing tasks from the last 30 days to optimize performance.
-    const start = request.startDate ?? null;
+  public async execute(request: FindTasksRequest): Promise<{ tasks: TaskDTO[] }> {
+    let start = request.startDate ?? null;
     const end = request.endDate ?? null;
 
+    // 1. Business Logic Execution: Enforce performance boundaries for resident queries
+    if (request.residentId && !start && !end) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      start = thirtyDaysAgo;
+    }
+
+    // 2. Fetch Aggregates via Repository
     const tasks = await this.repo.list({
       search: request.search ?? null,
       status: request.status ?? null,
@@ -32,6 +41,9 @@ export class FindAllTasksUseCase {
       take: request.take,
     });
 
-    return tasks;
+    // 3. Transform and safely return the presentation layer payload
+    return {
+      tasks: tasks.map(task => TaskMap.toDTO(task))
+    };
   }
 }

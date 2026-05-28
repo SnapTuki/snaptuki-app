@@ -16,32 +16,9 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   DateTime: { input: any; output: any; }
-  JSON: { input: any; output: any; }
-};
-
-export type ActionRecordType = {
-  __typename?: 'ActionRecordType';
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['Int']['output'];
-  notes?: Maybe<Scalars['String']['output']>;
-  value?: Maybe<Scalars['JSON']['output']>;
-};
-
-export type ActivateUserInput = {
-  userId: Scalars['ID']['input'];
-};
-
-export type AddCaregiverCertificationInputGql = {
-  caregiverId: Scalars['ID']['input'];
-  certId: Scalars['ID']['input'];
-  issuer: Scalars['String']['input'];
-  name: Scalars['String']['input'];
-  validFrom: Scalars['DateTime']['input'];
-  validTo?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 export type AddResidentAllergyInput = {
-  id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   notes?: InputMaybe<Scalars['String']['input']>;
   reaction: Scalars['String']['input'];
@@ -53,7 +30,6 @@ export type AddResidentMedicationInput = {
   dosage: Scalars['String']['input'];
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   frequency: Scalars['String']['input'];
-  id: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   prescribedBy?: InputMaybe<Scalars['String']['input']>;
   residentId: Scalars['ID']['input'];
@@ -63,7 +39,7 @@ export type AddResidentMedicationInput = {
 export enum AllergySeverity {
   Mild = 'MILD',
   Moderate = 'MODERATE',
-  Severe = 'SEVERE'
+  Sever = 'SEVER'
 }
 
 export type AllergyType = {
@@ -75,16 +51,6 @@ export type AllergyType = {
   severity: AllergySeverity;
 };
 
-export type AssignPrimaryCaregiverInput = {
-  caregiverId: Scalars['ID']['input'];
-  residentId: Scalars['ID']['input'];
-};
-
-export type AssignRoleInput = {
-  role: Role;
-  userId: Scalars['ID']['input'];
-};
-
 export type AuthResultGql = {
   __typename?: 'AuthResultGQL';
   token: Scalars['String']['output'];
@@ -94,35 +60,6 @@ export type AuthResultGql = {
 export type AuthenticateInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
-};
-
-export enum CaregiverRole {
-  Caregiver = 'CAREGIVER',
-  Coordinator = 'COORDINATOR',
-  HeadNurse = 'HEAD_NURSE'
-}
-
-export enum CaregiverStatus {
-  Active = 'ACTIVE',
-  Inactive = 'INACTIVE',
-  Suspended = 'SUSPENDED'
-}
-
-export type CaregiverType = {
-  __typename?: 'CaregiverType';
-  certifications: Array<CertificationType>;
-  createdAt: Scalars['DateTime']['output'];
-  email: Scalars['String']['output'];
-  employmentType: EmploymentType;
-  firstName: Scalars['String']['output'];
-  hireDate: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  lastName: Scalars['String']['output'];
-  phone?: Maybe<Scalars['String']['output']>;
-  role: CaregiverRole;
-  status: CaregiverStatus;
-  updatedAt: Scalars['DateTime']['output'];
-  userId?: Maybe<Scalars['String']['output']>;
 };
 
 export type CertificationType = {
@@ -139,32 +76,30 @@ export type ChangePasswordInput = {
   userId: Scalars['ID']['input'];
 };
 
-export type ChecklistItemInput = {
-  done?: InputMaybe<Scalars['Boolean']['input']>;
-  id: Scalars['ID']['input'];
-  label: Scalars['String']['input'];
-  required?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
 export type CompleteTaskInputGql = {
   completedByCaregiverId: Scalars['ID']['input'];
   id: Scalars['ID']['input'];
-  notes?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type CreateChecklistItemInput = {
+  label: Scalars['String']['input'];
+  required?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateTaskInput = {
   assignedCaregiverId: Scalars['String']['input'];
   category: TaskCategory;
-  checklist?: InputMaybe<Array<ChecklistItemInput>>;
-  description: Scalars['String']['input'];
-  dueAt?: InputMaybe<Scalars['DateTime']['input']>;
+  checklist?: InputMaybe<Array<CreateChecklistItemInput>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  dueAt: Scalars['DateTime']['input'];
   priority: TaskPriority;
-  residentId?: InputMaybe<Scalars['String']['input']>;
-  status: TaskStatus;
+  residentId: Scalars['String']['input'];
   title: Scalars['String']['input'];
 };
 
 export type EmergencyContactInput = {
+  email?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['ID']['input']>;
   isPrimary?: Scalars['Boolean']['input'];
   name: Scalars['String']['input'];
@@ -213,37 +148,22 @@ export enum MobilityLevel {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  activateUser: Scalars['Boolean']['output'];
-  addCaregiverCertification: CaregiverType;
   addResidentAllergy: ResidentType;
   addResidentMedication: ResidentType;
-  assignPrimaryCaregiver: ResidentType;
-  assignRole: User;
   authenticateUser: AuthResultGql;
   cancelTask: Task;
   changePassword: Scalars['Boolean']['output'];
   completeTask: Task;
   createTask: Task;
-  deactivateCaregiver: CaregiverType;
   dischargeResident: ResidentType;
-  registerCaregiver: CaregiverType;
+  registerCaregiver: StaffType;
   registerResident: ResidentType;
   registerUser: User;
   toggleChecklistItem: Task;
-  updateCaregiverContact: CaregiverType;
+  updateCaregiverContact: StaffType;
   updateEmergencyContacts: ResidentType;
   updateResidentIdentity: ResidentType;
   updateTask: Task;
-};
-
-
-export type MutationActivateUserArgs = {
-  input: ActivateUserInput;
-};
-
-
-export type MutationAddCaregiverCertificationArgs = {
-  input: AddCaregiverCertificationInputGql;
 };
 
 
@@ -254,16 +174,6 @@ export type MutationAddResidentAllergyArgs = {
 
 export type MutationAddResidentMedicationArgs = {
   input: AddResidentMedicationInput;
-};
-
-
-export type MutationAssignPrimaryCaregiverArgs = {
-  input: AssignPrimaryCaregiverInput;
-};
-
-
-export type MutationAssignRoleArgs = {
-  input: AssignRoleInput;
 };
 
 
@@ -290,11 +200,6 @@ export type MutationCompleteTaskArgs = {
 
 export type MutationCreateTaskArgs = {
   input: CreateTaskInput;
-};
-
-
-export type MutationDeactivateCaregiverArgs = {
-  id: Scalars['String']['input'];
 };
 
 
@@ -345,8 +250,8 @@ export type MutationUpdateTaskArgs = {
 
 export type Query = {
   __typename?: 'Query';
-  caregiverById?: Maybe<CaregiverType>;
-  caregiverList: Array<CaregiverType>;
+  caregiverById?: Maybe<StaffType>;
+  caregiverList: Array<StaffType>;
   getResidentById?: Maybe<ResidentType>;
   me?: Maybe<User>;
   residentList: Array<ResidentType>;
@@ -393,19 +298,19 @@ export type QueryTaskListArgs = {
 };
 
 export type RegisterCaregiverInputGql = {
-  agencyId?: InputMaybe<Scalars['Float']['input']>;
+  birthDate: Scalars['String']['input'];
   email: Scalars['String']['input'];
   employmentType: EmploymentType;
   firstName: Scalars['String']['input'];
-  hireDate: Scalars['DateTime']['input'];
+  hireDate: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
   lastName: Scalars['String']['input'];
-  passwordHash: Scalars['String']['input'];
-  phone?: InputMaybe<Scalars['String']['input']>;
-  role: CaregiverRole;
+  phone: Scalars['String']['input'];
+  role: StaffRole;
 };
 
 export type RegisterResidentInput = {
-  agencyId: Scalars['Float']['input'];
+  agencyId: Scalars['Int']['input'];
   birthDate: Scalars['DateTime']['input'];
   email?: InputMaybe<Scalars['String']['input']>;
   firstName: Scalars['String']['input'];
@@ -420,38 +325,16 @@ export type RegisterResidentInput = {
 export type RegisterUserInput = {
   agencyId?: InputMaybe<Scalars['Float']['input']>;
   email: Scalars['String']['input'];
-  firstName?: InputMaybe<Scalars['String']['input']>;
-  lastName?: InputMaybe<Scalars['String']['input']>;
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
   password: Scalars['String']['input'];
-  roles?: InputMaybe<Array<Role>>;
-};
-
-export type ResidentChecklistItem = {
-  __typename?: 'ResidentChecklistItem';
-  completedAt?: Maybe<Scalars['DateTime']['output']>;
-  id: Scalars['ID']['output'];
-  isCompleted: Scalars['Boolean']['output'];
-  isRequired: Scalars['Boolean']['output'];
-  label: Scalars['String']['output'];
+  roles: Array<UserRole>;
 };
 
 export enum ResidentStatus {
   Active = 'Active',
   Discharged = 'Discharged'
 }
-
-export type ResidentTask = {
-  __typename?: 'ResidentTask';
-  actionRecords: Array<ActionRecordType>;
-  category: TaskCategory;
-  checklist: Array<ResidentChecklistItem>;
-  completedAt?: Maybe<Scalars['DateTime']['output']>;
-  completionNotes?: Maybe<Scalars['String']['output']>;
-  dueAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  priority: TaskPriority;
-  status: TaskStatus;
-};
 
 export type ResidentType = {
   __typename?: 'ResidentType';
@@ -468,92 +351,100 @@ export type ResidentType = {
   residentId: Scalars['ID']['output'];
   room?: Maybe<Scalars['String']['output']>;
   status: ResidentStatus;
-  taskAssignments: Array<TaskAssignmentType>;
-  tasks: Array<ResidentTask>;
+  updatedAt: Scalars['DateTime']['output'];
 };
 
-export enum Role {
-  AgencyStaff = 'AGENCY_STAFF',
-  Caregiver = 'CAREGIVER',
-  Supervisor = 'SUPERVISOR',
-  SuperAdmin = 'SUPER_ADMIN'
+export enum StaffRole {
+  Coordinator = 'COORDINATOR',
+  Doctor = 'DOCTOR',
+  HeadNurse = 'HEAD_NURSE',
+  Manager = 'MANAGER',
+  Nurse = 'NURSE',
+  PracticalNurse = 'PRACTICAL_NURSE'
 }
+
+export type StaffType = {
+  __typename?: 'StaffType';
+  certifications: Array<CertificationType>;
+  createdAt: Scalars['DateTime']['output'];
+  email: Scalars['String']['output'];
+  employmentType: EmploymentType;
+  firstName: Scalars['String']['output'];
+  hireDate: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  lastName: Scalars['String']['output'];
+  phone?: Maybe<Scalars['String']['output']>;
+  role: Array<StaffRole>;
+  updatedAt: Scalars['DateTime']['output'];
+};
 
 export type Task = {
   __typename?: 'Task';
-  assignedCaregiver?: Maybe<TaskTypeCaregiverProfile>;
+  assignedCaregiver?: Maybe<TaskCaregiverProfile>;
   assignedCaregiverId?: Maybe<Scalars['String']['output']>;
   category: TaskCategory;
   checklist: Array<TaskChecklistItem>;
   completedAt?: Maybe<Scalars['DateTime']['output']>;
-  completionNotes?: Maybe<Scalars['String']['output']>;
+  completedByCaregiverId?: Maybe<Scalars['String']['output']>;
+  completionNotes?: Maybe<Array<Scalars['String']['output']>>;
   createdAt: Scalars['DateTime']['output'];
-  createdByUserId?: Maybe<Scalars['String']['output']>;
+  createdByUserId: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
   dueAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   priority: TaskPriority;
-  resident?: Maybe<ResidentType>;
-  residentId: Scalars['String']['output'];
+  resident?: Maybe<TaskResidentProfile>;
+  residentId?: Maybe<Scalars['String']['output']>;
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   status: TaskStatus;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
-  visit?: Maybe<Visit>;
 };
 
-export type TaskAssignmentType = {
-  __typename?: 'TaskAssignmentType';
-  id: Scalars['Int']['output'];
-  isActive: Scalars['Boolean']['output'];
-  taskTemplate: TaskTemplateType;
+export type TaskCaregiverProfile = {
+  __typename?: 'TaskCaregiverProfile';
+  firstName: Scalars['String']['output'];
+  lastName: Scalars['String']['output'];
 };
 
 export enum TaskCategory {
-  Admin = 'ADMIN',
   Care = 'CARE',
   Hygiene = 'HYGIENE',
   Medication = 'MEDICATION',
-  Other = 'OTHER'
+  Other = 'OTHER',
+  Vitals = 'VITALS'
 }
 
 export type TaskChecklistItem = {
   __typename?: 'TaskChecklistItem';
-  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  done: Scalars['Boolean']['output'];
+  doneAt?: Maybe<Scalars['DateTime']['output']>;
+  doneByCaregiverId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  isCompleted: Scalars['Boolean']['output'];
-  isRequired: Scalars['Boolean']['output'];
   label: Scalars['String']['output'];
+  required: Scalars['Boolean']['output'];
 };
 
 export enum TaskPriority {
-  Critical = 'CRITICAL',
   High = 'HIGH',
   Low = 'LOW',
-  Medium = 'MEDIUM'
+  Medium = 'MEDIUM',
+  Urgent = 'URGENT'
 }
 
-export enum TaskStatus {
-  Assigned = 'ASSIGNED',
-  Cancelled = 'CANCELLED',
-  Completed = 'COMPLETED',
-  InProgress = 'IN_PROGRESS',
-  Pending = 'PENDING'
-}
-
-export type TaskTemplateType = {
-  __typename?: 'TaskTemplateType';
-  category: TaskCategory;
-  id: Scalars['Int']['output'];
-  name: Scalars['String']['output'];
-  priority: TaskPriority;
-};
-
-export type TaskTypeCaregiverProfile = {
-  __typename?: 'TaskTypeCaregiverProfile';
+export type TaskResidentProfile = {
+  __typename?: 'TaskResidentProfile';
   firstName: Scalars['String']['output'];
   lastName: Scalars['String']['output'];
 };
+
+export enum TaskStatus {
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  InProgress = 'IN_PROGRESS',
+  Missed = 'MISSED',
+  Pending = 'PENDING'
+}
 
 export type ToggleChecklistItemInputGql = {
   byCaregiverId?: InputMaybe<Scalars['String']['input']>;
@@ -563,9 +454,8 @@ export type ToggleChecklistItemInputGql = {
 };
 
 export type UpdateCaregiverContactInputGql = {
-  email: Scalars['String']['input'];
   id: Scalars['ID']['input'];
-  phone?: InputMaybe<Scalars['String']['input']>;
+  phone: Scalars['String']['input'];
 };
 
 export type UpdateResidentIdentityInput = {
@@ -574,53 +464,30 @@ export type UpdateResidentIdentityInput = {
   gender?: InputMaybe<Gender>;
   lastName?: InputMaybe<Scalars['String']['input']>;
   residentId: Scalars['ID']['input'];
-  ssn?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateTaskInput = {
   assignedCaregiverId?: InputMaybe<Scalars['String']['input']>;
-  checklist?: InputMaybe<Array<ChecklistItemInput>>;
   description?: InputMaybe<Scalars['String']['input']>;
   dueAt?: InputMaybe<Scalars['DateTime']['input']>;
-  id: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
   priority?: InputMaybe<TaskPriority>;
-  status?: InputMaybe<TaskStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
   __typename?: 'User';
-  active: Scalars['Boolean']['output'];
-  agencyId?: Maybe<Scalars['String']['output']>;
-  createdAt: Scalars['DateTime']['output'];
-  email: Scalars['String']['output'];
-  firstName?: Maybe<Scalars['String']['output']>;
-  lastName?: Maybe<Scalars['String']['output']>;
-  roles: Array<Role>;
-  updatedAt: Scalars['DateTime']['output'];
+  roles: Array<UserRole>;
   userId: Scalars['ID']['output'];
 };
 
-export type Visit = {
-  __typename?: 'Visit';
-  actualEnd?: Maybe<Scalars['DateTime']['output']>;
-  actualStart?: Maybe<Scalars['DateTime']['output']>;
-  caregiver: CaregiverType;
-  createdAt: Scalars['DateTime']['output'];
-  resident: ResidentType;
-  scheduledEnd: Scalars['DateTime']['output'];
-  scheduledStart: Scalars['DateTime']['output'];
-  status: VisitStatus;
-  tasks: Array<Task>;
-  updatedAt: Scalars['DateTime']['output'];
-  visitId: Scalars['ID']['output'];
-};
-
-export enum VisitStatus {
-  Cancelled = 'CANCELLED',
-  Completed = 'COMPLETED',
-  InProgress = 'IN_PROGRESS',
-  Planned = 'PLANNED'
+export enum UserRole {
+  Coordinator = 'COORDINATOR',
+  Doctor = 'DOCTOR',
+  HeadNurse = 'HEAD_NURSE',
+  Nurse = 'NURSE',
+  PracticalNurse = 'PRACTICAL_NURSE',
+  SuperAdmin = 'SUPER_ADMIN'
 }
 
 export type AuthenticateUserMutationVariables = Exact<{
@@ -629,19 +496,19 @@ export type AuthenticateUserMutationVariables = Exact<{
 }>;
 
 
-export type AuthenticateUserMutation = { __typename?: 'Mutation', authenticateUser: { __typename?: 'AuthResultGQL', token: string, user: { __typename?: 'User', userId: string, email: string, firstName?: string | null, lastName?: string | null } } };
+export type AuthenticateUserMutation = { __typename?: 'Mutation', authenticateUser: { __typename?: 'AuthResultGQL', token: string, user: { __typename?: 'User', userId: string } } };
 
 export type RegisterCaregiverMutationVariables = Exact<{
   input: RegisterCaregiverInputGql;
 }>;
 
 
-export type RegisterCaregiverMutation = { __typename?: 'Mutation', registerCaregiver: { __typename?: 'CaregiverType', id: string } };
+export type RegisterCaregiverMutation = { __typename?: 'Mutation', registerCaregiver: { __typename?: 'StaffType', id: string } };
 
 export type CaregiverListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CaregiverListQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string, email: string, phone?: string | null, role: CaregiverRole, status: CaregiverStatus }> };
+export type CaregiverListQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'StaffType', id: string, firstName: string, lastName: string, email: string, phone?: string | null, role: Array<StaffRole> }> };
 
 export type RegisterResidentMutationVariables = Exact<{
   input: RegisterResidentInput;
@@ -706,7 +573,7 @@ export type GetResidentByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }>, taskAssignments: Array<{ __typename?: 'TaskAssignmentType', id: number, isActive: boolean, taskTemplate: { __typename?: 'TaskTemplateType', id: number, name: string, category: TaskCategory, priority: TaskPriority } }>, tasks: Array<{ __typename?: 'ResidentTask', id: string, status: TaskStatus, priority: TaskPriority, category: TaskCategory, dueAt: any, completedAt?: any | null, completionNotes?: string | null, checklist: Array<{ __typename?: 'ResidentChecklistItem', id: string, label: string, isCompleted: boolean, completedAt?: any | null }>, actionRecords: Array<{ __typename?: 'ActionRecordType', id: number, value?: any | null, notes?: string | null, createdAt: any }> }> } | null };
+export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }> } | null };
 
 export type GetTaskListResidentQueryVariables = Exact<{
   residentId?: InputMaybe<Scalars['String']['input']>;
@@ -716,14 +583,14 @@ export type GetTaskListResidentQueryVariables = Exact<{
 }>;
 
 
-export type GetTaskListResidentQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueAt?: any | null, assignedCaregiver?: { __typename?: 'TaskTypeCaregiverProfile', firstName: string, lastName: string } | null }> };
+export type GetTaskListResidentQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, description?: string | null, status: TaskStatus, priority: TaskPriority, dueAt?: any | null, assignedCaregiver?: { __typename?: 'TaskCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
 
 export type SearchCaregiversQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'CaregiverType', id: string, firstName: string, lastName: string }> };
+export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'StaffType', id: string, firstName: string, lastName: string }> };
 
 export type GetTaskListQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -732,7 +599,7 @@ export type GetTaskListQueryVariables = Exact<{
 }>;
 
 
-export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, description?: string | null, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'ResidentType', firstName: string, lastName: string } | null, assignedCaregiver?: { __typename?: 'TaskTypeCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
+export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, description?: string | null, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'TaskResidentProfile', firstName: string, lastName: string } | null, assignedCaregiver?: { __typename?: 'TaskCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
 
 export type SearchResidentsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -748,9 +615,6 @@ export const AuthenticateUserDocument = gql`
     token
     user {
       userId
-      email
-      firstName
-      lastName
     }
   }
 }
@@ -824,7 +688,6 @@ export const CaregiverListDocument = gql`
     email
     phone
     role
-    status
   }
 }
     `;
@@ -1200,37 +1063,6 @@ export const GetResidentByIdDocument = gql`
       phone
       isPrimary
     }
-    taskAssignments {
-      id
-      isActive
-      taskTemplate {
-        id
-        name
-        category
-        priority
-      }
-    }
-    tasks {
-      id
-      status
-      priority
-      category
-      dueAt
-      completedAt
-      completionNotes
-      checklist {
-        id
-        label
-        isCompleted
-        completedAt
-      }
-      actionRecords {
-        id
-        value
-        notes
-        createdAt
-      }
-    }
   }
 }
     `;
@@ -1287,6 +1119,10 @@ export const GetTaskListResidentDocument = gql`
     assignedCaregiver {
       firstName
       lastName
+    }
+    checklist {
+      id
+      label
     }
   }
 }

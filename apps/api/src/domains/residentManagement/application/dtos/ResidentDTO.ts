@@ -1,17 +1,14 @@
-import { 
 
-  TaskStatus, 
-  TaskPriority, 
-  TaskCategory 
-} from "../../../../generated/prisma";
+import { TaskStatus, TaskPriority, TaskCategory } from "../../domain/entities/Task";
 import { Gender, MobilityLevel, ResidentStatus } from "../../domain/entities/Resident";
+import { AllergySeverity } from "../../domain/entities/Allergy";
 // --- Nested DTOs ---
 
 export interface AllergyDTO {
   id: string;
   name: string;
   reaction: string;
-  severity: "MILD" | "MODERATE" | "SEVERE";
+  severity: AllergySeverity;
   notes: string | null;
 }
 
@@ -74,8 +71,7 @@ export interface ResidentDTO {
   mobilityLevel: MobilityLevel;
   room: string | null;
   status: ResidentStatus;
-  
-  primaryCaregiverId?: string | null;
+
 
   // Nested Collections
   allergies: AllergyDTO[];
@@ -83,7 +79,6 @@ export interface ResidentDTO {
   emergencyContacts: EmergencyContactDTO[];
   
   // Care Plan & History (New)
-  taskAssignments: TaskAssignmentDTO[];
   tasks: TaskHistoryDTO[];
 
   createdAt: Date;

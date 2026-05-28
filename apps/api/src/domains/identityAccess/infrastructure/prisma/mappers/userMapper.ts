@@ -1,72 +1,82 @@
-// apps/backend/src/domains/IdentityAccess/infrastructure/prisma/mappers/userMapper.ts
+// apps/backend/src/domains/identityAccess/infrastructure/prisma/mappers/UserMap.ts
 
 import { User } from '../../../domain/entities/user';
 import { Role } from '../../../domain/valueObjects/role.vo';
+
 /**
- * This interface mirrors the Prisma "users" table shape you actually select.
- * It keeps the mapper decoupled from direct Prisma types if you want to unit test it
- * without importing the generated client.
+ * Mirrors the Prisma "users" table shape.
  */
 export type PrismaUserRow = {
-  userId: string;         // PK in prisma (mapped from "user_id")
+  userId: string;
   email: string;
-  passwordHash: string;   // mapped from "password_hash"
-  roles: Role[];
+  passwordHash: string;
+  roles: string[]; 
   active: boolean;
-
-  firstName: string | null; // mapped from "first_name"
-  lastName: string | null;  // mapped from "last_name"
-  agencyId: number | null;  // Int? mapped from "agency_id"
-
-  createdAt: Date;        // "created_at"
-  updatedAt: Date;        // "updated_at"
+  firstName: string; 
+  lastName: string;  
+  agencyId: number | null; 
+  createdAt: Date;
+  updatedAt: Date;
 };
 
-/**
- * Map from Prisma row -> Domain aggregate
- */
-export const toDomain = (row: PrismaUserRow | null): User | null => {
-  if (!row) return null;
+export class UserMap {
+  /**
+   * 1. INFRASTRUCTURE -> DOMAIN (Read)
+   */
+  static toDomain(row: PrismaUserRow | null): User | null {
+    if (!row) return null;
 
-  return User.restore({
-    userId: row.userId,                 // NOTE: userId maps to domain id
-    email: row.email,
-    passwordHash: row.passwordHash,
-    roles: row.roles as Role[],
-    active: row.active,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    firstName: row.firstName ?? undefined,
-    lastName: row.lastName ?? undefined,
-    agencyId: row.agencyId !== null ? row.agencyId : undefined,
-    // ^ Option: If you prefer to keep agencyId as Int in domain, change type there and drop String()
-  });
-};
+    return User.restore({
+      userId: row.userId,
+      email: row.email,
+      passwordHash: row.passwordHash,
+      roles: row.roles as Role[], 
+      active: row.active,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      agencyId: row.agencyId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
+  }
 
-/**
- * Map from Domain aggregate -> Prisma create/update payload
- * Keep nullability consistent with schema: use null for optional columns.
- */
-export const toPrisma = (user: User): Omit<PrismaUserRow, 'createdAt' | 'updatedAt'> & {
-  createdAt?: Date;
-  updatedAt?: Date;
-} => {
-  const s = user.snapshot();
+  /**
+   * 2. DOMAIN -> INFRASTRUCTURE (Write)
+   */
+  static toPrisma(user: User) {
+    const state = user.snapshot();
 
-  return {
-    userId: s.userId,                       // NOTE: Prisma expects "userId"
-    email: s.email,
-    passwordHash: s.passwordHash,
-    roles: s.roles,
-    active: s.active,
+    return {
+      userId: state.userId,
+      email: state.email,
+      passwordHash: state.passwordHash,
+      roles: state.roles,
+      active: state.active,
+      firstName: state.firstName,
+      lastName: state.lastName,
+      agencyId: state.agencyId, 
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
+    };
+  }
 
-    firstName: s.firstName ?? null,
-    lastName: s.lastName ?? null,
-    agencyId: s.agencyId ? Number(s.agencyId) : null, // convert back to Int? for Prisma
+  /**
+   * 3. DOMAIN -> PRESENTATION (API)
+   * CRITICAL: Explicitly strips out the passwordHash!
+   */
+  static toDTO(user: User) {
+    const state = user.snapshot();
 
-    // createdAt/updatedAt are handled by Prisma defaults, but we pass them when upserting
-    createdAt: s.createdAt,
-    updatedAt: s.updatedAt,
-  };
-};
-``
+    return {
+      id: state.userId,
+      email: state.email,
+      firstName: state.firstName,
+      lastName: state.lastName,
+      roles: state.roles,
+      active: state.active,
+      agencyId: state.agencyId,
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
+    };
+  }
+}

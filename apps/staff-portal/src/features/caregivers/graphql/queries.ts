@@ -12,7 +12,6 @@ export const GET_CAREGIVERS: TypedDocumentNode<Query> = gql`
       email
       phone
       role
-      status
     }
   }
 `;

@@ -1,108 +1,176 @@
-// IdentityAccess/domain/entities/UserAccount.ts
+// src/domains/identityAccess/domain/entities/User.ts
 import { Email } from '../valueObjects/email.vo';
 import { Role, assertRole } from '../valueObjects/role.vo';
 
-export class User {
-  private constructor(
-    public readonly userId: string,      // NOTE: userId (not generic id)
-    private _email: Email,
-    private _passwordHash: string,
-    private _roles: Set<Role>,
-    private _active: boolean,
-    public readonly createdAt: Date,
-    public readonly updatedAt: Date,
-    private _firstName?: string,
-    private _lastName?: string,
-    private _agencyId?: number           // keep as number to match Prisma Int?
-  ) {}
+// 1. Explicit Read-Only State Representation (The Snapshot)
+export interface UserState {
+  userId: string;
+  email: string;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  roles: Role[];
+  active: boolean;
+  agencyId: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  static createNew(params: {
-    userId: string;
+// 2. Internal Encapsulated Domain Properties
+interface UserProps {
+  userId: string;
+  email: Email;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  roles: Set<Role>;
+  active: boolean;
+  agencyId: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class User {
+  private props: UserProps;
+
+  private constructor(props: UserProps) {
+    this.props = { ...props };
+  }
+
+  /**
+   * --- DOMAIN FACTORY: For creating completely new users ---
+   */
+  public static createNew(params: {
+    userId: string; // The orchestrator must generate and pass this CUID/UUID
     email: Email;
     passwordHash: string;
+    firstName: string; // Mandatory!
+    lastName: string;  // Mandatory!
     roles?: Role[];
-    active?: boolean;
-    now?: Date;
-    firstName?: string;
-    lastName?: string;
-    agencyId?: number;
-  }): User {
-    const now = params.now ?? new Date();
-    const roles = new Set<Role>(params.roles?.length ? params.roles : ['AGENCY_STAFF']);
-    return new User(
-      params.userId,
-      params.email,
-      params.passwordHash,
-      roles,
-      params.active ?? true,
-      now,
-      now,
-      params.firstName?.trim() || undefined,
-      params.lastName?.trim() || undefined,
-      params.agencyId
-    );
-  }
-
-  static restore(snapshot: {
-    userId: string;
-    email: string;
-    passwordHash: string;
-    roles: Role[];
-    active: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    firstName?: string | null;
-    lastName?: string | null;
     agencyId?: number | null;
   }): User {
+    if (!params.firstName.trim() || !params.lastName.trim()) {
+      throw new Error("First name and last name are required.");
+    }
+
+    const now = new Date();
+    const initialRoles = params.roles?.length ? params.roles : ['COORDINATOR'] as Role[];
+    
+    // Ensure all provided roles are valid
+    initialRoles.forEach(assertRole);
+
+    return new User({
+      userId: params.userId,
+      email: params.email,
+      passwordHash: params.passwordHash,
+      firstName: params.firstName.trim(),
+      lastName: params.lastName.trim(),
+      roles: new Set<Role>(initialRoles),
+      active: true, // Always active upon creation
+      agencyId: params.agencyId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  /**
+   * --- REHYDRATION FACTORY: For the Infrastructure Mapper ---
+   */
+  public static restore(snapshot: UserState): User {
     snapshot.roles.forEach(assertRole);
-    return new User(
-      snapshot.userId,
-      Email.create(snapshot.email),
-      snapshot.passwordHash,
-      new Set(snapshot.roles),
-      snapshot.active,
-      new Date(snapshot.createdAt),
-      new Date(snapshot.updatedAt),
-      snapshot.firstName ?? undefined,
-      snapshot.lastName ?? undefined,
-      snapshot.agencyId ?? undefined
-    );
+    
+    return new User({
+      userId: snapshot.userId,
+      // Assuming your Email VO has a .create() or equivalent factory
+      email: Email.create ? Email.create(snapshot.email) : (snapshot.email as any), 
+      passwordHash: snapshot.passwordHash,
+      firstName: snapshot.firstName,
+      lastName: snapshot.lastName,
+      roles: new Set(snapshot.roles),
+      active: snapshot.active,
+      agencyId: snapshot.agencyId,
+      createdAt: snapshot.createdAt,
+      updatedAt: snapshot.updatedAt,
+    });
   }
 
-  // getters
-  get email() { return this._email.toString(); }
-  get passwordHash() { return this._passwordHash; }
-  get roles(): Role[] { return Array.from(this._roles.values()); }
-  get active() { return this._active; }
-  get firstName() { return this._firstName; }
-  get lastName() { return this._lastName; }
-  get agencyId() { return this._agencyId; }
-
-  // behaviors
-  assignRole(role: Role) { this._roles.add(role); }
-  revokeRole(role: Role) { this._roles.delete(role); }
-  deactivate() { this._active = false; }
-  activate() { this._active = true; }
-  changePasswordHash(newHash: string) { this._passwordHash = newHash; }
-  setName(first?: string, last?: string) {
-    this._firstName = first?.trim() || undefined;
-    this._lastName = last?.trim() || undefined;
-  }
-  setAgency(agencyId?: number) { this._agencyId = agencyId; }
-
-  snapshot() {
+  /**
+   * --- THE SNAPSHOT PATTERN ---
+   * Completely replaces all `get` accessors.
+   */
+  public snapshot(): UserState {
     return {
-      userId: this.userId,
-      email: this.email,
-      passwordHash: this._passwordHash,
-      roles: this.roles,
-      active: this._active,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      firstName: this._firstName,
-      lastName: this._lastName,
-      agencyId: this._agencyId,
+      userId: this.props.userId,
+      email: this.props.email.toString(), // or .getValue(), depending on your VO
+      passwordHash: this.props.passwordHash,
+      firstName: this.props.firstName,
+      lastName: this.props.lastName,
+      roles: Array.from(this.props.roles),
+      active: this.props.active,
+      agencyId: this.props.agencyId,
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
     };
+  }
+
+  /**
+   * --- FULL DOMAIN BEHAVIORS ---
+   */
+
+  public assignRole(role: Role): void {
+    assertRole(role);
+    if (!this.props.roles.has(role)) {
+      this.props.roles.add(role);
+      this.thisTrackUpdate();
+    }
+  }
+
+  public deactivate(): void {
+    if (!this.props.active) return;
+    this.props.active = false;
+    this.thisTrackUpdate();
+  }
+
+  public activate(): void {
+    if (this.props.active) return;
+    this.props.active = true;
+    this.thisTrackUpdate();
+  }
+
+  public changePasswordHash(newHash: string): void {
+    if (!newHash.trim()) throw new Error("Password hash cannot be empty.");
+    this.props.passwordHash = newHash;
+    this.thisTrackUpdate();
+  }
+
+  public updateIdentityDetails(firstName: string, lastName: string): void {
+    if (!firstName.trim() || !lastName.trim()) {
+      throw new Error("First name and last name cannot be empty.");
+    }
+    this.props.firstName = firstName.trim();
+    this.props.lastName = lastName.trim();
+    this.thisTrackUpdate();
+  }
+
+  public setAgency(agencyId: number | null): void {
+    this.props.agencyId = agencyId;
+    this.thisTrackUpdate();
+  }
+
+  public changeAccountEmail(email: string): boolean{
+    const newEmail = Email.create(email);
+    if(!newEmail){
+      throw new Error("Email cannot be created/changed")
+    }
+
+    this.props.email = newEmail;
+    return true;
+  }
+
+  /**
+   * Automatically ticks the updatedAt timestamp on any state mutation.
+   */
+  private thisTrackUpdate(): void {
+    this.props.updatedAt = new Date();
   }
 }
