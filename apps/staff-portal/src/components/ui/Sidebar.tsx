@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -10,6 +9,9 @@ import {
   ShieldPlus
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/authStore';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import type { Query } from '../../lib/graphql/generated';
+import { useQuery } from '@apollo/client/react';
 // Define the navigation links
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -18,6 +20,17 @@ const NAV_ITEMS = [
   { path: '/dashboard/tasks', label: 'Task Center', icon: ClipboardCheck },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
+
+export const GET_STAFF_NAME: TypedDocumentNode<Query> = gql`
+  query GetStaffName($id: String!) {
+    caregiverById(id: $id) {
+      firstName
+      lastName
+      role
+    }
+  }
+`;
+
 
 export function Sidebar() {
   const navigate = useNavigate();
@@ -28,9 +41,16 @@ export function Sidebar() {
     logout();
     navigate('/login', { replace: true });
   };
+   // 2. Execute the GQL Query
+  const { data, loading, error } = useQuery(GET_STAFF_NAME, {
+      variables: { id: user?.userId || '' },
+      skip: !user?.userId, // Prevent fetching if user isn't loaded yet
+      fetchPolicy: 'cache-and-network',
+    });
+  
 
   // Fallback initials if no profile photo exists
-  const initials = user ? `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}` : 'ST';
+  const initials = user ? `${data?.caregiverById?.firstName.charAt(0)}${data?.caregiverById?.lastName.charAt(0)}` : 'ST';
 
   return (
     <aside className="w-72 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col shadow-sm">
@@ -60,7 +80,7 @@ export function Sidebar() {
         </div>
         
         <h2 className="text-lg font-bold text-slate-900 text-center leading-tight">
-          {user ? `${user.firstName} ${user.lastName}` : 'Staff Member'}
+          {user ? `${data?.caregiverById?.firstName} ${data?.caregiverById?.lastName}` : 'Staff Member'}
         </h2>
         <p className="text-sm font-bold text-blue-600 uppercase tracking-wider mt-1.5">
           {user?.roles?.at(0) || 'Care Coordinator'}

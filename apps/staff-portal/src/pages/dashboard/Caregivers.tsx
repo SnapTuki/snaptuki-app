@@ -30,8 +30,8 @@ import {
 
 // --- GRAPHQL OPERATIONS ---
 import { GET_CAREGIVERS } from '../../features/caregivers/graphql/queries';
-import type { CaregiverType } from '../../lib/graphql/generated';
-import { CaregiverRole, CaregiverStatus } from '../../lib/graphql/generated';
+import type { StaffType } from '../../lib/graphql/generated';
+import { StaffRole } from '../../lib/graphql/generated';
 import { REGISTER_CAREGIVER } from '../../features/caregivers/graphql/mutations';
 
 const UPDATE_CAREGIVER = gql`
@@ -117,7 +117,7 @@ function CaregiverAddDrawer({ isOpen, onClose, refetch }: CaregiverAddDrawerProp
       email: '',
       phone: '',
       city: '',
-      role: CaregiverRole.Caregiver,
+      role: StaffRole.Nurse,
       employmentType: 'FULL_TIME',
       hireDate: new Date().toISOString().split('T')[0],
       password: '', 
@@ -332,7 +332,7 @@ function CaregiverAddDrawer({ isOpen, onClose, refetch }: CaregiverAddDrawerProp
 interface CaregiverProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  caregiver: CaregiverType | null;
+  caregiver: StaffType | null;
   refetch: () => void;
 }
 
@@ -397,10 +397,6 @@ function CaregiverProfileModal({ isOpen, onClose, caregiver, refetch }: Caregive
               {caregiver.firstName?.charAt(0)}{caregiver.lastName?.charAt(0)}
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-slate-900">{caregiver.firstName} {caregiver.lastName}</h2>
-                <StatusBadge status={caregiver.status} />
-              </div>
               <div className="flex items-center gap-3 text-sm text-slate-500 mt-1.5 font-medium">
                 <span className="flex items-center gap-1.5 capitalize text-slate-700 font-bold">
                   {caregiver.role === 'HEAD_NURSE' ? <Shield className="w-4 h-4 text-purple-600" /> : <Briefcase className="w-4 h-4 text-blue-600" />}
@@ -508,8 +504,7 @@ function CaregiverProfileModal({ isOpen, onClose, caregiver, refetch }: Caregive
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Account Status</p>
-                    <StatusBadge status={caregiver.status} />
+                   
                   </div>
                 </div>
                 <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -582,14 +577,14 @@ export default function CaregiversPage() {
   // Modals
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedCaregiver, setSelectedCaregiver] = useState<CaregiverType | null>(null);
+  const [selectedCaregiver, setSelectedCaregiver] = useState<StaffType | null>(null);
 
   // Queries
   const { data, loading, error, refetch } = useQuery(GET_CAREGIVERS, {
     fetchPolicy: 'cache-and-network'
   });
 
-  const caregivers: CaregiverType[] = data?.caregiverList || [];
+  const caregivers: StaffType[] = data?.caregiverList || [];
 
   // --- FILTER LOGIC ---
   const filteredCaregivers = caregivers.filter((staff) => {
@@ -608,17 +603,14 @@ export default function CaregiversPage() {
     // 2. Role Filter
     const matchesRole = filterRole === 'ALL' || staff.role === filterRole;
 
-    // 3. Status Filter
-    const matchesStatus = filterStatus === 'ALL' || staff.status === filterStatus;
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   const totalStaff = caregivers.length;
-  const activeCount = caregivers.filter(c => c.status === CaregiverStatus.Active).length;
   const nurseCount = caregivers.filter(c => c.role === 'HEAD_NURSE').length;
 
-  const handleCardClick = (staff: CaregiverType) => {
+  const handleCardClick = (staff: StaffType) => {
     setSelectedCaregiver(staff);
     setIsProfileModalOpen(true);
   };
@@ -697,7 +689,6 @@ export default function CaregiversPage() {
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
                  <Activity className="w-3.5 h-3.5 text-emerald-600" />
               </div>
-              <span className="text-slate-500 font-medium">Active: <strong className="text-slate-900 ml-0.5">{activeCount}</strong></span>
             </div>
             <div className="flex items-center gap-2.5 px-4 py-2 border border-slate-200 bg-white/60 rounded-xl shadow-sm">
               <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
@@ -890,7 +881,6 @@ export default function CaregiversPage() {
 
                         {/* Footer: Badge & Detail Link */}
                         <div className="flex items-center justify-between">
-                          <StatusBadge status={staff.status} />
                           
                           <span className="text-xs font-bold text-slate-400 group-hover:text-blue-600 transition-colors flex items-center gap-1">
                             View Profile <ChevronDown className="w-3 h-3 -rotate-90" />

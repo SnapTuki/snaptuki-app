@@ -374,7 +374,7 @@ export type StaffType = {
   id: Scalars['ID']['output'];
   lastName: Scalars['String']['output'];
   phone?: Maybe<Scalars['String']['output']>;
-  role: Array<StaffRole>;
+  role: StaffRole;
   updatedAt: Scalars['DateTime']['output'];
 };
 
@@ -508,7 +508,7 @@ export type RegisterCaregiverMutation = { __typename?: 'Mutation', registerCareg
 export type CaregiverListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CaregiverListQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'StaffType', id: string, firstName: string, lastName: string, email: string, phone?: string | null, role: Array<StaffRole> }> };
+export type CaregiverListQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'StaffType', id: string, firstName: string, lastName: string, email: string, phone?: string | null, role: StaffRole }> };
 
 export type RegisterResidentMutationVariables = Exact<{
   input: RegisterResidentInput;

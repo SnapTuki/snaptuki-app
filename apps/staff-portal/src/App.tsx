@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Login';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { Overview } from './pages/dashboard/Overview';
+import {Overview} from './pages/dashboard/Overview';
 import Residents from './pages/dashboard/residents/Residents';
 import CaregiversPage from './pages/dashboard/Caregivers';
 import TasksPage from './pages/dashboard/TaskCenter';

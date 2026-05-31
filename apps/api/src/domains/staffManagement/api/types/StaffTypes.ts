@@ -40,7 +40,7 @@ export class StaffType {
   @Field(() => String) lastName!: string;
   @Field(() => String) email!: string;
   @Field(() => String, { nullable: true }) phone!: string | null;
-  @Field(() => [StaffRoleAPI]) role!: StaffRoleAPI;
+  @Field(() => StaffRoleAPI) role!: StaffRoleAPI;
   @Field(() => EmploymentTypeAPI) employmentType!: EmploymentTypeAPI;
   @Field(() => GraphQLDateTime) hireDate!: Date;
   @Field(() => [CertificationType]) certifications!: CertificationType[];

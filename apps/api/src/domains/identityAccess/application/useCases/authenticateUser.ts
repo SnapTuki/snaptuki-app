@@ -35,7 +35,8 @@ export class AuthenticateUser {
         return {
             token,
             // 4. Use the static mapper we built to safely strip the password
-            user: UserMap.toDTO(user),
+            userId: state.userId,
+            roles: state.roles
         };
     }
 }
