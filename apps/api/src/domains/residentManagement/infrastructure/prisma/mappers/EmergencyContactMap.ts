@@ -1,6 +1,6 @@
 // src/domains/residentManagement/infrastructure/mappers/EmergencyContactMap.ts
 
-import { EmergencyContact } from "../../domain/entities/EmergencyContact";
+import { EmergencyContact } from "../../../domain/entities/EmergencyContact";
 
 /**
  * Decoupled Prisma type for the mapper.

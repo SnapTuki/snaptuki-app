@@ -2,7 +2,7 @@
 
 import { IResidentRepo } from "../interfaces/IResidentRepo";
 import { EmergencyContact } from "../../domain/entities/EmergencyContact";
-import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentMap } from "../../infrastructure/prisma/mappers/ResidentMap";
 import { ResidentDTO } from "../dtos/ResidentDTO";
 import { randomUUID } from "node:crypto";
 

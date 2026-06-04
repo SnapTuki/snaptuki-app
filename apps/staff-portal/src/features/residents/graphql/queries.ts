@@ -60,7 +60,13 @@ export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
         name
         relation
         phone
-        isPrimary
+      }
+
+      tasks{
+        title
+        status
+        category
+        createdAt
       }
       
     }

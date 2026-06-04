@@ -1,7 +1,7 @@
 // src/domains/residentManagement/application/useCases/DischargeResidentUseCase.ts
 
 import { IResidentRepo } from "../interfaces/IResidentRepo";
-import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentMap } from "../../infrastructure/prisma/mappers/ResidentMap";
 import { ResidentDTO } from "../dtos/ResidentDTO";
 
 export class DischargeResidentUseCase {

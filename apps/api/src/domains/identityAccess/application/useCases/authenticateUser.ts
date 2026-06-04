@@ -36,7 +36,8 @@ export class AuthenticateUser {
             token,
             // 4. Use the static mapper we built to safely strip the password
             userId: state.userId,
-            roles: state.roles
+            roles: state.roles,
+            agencyId: state.agencyId,
         };
     }
 }

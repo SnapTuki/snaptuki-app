@@ -1,9 +1,9 @@
 // src/domains/residentManagement/infrastructure/repos/PrismaResidentRepo.ts
 
-import { IResidentRepo } from "../../../residentManagement/application/interfaces/IResidentRepo";
-import { Resident } from "../../../residentManagement/domain/entities/Resident";
+import { IResidentRepo } from "../../../../residentManagement/application/interfaces/IResidentRepo";
+import { Resident } from "../../../../residentManagement/domain/entities/Resident";
 import { ResidentMap } from "../mappers/ResidentMap";
-import { PrismaClient } from "../../../../generated/prisma";
+import { PrismaClient } from "../../../../../generated/prisma";
 
 export class PrismaResidentRepo implements IResidentRepo {
 
@@ -48,7 +48,6 @@ export class PrismaResidentRepo implements IResidentRepo {
                   { firstName: { contains: search, mode: "insensitive" } },
                   { lastName: { contains: search, mode: "insensitive" } },
                   { mrn: { contains: search, mode: "insensitive" } },
-                  { email: { contains: search, mode: "insensitive" } },
                 ],
               }
             : {},
@@ -82,14 +81,12 @@ export class PrismaResidentRepo implements IResidentRepo {
         mrn: data.mrn,
         firstName: data.firstName,
         lastName: data.lastName,
+        ssn: data.ssn,
         birthDate: data.birthDate,
         gender: data.gender,
-        email: data.email,
-        phone: data.phone,
         status: data.status,
         mobilityLevel: data.mobilityLevel,
         room: data.room,
-        
         // Map the creations directly without deleteMany
         allergies: { create: state.allergies },
         medications: { create: state.medications },

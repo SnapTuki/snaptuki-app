@@ -18,7 +18,7 @@ import { TaskResolver } from "./domains/taskManagement/api/graphql/resolvers/Tas
 import { StaffResolvers } from "./domains/staffManagement/api/resolvers/StaffResolvers";
 
 import { createCaregiverManagementContainer } from "./domains/staffManagement/infrastructure";
-import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure";
+import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure/prisma";
 import { createTaskManagementContainer } from "./domains/taskManagement/infrastructure";
 import { config } from "./config";
 import { initializeTaskScheduler } from "./domains/taskManagement/infrastructure/schedulers/TaskSchedulers";

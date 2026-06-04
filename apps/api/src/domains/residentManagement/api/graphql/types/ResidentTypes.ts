@@ -5,9 +5,8 @@ import { ObjectType, Field, ID, registerEnumType, Int } from "type-graphql";
 
 // 1. IMPORT ENUMS EXCLUSIVELY FROM THE DOMAIN (No Prisma leaks!)
 import { Gender, MobilityLevel, ResidentStatus } from "../../../domain/entities/Resident";
-import { TaskStatus, TaskPriority, TaskCategory } from "../../../domain/entities/Task";
 import { AllergySeverity } from "../../../domain/entities/Allergy";
-
+import { TaskType } from "../../../../taskManagement/api/graphql/types/TaskTypes";
 // 2. REGISTER OWNED ENUMS WITH TYPE-GRAPHQL
 registerEnumType(Gender, { name: "Gender" });
 registerEnumType(MobilityLevel, { name: "MobilityLevel" });
@@ -70,6 +69,10 @@ export class ResidentType {
   @Field(() => ResidentStatus) status!: ResidentStatus;
   @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room!: string | null;
+
+  @Field(() => [TaskType])
+  tasks?: TaskType[];
+
   @Field(() => GraphQLDateTime) createdAt!: Date;
   @Field(() => GraphQLDateTime) updatedAt!: Date;
 

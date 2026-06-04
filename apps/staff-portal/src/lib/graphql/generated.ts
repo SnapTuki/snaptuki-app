@@ -101,7 +101,6 @@ export type CreateTaskInput = {
 export type EmergencyContactInput = {
   email?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['ID']['input']>;
-  isPrimary?: Scalars['Boolean']['input'];
   name: Scalars['String']['input'];
   phone: Scalars['String']['input'];
   relation: Scalars['String']['input'];
@@ -311,15 +310,14 @@ export type RegisterCaregiverInputGql = {
 
 export type RegisterResidentInput = {
   agencyId: Scalars['Int']['input'];
-  birthDate: Scalars['DateTime']['input'];
-  email?: InputMaybe<Scalars['String']['input']>;
+  birthDate: Scalars['String']['input'];
+  emergencyContacts: Array<EmergencyContactInput>;
   firstName: Scalars['String']['input'];
   gender: Gender;
   lastName: Scalars['String']['input'];
   mobilityLevel: MobilityLevel;
-  mrn: Scalars['String']['input'];
-  phone?: InputMaybe<Scalars['String']['input']>;
   room?: InputMaybe<Scalars['String']['input']>;
+  ssn: Scalars['String']['input'];
 };
 
 export type RegisterUserInput = {
@@ -351,7 +349,14 @@ export type ResidentType = {
   residentId: Scalars['ID']['output'];
   room?: Maybe<Scalars['String']['output']>;
   status: ResidentStatus;
+  tasks: Array<Task>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+
+export type ResidentTypeTasksArgs = {
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum StaffRole {
@@ -477,6 +482,7 @@ export type UpdateTaskInput = {
 
 export type User = {
   __typename?: 'User';
+  agencyId: Scalars['Float']['output'];
   roles: Array<UserRole>;
   userId: Scalars['ID']['output'];
 };
@@ -496,7 +502,7 @@ export type AuthenticateUserMutationVariables = Exact<{
 }>;
 
 
-export type AuthenticateUserMutation = { __typename?: 'Mutation', authenticateUser: { __typename?: 'AuthResultGQL', token: string, user: { __typename?: 'User', userId: string } } };
+export type AuthenticateUserMutation = { __typename?: 'Mutation', authenticateUser: { __typename?: 'AuthResultGQL', token: string, user: { __typename?: 'User', userId: string, agencyId: number } } };
 
 export type RegisterCaregiverMutationVariables = Exact<{
   input: RegisterCaregiverInputGql;
@@ -573,7 +579,7 @@ export type GetResidentByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }> } | null };
+export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }>, tasks: Array<{ __typename?: 'Task', title: string, status: TaskStatus, category: TaskCategory, createdAt: any }> } | null };
 
 export type GetTaskListResidentQueryVariables = Exact<{
   residentId?: InputMaybe<Scalars['String']['input']>;
@@ -615,6 +621,7 @@ export const AuthenticateUserDocument = gql`
     token
     user {
       userId
+      agencyId
     }
   }
 }
@@ -1062,6 +1069,12 @@ export const GetResidentByIdDocument = gql`
       relation
       phone
       isPrimary
+    }
+    tasks {
+      title
+      status
+      category
+      createdAt
     }
   }
 }

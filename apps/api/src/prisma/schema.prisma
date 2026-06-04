@@ -185,13 +185,12 @@ model Resident {
   mrn        String         @unique
   firstName  String         @map("first_name")
   lastName   String         @map("last_name")
+  ssn        String         @unique
   birthDate  DateTime       @map("birth_date")
   gender     Gender
   status     ResidentStatus @default(ACTIVE)
+  room          String? 
 
-  room          String?
-  phone         String?
-  email         String?
   mobilityLevel MobilityLevel
 
   agencyId Int            @map("care_home_agency_id")
@@ -240,6 +239,7 @@ model EmergencyContact {
   name       String
   relation   String
   phone      String
+  email      String   @default("Unknown")
   residentId String
   resident   Resident @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
 

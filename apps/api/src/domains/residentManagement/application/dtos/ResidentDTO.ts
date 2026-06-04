@@ -65,22 +65,16 @@ export interface ResidentDTO {
   lastName: string;
   birthDate: Date; // ISO String
   gender: Gender;
-  email: string | null;
-  phone: string | null;
 
   mobilityLevel: MobilityLevel;
   room: string | null;
   status: ResidentStatus;
-
 
   // Nested Collections
   allergies: AllergyDTO[];
   medications: MedicationDTO[];
   emergencyContacts: EmergencyContactDTO[];
   
-  // Care Plan & History (New)
-  tasks: TaskHistoryDTO[];
-
   createdAt: Date;
   updatedAt: Date;
 }

@@ -2,7 +2,7 @@
 
 import { IResidentRepo } from "../interfaces/IResidentRepo";
 import { Medication } from "../../domain/entities/Medication";
-import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentMap } from "../../infrastructure/prisma/mappers/ResidentMap";
 import { ResidentDTO } from "../dtos/ResidentDTO";
 
 export interface AddResidentMedicationInput {

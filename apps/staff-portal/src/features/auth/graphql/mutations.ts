@@ -8,6 +8,7 @@ export const AUTHENTICATE_USER: TypedDocumentNode<Mutation> = gql`
       token
       user {
         userId
+        agencyId
       }
     }
   }

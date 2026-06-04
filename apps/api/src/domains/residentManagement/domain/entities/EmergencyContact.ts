@@ -77,7 +77,7 @@ export class EmergencyContact {
       name: this.props.name,
       relation: this.props.relation,
       phone: this.props.phone.value, // Extract the raw string
-      email: this.props.email ? this.props.email.toString() : null, // Extract the raw string
+      email: this.props.email ? this.props.email.value : null, // Extract the raw string
     };
   }
 

@@ -17,6 +17,7 @@ export class UserResolver {
     return {
       userId: currentUser.userId,
       roles: currentUser.roles.map(role => role as UserRole),
+      agencyId: currentUser.agencyID,
     };
   }
 

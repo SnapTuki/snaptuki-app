@@ -21,4 +21,6 @@ export class UserAuthData {
   @Field(() => [UserRole])
   roles!: UserRole[];
 
+  @Field(() => Number) agencyId!: number;
+
 }

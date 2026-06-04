@@ -1,35 +1,35 @@
 // src/domains/residentManagement/infrastructure/mappers/ResidentMap.ts
 
-import { Resident } from "../../domain/entities/Resident";
-import { ResidentDTO } from "../../application/dtos/ResidentDTO";
+import { Resident } from "../../../domain/entities/Resident";
+import { ResidentDTO } from "../../../application/dtos/ResidentDTO";
 
 // Assuming these are your enum mappers
 import { toDomainGender } from "./GenderMap";
 import { toDomainResidentStatus } from "./ResidentStatusMap";
 import { toDomainMobilityLevel } from "./MobilityLevelMap";
 
-import type { 
-  Resident as PrismaResident, 
-  Allergy as PrismaAllergy, 
-  Medication as PrismaMedication, 
+import type {
+  Resident as PrismaResident,
+  Allergy as PrismaAllergy,
+  Medication as PrismaMedication,
   EmergencyContact as PrismaEC,
   ResidentTaskAssignment as PrismaTaskAssignment,
   Task as PrismaTask,
   ChecklistItem as PrismaChecklistItem,
-  ActionRecord as PrismaActionRecord 
-} from "../../../../generated/prisma";
+  ActionRecord as PrismaActionRecord
+} from "../../../../../generated/prisma";
 
 // Define the full Prisma row type for clean arguments
-type FullPrismaResident = PrismaResident & { 
+type FullPrismaResident = PrismaResident & {
   allergies?: PrismaAllergy[];
   medications?: PrismaMedication[];
   emergencyContacts?: PrismaEC[];
   taskAssignments?: PrismaTaskAssignment[];
-  tasks?: (PrismaTask & { checklist: PrismaChecklistItem[]; actionRecords: PrismaActionRecord[] })[]; 
+  tasks?: (PrismaTask & { checklist: PrismaChecklistItem[]; actionRecords: PrismaActionRecord[] })[];
 };
 
 export class ResidentMap {
-  
+
   /**
    * 1. INFRASTRUCTURE -> DOMAIN (Read)
    */
@@ -44,9 +44,8 @@ export class ResidentMap {
       firstName: row.firstName,
       lastName: row.lastName,
       birthDate: row.birthDate,
+      ssn: row.ssn,
       gender: toDomainGender(row.gender),
-      email: row.email,
-      phone: row.phone,
       status: toDomainResidentStatus(row.status),
       mobilityLevel: toDomainMobilityLevel(row.mobilityLevel),
       room: row.room ?? null,
@@ -70,23 +69,19 @@ export class ResidentMap {
     // ONE call to get the entire un-encapsulated state of the Aggregate
     const state = resident.snapshot();
 
-    return {
+    const persistenceData:any = {
       agencyId: state.agencyId,
       mrn: state.mrn,
       firstName: state.firstName,
       lastName: state.lastName,
       birthDate: state.birthDate,
+      ssn: state.ssn,
       gender: state.gender,
-      email: state.email,
-      phone: state.phone,
       status: state.status,
       mobilityLevel: state.mobilityLevel,
       room: state.room,
-
-      // --- Nested Writes (The DDD Wipe & Replace Pattern) ---
-      
       allergies: {
-        deleteMany: {}, 
+        deleteMany: {},
         create: state.allergies.map(a => ({
           id: a.id,
           name: a.name,
@@ -108,9 +103,8 @@ export class ResidentMap {
           prescribedBy: m.prescribedBy
         }))
       },
-
       emergencyContacts: {
-        deleteMany: {}, 
+        deleteMany: {},
         create: state.emergencyContacts.map(ec => ({
           id: ec.id,
           name: ec.name,
@@ -130,11 +124,9 @@ export class ResidentMap {
         }))
       },
 
-      // Tasks represent historical execution data (Care History). 
-      // You rarely "Wipe and Replace" history. Typically, tasks are saved 
-      // individually via a specific TaskRepository to avoid massive payload bottlenecks.
-      // If saving here, use `upsert` or just omit them from the Resident root save.
-    };
+    }
+
+    return persistenceData;
   }
 
   /**
@@ -151,8 +143,6 @@ export class ResidentMap {
       lastName: state.lastName,
       birthDate: state.birthDate,
       gender: state.gender,
-      email: state.email,
-      phone: state.phone,
       status: state.status,
       mobilityLevel: state.mobilityLevel,
       room: state.room,
@@ -162,20 +152,6 @@ export class ResidentMap {
       allergies: state.allergies,
       medications: state.medications,
       emergencyContacts: state.emergencyContacts,
-      
-      tasks: state.tasks.map(t => ({
-        id: t.id,
-        status: t.status,
-        priority: t.priority,
-        category: t.category,
-        dueAt: t.dueAt,
-        completedAt: t.completedAt,
-        completionNotes: t.completionNotes,
-        checklist: t.checklist.map((c:any) => ({
-          label: c.label,
-          isCompleted: c.isCompleted
-        }))
-      })),
 
       createdAt: state.createdAt,
       updatedAt: state.updatedAt,

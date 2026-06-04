@@ -1,5 +1,5 @@
-import { MobilityLevel as PrismaMobilityLevel } from "../../../../generated/prisma";
-import { MobilityLevel as DomainMobilityLevel } from "../../domain/entities/Resident";
+import { MobilityLevel as PrismaMobilityLevel } from "../../../../../generated/prisma";
+import { MobilityLevel as DomainMobilityLevel } from "../../../domain/entities/Resident";
 
 export const toDomainMobilityLevel = (prismaMobilityLevel: PrismaMobilityLevel): DomainMobilityLevel => {
   const mapping: Record<PrismaMobilityLevel, DomainMobilityLevel> = {

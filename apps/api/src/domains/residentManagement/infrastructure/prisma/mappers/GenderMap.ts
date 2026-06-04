@@ -1,6 +1,6 @@
 // src/domains/residentManagement/infrastructure/mappers/GenderMap.ts
-import { Gender as DomainGender } from "../../domain/entities/Resident";
-import { Gender as PrismaGender } from "../../../../generated/prisma";
+import { Gender as DomainGender } from "../../../domain/entities/Resident";
+import { Gender as PrismaGender } from "../../../../../generated/prisma";
 
 export const toDomainGender = (prismaGender: PrismaGender): DomainGender => {
   const mapping: Record<PrismaGender, DomainGender> = {

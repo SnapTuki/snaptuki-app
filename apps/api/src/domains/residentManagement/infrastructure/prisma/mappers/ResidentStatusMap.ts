@@ -1,5 +1,5 @@
-import { ResidentStatus as PrismaResidentStatus } from "../../../../generated/prisma";
-import { ResidentStatus as DomainStatus } from "../../domain/entities/Resident";
+import { ResidentStatus as PrismaResidentStatus } from "../../../../../generated/prisma";
+import { ResidentStatus as DomainStatus } from "../../../domain/entities/Resident";
 
 export const toDomainResidentStatus = (prismaStatus: PrismaResidentStatus): DomainStatus => {
   const mapping: Record<PrismaResidentStatus, DomainStatus> = {

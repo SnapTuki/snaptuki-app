@@ -27,7 +27,8 @@ export class AuthResolver {
             token: result.token,
             user: {
                 userId: result.userId,
-                roles: result.roles
+                roles: result.roles,
+                agencyId: result.agencyId
             } as unknown as UserAuthData,
         };
     }

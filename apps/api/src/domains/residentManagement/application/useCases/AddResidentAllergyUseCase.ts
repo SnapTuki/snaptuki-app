@@ -2,7 +2,7 @@
 
 import { IResidentRepo } from "../interfaces/IResidentRepo";
 import { Allergy, AllergySeverity } from "../../domain/entities/Allergy";
-import { ResidentMap } from "../../infrastructure/mappers/ResidentMap";
+import { ResidentMap } from "../../infrastructure/prisma/mappers/ResidentMap";
 import { ResidentDTO } from "../dtos/ResidentDTO";
 
 export interface AddResidentAllergyInput {

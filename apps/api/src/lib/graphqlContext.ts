@@ -1,6 +1,7 @@
 export type CurrentUser = {
   userId: string;
   roles: string[];
+  agencyID: number;
 } | null;
 
 export type IdentityAccessContainer = {

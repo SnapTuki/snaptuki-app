@@ -7,6 +7,7 @@ import { Medication } from "./Medication";
 import { EmergencyContact } from "./EmergencyContact";
 import { TaskAssignment } from "./TaskAssignment"; 
 import { Task } from "./Task";
+import { SSN } from "../valueObjects/SSN";
 
 export enum Gender {
   MALE = "MALE",
@@ -33,10 +34,9 @@ export interface ResidentState {
   mrn: string; // Unwrapped Value Object
   firstName: string;
   lastName: string;
+  ssn: string; //Unwrapped Value
   birthDate: Date;
   gender: Gender;
-  email: string | null; // Unwrapped Value Object
-  phone: string | null; // Unwrapped Value Object
   mobilityLevel: MobilityLevel;
   room: string | null;
   status: ResidentStatus;
@@ -58,10 +58,9 @@ export interface ResidentProps {
   mrn: MedicalRecordNumber;
   firstName: string;
   lastName: string;
+  ssn: SSN;
   birthDate: Date;
   gender: Gender;
-  email: Email | null;
-  phone: PhoneNumber | null;
   mobilityLevel: MobilityLevel;
   room: string | null;
   status: ResidentStatus;
@@ -122,10 +121,9 @@ export class Resident {
       mrn: MedicalRecordNumber.create(snapshot.mrn), // Assuming your VO has a create method
       firstName: snapshot.firstName,
       lastName: snapshot.lastName,
+      ssn: SSN.create(snapshot.ssn),
       birthDate: snapshot.birthDate,
       gender: snapshot.gender,
-      email: snapshot.email ? Email.create(snapshot.email) : null,
-      phone: snapshot.phone ? PhoneNumber.create(snapshot.phone) : null,
       mobilityLevel: snapshot.mobilityLevel,
       room: snapshot.room,
       status: snapshot.status,
@@ -153,10 +151,9 @@ export class Resident {
       mrn: this.props.mrn.value, // Extract the raw string from the VO
       firstName: this.props.firstName,
       lastName: this.props.lastName,
+      ssn: this.props.ssn.getValue(),
       birthDate: this.props.birthDate,
       gender: this.props.gender,
-      email: this.props.email ? this.props.email.toString() : null, // Extract string
-      phone: this.props.phone ? this.props.phone.value : null, // Extract string
       mobilityLevel: this.props.mobilityLevel,
       room: this.props.room,
       status: this.props.status,

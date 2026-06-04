@@ -10,13 +10,12 @@ import { AllergySeverity } from "../../../domain/entities/Allergy";
 @InputType()
 export class RegisterResidentInput {
   @Field(() => Int) agencyId!: number; // Fixed type to map Int scalar properly
-  @Field(() => String) mrn!: string;
   @Field(() => String) firstName!: string;
   @Field(() => String) lastName!: string;
-  @Field(() => GraphQLDateTime) birthDate!: Date;
+  @Field(() => String) ssn!: string;
+  @Field(() => String) birthDate!: string;
   @Field(() => Gender) gender!: Gender;
-  @Field(() => String, { nullable: true }) email?: string | null;
-  @Field(() => String, { nullable: true }) phone?: string | null;
+  @Field(() => [EmergencyContactInput]) emergencyContacts!: EmergencyContactInput[]
   @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room?: string | null;
 }
@@ -69,12 +68,11 @@ export class UpdateResidentPlacementInput {
 
 @InputType()
 export class EmergencyContactInput {
-  @Field(() => ID, { nullable: true }) id?: string | null;
+  @Field(() => ID, { nullable: true }) id!: string | null;
   @Field(() => String) name!: string;
   @Field(() => String) relation!: string;
   @Field(() => String) phone!: string;
   @Field(() => String, { nullable: true }) email?: string | null; // Added missing email field to support your entities
-  @Field(() => Boolean, { defaultValue: false }) isPrimary!: boolean;
 }
 
 @InputType()

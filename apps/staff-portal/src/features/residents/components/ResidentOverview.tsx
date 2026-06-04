@@ -22,7 +22,7 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'succ
   );
 };
 
-const ResidentOverview = ({ residentId }: { residentId: string | null }) => {
+const ResidentOverview = ({ residentId }: { residentId: string }) => {
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   // 1. Fetch Resident Data using the ID
