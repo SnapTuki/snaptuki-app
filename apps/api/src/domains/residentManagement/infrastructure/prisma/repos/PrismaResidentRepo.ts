@@ -19,23 +19,22 @@ export class PrismaResidentRepo implements IResidentRepo {
     tasks: true, // Optional: Only include if you intend to load full care history every time
   };
 
-  async getById(id: string): Promise<Resident | null> {
-    const row = await this.prisma.resident.findUnique({
+  async getById(id: string) {
+    return await this.prisma.resident.findUnique({
       where: { residentId: id },
       include: this.aggregateIncludes,
     });
-    return row ? ResidentMap.toDomain(row as any) : null; 
   }
 
-  async getByMRN(mrn: string): Promise<Resident | null> {
+  async getByMRN(mrn: string) {
     const row = await this.prisma.resident.findUnique({
       where: { mrn },
       include: this.aggregateIncludes,
     });
-    return row ? ResidentMap.toDomain(row as any) : null;
+    return row;
   }
 
-  async list(params?: { take?: number; skip?: number; search?: string | null; mobilityLevel?: string | null; }): Promise<Resident[]> {
+  async list(params?: { take?: number; skip?: number; search?: string | null; mobilityLevel?: string | null; }) {
     const { take = 50, skip = 0, search, mobilityLevel } = params ?? {};
     
     const rows = await this.prisma.resident.findMany({
@@ -60,7 +59,7 @@ export class PrismaResidentRepo implements IResidentRepo {
     });
 
     // Map safely, filtering out any potential nulls
-    return rows.map(row => ResidentMap.toDomain(row as any)).filter((r): r is Resident => r !== null);
+    return rows;
   }
 
   /**

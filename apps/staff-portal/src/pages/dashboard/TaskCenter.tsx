@@ -916,10 +916,8 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
           const checklistInput = values.steps.map(label => ({
-            id: crypto.randomUUID(), 
             label,
             required: true,
-            done: false,
           }));
 
           try {
@@ -934,7 +932,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                   assignedCaregiverId: values.assignedCaregiverId || null,
                   dueAt: values.dueAt, 
                   checklist: checklistInput,
-                  status: values.assignedCaregiverId ? 'ASSIGNED' : 'PENDING'
                 }
               }
             });

@@ -6,7 +6,6 @@ import { FieldResolver } from "type-graphql";
 import { TaskType } from "../../../../taskManagement/api/graphql/types/TaskTypes";
 import {
   RegisterResidentInput,
-  AssignPrimaryCaregiverInput,
   AddResidentAllergyInput,
   AddResidentMedicationInput,
   EmergencyContactInput,
@@ -25,6 +24,8 @@ import { UpdateEmergencyContactsUseCase } from "../../../application/useCases/Up
 import { ListResidentsUseCase } from "../../../application/useCases/ListResidentsUseCase";
 import { MobilityLevel } from "../../../domain/entities/Resident";
 import { FindAllTasksUseCase } from "../../../../taskManagement/application/useCases/FindAllTasksUseCase";
+
+
 @Resolver(() => ResidentType)
 export class ResidentResolver {
 
@@ -36,12 +37,13 @@ export class ResidentResolver {
   ): Promise<ResidentType[]> {
 
     const useCase = new ListResidentsUseCase(ctx.residentManagement.repo);
-    
     // The Use Case returns { residents: ResidentDTO[] }
     const result = await useCase.execute({
       search: search ?? null,
       mobilityLevel: mobilityLevel ?? null
     });
+
+    console.log(result)
 
     // Return the pre-mapped DTOs directly!
     return result.residents; 
@@ -51,6 +53,7 @@ export class ResidentResolver {
   async getResidentById(@Arg("residentId", () => String) residentId: string, @Ctx() ctx: GraphQLContext) {
     // This is the ONLY place we still use the Mapper, because it bypasses the Use Cases
     const resident = await ctx.residentManagement.repo.getById(residentId);
+    console.log("REsident Details from resolver: ", resident)
     return resident ? ResidentMap.toDTO(resident) : null;
   }
 

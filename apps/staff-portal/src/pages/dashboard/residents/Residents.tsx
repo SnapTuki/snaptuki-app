@@ -14,7 +14,7 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-import { GET_RESIDENTS } from '../../../features/residents/graphql/queries';
+import { GET_RESIDENT_SUGGESTIONS, GET_RESIDENTS } from '../../../features/residents/graphql/queries';
 import { type ResidentType } from '../../../lib/graphql/generated';
 import { REGISTER_RESIDENT } from '../../../features/residents/graphql/mutations';
 import { useAuthStore } from '../../../lib/store/authStore';
@@ -72,7 +72,7 @@ export function Residents() {
 
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const { data, error, refetch } = useQuery(GET_RESIDENTS, {
+  const { data, error, refetch } = useQuery(GET_RESIDENT_SUGGESTIONS, {
     fetchPolicy: 'cache-and-network'
   });
   const [registerResident] = useMutation(REGISTER_RESIDENT);

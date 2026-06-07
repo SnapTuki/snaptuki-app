@@ -42,8 +42,24 @@ export class FindAllTasksUseCase {
     });
 
     // 3. Transform and safely return the presentation layer payload
-    return {
-      tasks: tasks.map(task => TaskMap.toDTO(task))
-    };
+    return tasks.map((row:any) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      status: row.status,
+      priority: row.priority,
+      dueAt: row.dueAt,
+      assignedCaregiver: row.assignedStaff ? {
+        id: row.assignedStaff.id,
+        firstName: row.assignedStaff.firstName,
+        lastName: row.assignedStaff.lastName,
+      } : null,
+      checklist: row.checklist.map((c:any) => ({
+        id: c.id,
+        label: c.label,
+        isRequired: c.isRequired,
+        isCompleted: c.isCompleted
+      }))
+    }));
   }
 }

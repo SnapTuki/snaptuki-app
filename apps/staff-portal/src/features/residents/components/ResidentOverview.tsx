@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { Formik, Form, FieldArray, Field } from 'formik';
 // Ensure you have a GET_RESIDENT query defined in your mutations/queries file
 import { UPDATE_RESIDENT_IDENTITY, UPDATE_EMERGENCY_CONTACTS } from '../graphql/mutations';
-import { GET_RESIDENT_BY_ID } from '../graphql/queries';
+import { GET_RESIDENT_IDENTITY_PROFILE } from '../graphql/queries';
 
 // --- NOTIFICATION COMPONENT ---
 const Notification = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
@@ -26,7 +26,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   // 1. Fetch Resident Data using the ID
-  const { data: queryData, loading, error: queryError } = useQuery(GET_RESIDENT_BY_ID, {
+  const { data: queryData, loading, error: queryError } = useQuery(GET_RESIDENT_IDENTITY_PROFILE, {
     variables: { residentId },
   });
 
@@ -41,7 +41,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
     // but explicit cache modification can be done here if needed.
     refetchQueries: [
       {
-        query: GET_RESIDENT_BY_ID,
+        query: GET_RESIDENT_IDENTITY_PROFILE,
         variables: { residentId }
       }
     ]
@@ -52,7 +52,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
     onError: (error) => setNotification({ message: `Contacts Update Failed: ${error.message}`, type: 'error' }),
     refetchQueries: [
       {
-        query: GET_RESIDENT_BY_ID,
+        query: GET_RESIDENT_IDENTITY_PROFILE,
         variables: { residentId }
       }
     ]

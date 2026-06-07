@@ -14,11 +14,13 @@ export interface ChecklistItemDTO {
 
 // Optional: Define strict nested types if you intend to return joined data
 export interface TaskResidentDTO {
+  id: string;
   firstName: string;
   lastName: string;
 }
 
 export interface TaskCaregiverDTO {
+  id: string;
   firstName: string;
   lastName: string;
 }

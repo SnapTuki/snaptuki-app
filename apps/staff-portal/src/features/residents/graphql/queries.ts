@@ -24,6 +24,17 @@ export const GET_RESIDENTS: TypedDocumentNode<Query> = gql`
   }
 `;
 
+export const GET_RESIDENT_SUGGESTIONS: TypedDocumentNode<Query> = gql`
+  query ResidentSuggestions($search: String) {
+    residentList(search: $search) {
+        residentId
+        mrn
+        firstName
+        lastName
+    }
+  }
+`;
+
 export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
   query GetResidentById($residentId: String!) {
     getResidentById(residentId: $residentId) {
@@ -31,44 +42,7 @@ export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
       mrn
       firstName
       lastName
-      birthDate
-      gender
-      status
-      room
-      mobilityLevel
-      createdAt
-      
-      # 1. Clinical Data
-      allergies {
-        id
-        name
-        reaction
-        severity
-      }
-      
-      medications {
-        id
-        name
-        dosage
-        frequency
-        startDate
-        endDate
-      }
-      
-      emergencyContacts {
-        id
-        name
-        relation
-        phone
-      }
-
-      tasks{
-        title
-        status
-        category
-        createdAt
-      }
-      
+     
     }
   }
 `;
@@ -104,3 +78,25 @@ export const SEARCH_CAREGIVERS: TypedDocumentNode<Query> = gql`
     }
   }
 `;
+
+export const GET_RESIDENT_IDENTITY_PROFILE: TypedDocumentNode<Query> = gql`
+query GetResidentIdentityProfile($residentId: String!) {
+
+  getResidentById(residentId: $residentId){
+    residentId
+    mrn
+    firstName
+    lastName
+    room
+    gender
+    birthDate
+    emergencyContacts{
+      id
+      name
+      phone
+      relation
+    }
+    mobilityLevel
+}
+}
+`

@@ -404,10 +404,8 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
                 const caregiverId = values.assignedCaregiver?.id;
                 const combinedDateTime = new Date(`${values.scheduleDate}T${values.scheduleTime}`).toISOString();
                 const checklistInput = values.steps.map((label: string) => ({
-                    id: crypto.randomUUID(),
                     label,
                     required: true,
-                    done: false,
                 }));
 
                 if (activeTask) {
@@ -436,7 +434,6 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
                           assignedCaregiverId: caregiverId,
                           dueAt: combinedDateTime,
                           checklist: checklistInput,
-                          status: assignedCaregiver ? 'ASSIGNED' : 'PENDING'
                         }
                       }
                     });

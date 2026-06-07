@@ -13,7 +13,7 @@ export interface ITaskRepo {
     residentId?: string | null;
     startDate?: Date | null;
     endDate?: Date | null;
-  }): Promise<Task[]>;
+  }): any;
   
   // Replaced create/save with the unified Upsert pattern
   save(task: Task): Promise<void>;

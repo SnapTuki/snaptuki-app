@@ -74,6 +74,7 @@ export interface ResidentDTO {
   allergies: AllergyDTO[];
   medications: MedicationDTO[];
   emergencyContacts: EmergencyContactDTO[];
+  tasks: any;
   
   createdAt: Date;
   updatedAt: Date;

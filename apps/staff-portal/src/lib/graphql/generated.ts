@@ -574,12 +574,19 @@ export type ResidentListQueryVariables = Exact<{
 
 export type ResidentListQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, mobilityLevel: MobilityLevel, status: ResidentStatus, room?: string | null, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string }> }> };
 
+export type ResidentSuggestionsQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ResidentSuggestionsQuery = { __typename?: 'Query', residentList: Array<{ __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string }> };
+
 export type GetResidentByIdQueryVariables = Exact<{
   residentId: Scalars['String']['input'];
 }>;
 
 
-export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string, isPrimary: boolean }>, tasks: Array<{ __typename?: 'Task', title: string, status: TaskStatus, category: TaskCategory, createdAt: any }> } | null };
+export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string }>, tasks: Array<{ __typename?: 'Task', title: string, status: TaskStatus, category: TaskCategory, createdAt: any }> } | null };
 
 export type GetTaskListResidentQueryVariables = Exact<{
   residentId?: InputMaybe<Scalars['String']['input']>;
@@ -1036,6 +1043,52 @@ export type ResidentListQueryHookResult = ReturnType<typeof useResidentListQuery
 export type ResidentListLazyQueryHookResult = ReturnType<typeof useResidentListLazyQuery>;
 export type ResidentListSuspenseQueryHookResult = ReturnType<typeof useResidentListSuspenseQuery>;
 export type ResidentListQueryResult = Apollo.QueryResult<ResidentListQuery, ResidentListQueryVariables>;
+export const ResidentSuggestionsDocument = gql`
+    query ResidentSuggestions($search: String) {
+  residentList(search: $search) {
+    residentId
+    mrn
+    firstName
+    lastName
+  }
+}
+    `;
+
+/**
+ * __useResidentSuggestionsQuery__
+ *
+ * To run a query within a React component, call `useResidentSuggestionsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useResidentSuggestionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useResidentSuggestionsQuery({
+ *   variables: {
+ *      search: // value for 'search'
+ *   },
+ * });
+ */
+export function useResidentSuggestionsQuery(baseOptions?: Apollo.QueryHookOptions<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>(ResidentSuggestionsDocument, options);
+      }
+export function useResidentSuggestionsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>(ResidentSuggestionsDocument, options);
+        }
+// @ts-ignore
+export function useResidentSuggestionsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>): Apollo.UseSuspenseQueryResult<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>;
+export function useResidentSuggestionsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>): Apollo.UseSuspenseQueryResult<ResidentSuggestionsQuery | undefined, ResidentSuggestionsQueryVariables>;
+export function useResidentSuggestionsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>(ResidentSuggestionsDocument, options);
+        }
+export type ResidentSuggestionsQueryHookResult = ReturnType<typeof useResidentSuggestionsQuery>;
+export type ResidentSuggestionsLazyQueryHookResult = ReturnType<typeof useResidentSuggestionsLazyQuery>;
+export type ResidentSuggestionsSuspenseQueryHookResult = ReturnType<typeof useResidentSuggestionsSuspenseQuery>;
+export type ResidentSuggestionsQueryResult = Apollo.QueryResult<ResidentSuggestionsQuery, ResidentSuggestionsQueryVariables>;
 export const GetResidentByIdDocument = gql`
     query GetResidentById($residentId: String!) {
   getResidentById(residentId: $residentId) {
@@ -1068,7 +1121,6 @@ export const GetResidentByIdDocument = gql`
       name
       relation
       phone
-      isPrimary
     }
     tasks {
       title

@@ -98,7 +98,7 @@ export class TaskMap {
   /**
    * 3. DOMAIN -> PRESENTATION (API/GraphQL)
    */
-  static toDTO(task: Task): TaskDTO {
+  static toDTO(task: any): TaskDTO {
     const state = task.snapshot();
 
     return {
@@ -117,7 +117,7 @@ export class TaskMap {
       completionNotes: state.completionNotes,
       
       // State arrays already contain clean, plain objects!
-      checklist: state.checklist.map(ci => ({
+      checklist: state.checklist.map((ci:any) => ({
         id: ci.id,
         label: ci.label,
         required: ci.isRequired,

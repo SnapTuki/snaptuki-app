@@ -19,13 +19,13 @@ export class ListResidentsUseCase {
     // 1. Fetch the raw aggregates from the repository using the corrected property key
     const residents = await this.residentRepo.list({
       search: input.search ?? null,
-      careLevel: (input.mobilityLevel as MobilityLevel) ?? null, // FIXED: changed careLevel to mobilityLevel
+      careLevel: (input.mobilityLevel as MobilityLevel) ?? null,
     });
 
     console.log(`Use case list residents found ${residents.length} records.`);
 
     // 2. Safely transform the entire collection into presentation-ready objects
-    const residentDTOs = residents.map(resident => ResidentMap.toDTO(resident));
+    const residentDTOs = residents.map((resident:any) => ResidentMap.toDTO(resident));
 
     // 3. Return the clean, plain JSON array
     return { residents: residentDTOs };

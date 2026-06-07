@@ -132,29 +132,28 @@ export class ResidentMap {
   /**
    * 3. DOMAIN -> PRESENTATION (API/GraphQL)
    */
-  static toDTO(resident: Resident): ResidentDTO {
-    const state = resident.snapshot();
+  static toDTO(row: any): ResidentDTO {
 
     return {
-      residentId: state.residentId,
-      agencyId: state.agencyId,
-      mrn: state.mrn,
-      firstName: state.firstName,
-      lastName: state.lastName,
-      birthDate: state.birthDate,
-      gender: state.gender,
-      status: state.status,
-      mobilityLevel: state.mobilityLevel,
-      room: state.room,
-
+      residentId: row.residentId,
+      agencyId: row.agencyId,
+      mrn: row.mrn,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      birthDate: row.birthDate,
+      gender: row.gender,
+      status: row.status,
+      mobilityLevel: row.mobilityLevel,
+      room: row.room,
+      tasks: row.tasks,
       // State arrays already contain clean, plain objects! 
       // We can map them directly to the DTO without calling getters.
-      allergies: state.allergies,
-      medications: state.medications,
-      emergencyContacts: state.emergencyContacts,
+      allergies: row.allergies,
+      medications: row.medications,
+      emergencyContacts: row.emergencyContacts,
 
-      createdAt: state.createdAt,
-      updatedAt: state.updatedAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     };
   }
 }
