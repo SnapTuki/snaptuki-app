@@ -24,10 +24,10 @@ export class PrismaTaskRepo implements ITaskRepo {
   async list(params?: {
     take?: number; skip?: number; search?: string | null;
     status?: string | null; caregiverId?: string | null; residentId?: string | null;
-    startDate?: Date | null; endDate?: Date | null;
+    startDate?: Date | null; endDate?: Date | null; dueAt?: Date;
   }) {
     const {
-      take = 50, skip = 0, search, status, caregiverId, residentId, startDate, endDate
+      take = 50, skip = 0, search, status, caregiverId, residentId, startDate, endDate, dueAt
     } = params ?? {};
 
     const rows = await this.prisma.task.findMany({
@@ -48,13 +48,14 @@ export class PrismaTaskRepo implements ITaskRepo {
               { description: { contains: search, mode: 'insensitive' } },
             ]
           } : {},
+          dueAt ? {dueAt}: {}
         ]
       },
       take,
       skip,
       orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
       include: {
-        checklist: true, assignedStaff: true
+        checklist: true, assignedStaff: true, resident: true
       },
     });
 

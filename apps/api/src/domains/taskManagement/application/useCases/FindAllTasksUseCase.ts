@@ -13,14 +13,16 @@ export interface FindTasksRequest {
   endDate?: Date | null;
   skip?: number;
   take?: number;
+  dueAt?: Date;
 }
 
 export class FindAllTasksUseCase {
   constructor(private readonly repo: ITaskRepo) {}
 
-  public async execute(request: FindTasksRequest): Promise<{ tasks: TaskDTO[] }> {
+  public async execute(request: FindTasksRequest): Promise< TaskDTO[]> {
     let start = request.startDate ?? null;
     const end = request.endDate ?? null;
+    const dueAt = request.dueAt;
 
     // 1. Business Logic Execution: Enforce performance boundaries for resident queries
     if (request.residentId && !start && !end) {
@@ -39,7 +41,10 @@ export class FindAllTasksUseCase {
       endDate: end,
       skip: request.skip,
       take: request.take,
+      dueAt: dueAt,
     });
+
+    //console.log("Executing from task repo list method: ", tasks)
 
     // 3. Transform and safely return the presentation layer payload
     return tasks.map((row:any) => ({
@@ -49,6 +54,11 @@ export class FindAllTasksUseCase {
       status: row.status,
       priority: row.priority,
       dueAt: row.dueAt,
+      residentId: row.residentId,
+      assignedResident: {
+        firstName: row.resident.firstName,
+        lastName: row.resident.lastName 
+      },
       assignedCaregiver: row.assignedStaff ? {
         id: row.assignedStaff.id,
         firstName: row.assignedStaff.firstName,
@@ -61,5 +71,6 @@ export class FindAllTasksUseCase {
         isCompleted: c.isCompleted
       }))
     }));
+
   }
 }

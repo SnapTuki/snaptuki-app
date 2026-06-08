@@ -98,26 +98,25 @@ export class TaskMap {
   /**
    * 3. DOMAIN -> PRESENTATION (API/GraphQL)
    */
-  static toDTO(task: any): TaskDTO {
-    const state = task.snapshot();
+  static toDTO(row: any): TaskDTO {
 
     return {
-      id: state.id,
-      title: state.title,
-      description: state.description,
-      category: state.category,
-      priority: state.priority,
-      status: state.status,
-      residentId: state.residentId,
-      assignedCaregiverId: state.assignedCaregiverId,
-      dueAt: state.dueAt,
-      startedAt: state.startedAt,
-      completedAt: state.completedAt,
-      completedByCaregiverId: state.completedByCaregiverId,
-      completionNotes: state.completionNotes,
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      priority: row.priority,
+      status: row.status,
+      residentId: row.residentId,
+      assignedCaregiverId: row.assignedCaregiverId,
+      dueAt: row.dueAt,
+      startedAt: row.startedAt,
+      completedAt: row.completedAt,
+      completedByCaregiverId: row.completedByCaregiverId,
+      completionNotes: row.completionNotes,
       
       // State arrays already contain clean, plain objects!
-      checklist: state.checklist.map((ci:any) => ({
+      checklist: row.checklist.map((ci:any) => ({
         id: ci.id,
         label: ci.label,
         required: ci.isRequired,
@@ -126,9 +125,9 @@ export class TaskMap {
         doneByCaregiverId: ci.completedByCaregiverId,
       })),
       
-      createdByUserId: state.createdByUserId,
-      createdAt: state.createdAt,
-      updatedAt: state.updatedAt,
+      createdByUserId: row.createdByUserId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     };
   }
 }

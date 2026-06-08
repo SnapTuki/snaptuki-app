@@ -48,7 +48,7 @@ export class TaskType {
   @Field(() => TaskStatus) status!: TaskStatus;
 
   @Field(() => String, { nullable: true }) residentId?: string | null;
-  @Field(() => TaskResidentProfileType, { nullable: true }) resident?: TaskResidentProfileType | null; 
+  @Field(() => TaskResidentProfileType, { nullable: true }) assignedResident?: TaskResidentProfileType | null; 
 
   @Field(() => String, { nullable: true }) assignedCaregiverId?: string | null;
   @Field(() => TaskCaregiverProfileType, { nullable: true }) assignedCaregiver?: TaskCaregiverProfileType | null;

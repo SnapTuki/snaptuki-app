@@ -10,7 +10,7 @@ import {
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
-import { GET_TASK_LIST, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
+import { GET_ALL_TASKS, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
 import { 
   CREATE_ADHOC_TASK, 
   UPDATE_TASK,
@@ -35,12 +35,13 @@ export default function TaskCenter() {
   // History states
   const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const { data, refetch } = useQuery(GET_TASK_LIST, {
+  const { data, error, refetch } = useQuery(GET_ALL_TASKS, {
     variables: { search: searchTerm },
   });
 
+  error ? console.log("Error ", error): console.log("No error");
   const allTasks = data?.taskList || [];
-
+  console.log('Tasks ALL : ', allTasks)
   // Filtered tasks for Today View (Now with Date filtering)
   const filteredTasks = useMemo(() => {
     // Calculate date boundaries
@@ -421,8 +422,8 @@ function TaskDetailView({ task, onUpdate }: any) {
           description: task.description || '',
           status: task.status || 'PENDING',
           priority: task.priority || 'MEDIUM',
-          residentId: task.resident?.id || '',
-          residentName: `${task.resident?.firstName} ${task.resident?.lastName}` || 'Unknown Resident',
+          residentId: task.residentId || '',
+          residentName: `${task.assignedResident?.firstName} ${task.assignedResident?.lastName}` || 'Unknown Resident',
           assignedCaregiverId: task.assignedCaregiverId || '',
           assignedCaregiver: task.assignedCaregiver || null,
           caregiverName: task.assignedCaregiver

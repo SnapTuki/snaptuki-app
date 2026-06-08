@@ -152,6 +152,6 @@ export class ResidentResolver {
       residentId: resident.residentId, 
     });
 
-    return result.tasks;
+    return result;
   }
 }

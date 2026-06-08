@@ -222,6 +222,7 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
   });
 
   const tasks = data?.taskList || [];
+  console.log('Tasks for this resident: ', tasks)
   const isCancelled = activeTask?.status === 'CANCELLED';
   
   // Calculate if a cancelled task is eligible to be restored
@@ -267,7 +268,7 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
       />
 
       <header className="shrink-0 px-8 py-5 border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center justify-between gap-10 max-w-[1600px] mx-auto">
+        <div className="flex items-center justify-between gap-10 max-w-400 mx-auto">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-4">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Schedule</span>
@@ -309,7 +310,7 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
       </header>
 
       <div className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="max-w-[1600px] mx-auto">
+        <div className="max-w-400 mx-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <p className="text-sm font-medium animate-pulse">Loading schedule...</p>
@@ -360,10 +361,10 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
                   </div>
                   <div className={`w-56 shrink-0 flex items-center gap-3 ${task.status === 'CANCELLED' ? 'opacity-50' : ''}`}>
                     <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 border border-slate-200">
-                      {task.assignedCaregiver?.user?.firstName?.[0] || 'U'}
+                      {task.assignedCaregiver.firstName?.[0] || 'U'}
                     </div>
                     <span className="text-sm font-medium text-slate-700 truncate">
-                      {task.assignedCaregiver?.user?.firstName} {task.assignedCaregiver?.user?.lastName}
+                      {task.assignedCaregiver.firstName} {task.assignedCaregiver.lastName}
                     </span>
                   </div>
                   <div className="w-16 shrink-0 flex justify-end">

@@ -2,17 +2,16 @@ import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';
 import type { Query } from '../../../lib/graphql/generated';
 
-export const GET_TASK_LIST:TypedDocumentNode<Query> = gql`
-  query GetTaskList($search: String, $status: String, $residentId: String) {
-    taskList(search: $search, status: $status, residentId: $residentId) {
+export const GET_ALL_TASKS:TypedDocumentNode<Query> = gql`
+  query GetTodayTasks($todayDate: DateTime) {
+    taskList(dueAt: $todayDate) {
       id
       title
-      category
       priority
       description
       status
       dueAt
-      resident {
+      assignedResident {
         firstName
         lastName
       }

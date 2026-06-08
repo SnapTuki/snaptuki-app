@@ -33,10 +33,10 @@ export class TaskResolver {
     @Arg("take", () => Number, { nullable: true }) take?: number,
     @Arg("startDate", () => Date, { nullable: true }) startDate?: Date,
     @Arg("endDate", () => Date, { nullable: true }) endDate?: Date,
+    @Arg("dueAt", () => Date, { nullable: true }) dueAt?: Date,
   ) {
     const useCase = new FindAllTasksUseCase(ctx.taskManagement.repo);
 
-    // Use Case returns { tasks: TaskDTO[] }
     const result = await useCase.execute({
       search,
       status,
@@ -45,11 +45,12 @@ export class TaskResolver {
       startDate,
       endDate,
       skip,
-      take
+      take,
+      dueAt,
     });
 
     // Return the pre-mapped array directly
-    return result.tasks; 
+    return result; 
   }
 
   @Query(() => TaskType, { nullable: true })
