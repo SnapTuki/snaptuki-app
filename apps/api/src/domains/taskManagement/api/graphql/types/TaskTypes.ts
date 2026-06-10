@@ -16,11 +16,6 @@ export class ChecklistItemType {
   @Field(() => ID) id!: string;
   @Field(() => String) label!: string;
   
-  // 2. MATCH EXACTLY TO THE DTO OUTPUT
-  @Field(() => Boolean) required!: boolean; 
-  @Field(() => Boolean) done!: boolean; 
-  @Field(() => GraphQLDateTime, { nullable: true }) doneAt!: Date | null;
-  @Field(() => String, { nullable: true }) doneByCaregiverId!: string | null;
 }
 
 // 3. LIGHTWEIGHT CROSS-CONTEXT PROFILES (Matching your DTO)

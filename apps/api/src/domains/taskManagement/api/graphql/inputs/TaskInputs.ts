@@ -14,6 +14,16 @@ export class CreateChecklistItemInput {
 }
 
 @InputType()
+export class ChecklistItemInput {
+  @Field(() => ID, { nullable: true })
+  id?: string; // Optional: If it's a brand new item, the frontend won't have an ID yet
+
+  @Field(() => String)
+  label!: string;
+
+}
+
+@InputType()
 export class CreateTaskInput {
     @Field(() => String) title!: string;
     @Field(() => String, { nullable: true }) description?: string | null;
@@ -55,10 +65,8 @@ export class UpdateTaskInput {
   @Field(() => String, { nullable: true }) title?: string;
   @Field(() => String, { nullable: true }) description?: string;
 
-  // REMOVED: status (Must trigger explicit domain behaviors)
-  // REMOVED: checklist (Must use Toggle/Add Use Cases)
-
   @Field(() => TaskPriority, { nullable: true }) priority?: TaskPriority;
   @Field(() => String, { nullable: true }) assignedCaregiverId?: string | null;
   @Field(() => GraphQLDateTime, { nullable: true }) dueAt?: Date | null;
+  @Field(() => [ChecklistItemInput], { nullable: true })checklist?: ChecklistItemInput[];
 }

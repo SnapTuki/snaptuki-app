@@ -28,7 +28,6 @@ export class CreateNewTaskUseCase {
       checklist: (input.checklist ?? []).map(item => ChecklistItem.createNew({
         id: crypto.randomUUID(), 
         label: item.label,
-        isRequired: item.required ?? false // Note: mapped to isRequired to match the entity
       })),
     });
 

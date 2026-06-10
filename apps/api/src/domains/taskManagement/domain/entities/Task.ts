@@ -184,17 +184,33 @@ export class Task {
 
   // --- Domain Behaviors ---
 
+  // Inside src/domains/taskManagement/domain/entities/Task.ts
+
   public update(props: UpdateTaskProps): void {
     if (props.title !== undefined) {
       if (props.title.trim() === '') throw new Error("Task title cannot be empty.");
       this.props.title = Title.create(props.title);
-    }
+    } 
+    // FIXED TYPO HERE (removed "}checklist")
     
     if (props.description !== undefined) {
       this.props.description = props.description ? Description.create(props.description) : null;
     }
     
     if (props.priority) this.props.priority = props.priority;
+
+    this.thisTrackUpdate();
+  }
+
+  // ADD THIS NEW METHOD:
+  public updateChecklist(newItems: { id: string, label: string}[]): void {
+  
+    this.props.checklist = newItems.map(item => 
+      ChecklistItem.restore({
+        id: item.id,
+        label: item.label,
+      })
+    );
 
     this.thisTrackUpdate();
   }
@@ -222,10 +238,6 @@ export class Task {
       throw new Error("Cannot complete a cancelled task.");
     }
     
-    const pendingItems = this.props.checklist.filter(item => item.isRequired() && !item.isCompleted());
-    if (pendingItems.length > 0) {
-        throw new Error("Cannot complete task: required checklist items are missing.");
-    }
 
     this.props.status = TaskStatus.COMPLETED;
     this.props.completedAt = now;

@@ -1,10 +1,18 @@
 // src/domains/taskManagement/application/useCases/UpdateTaskUseCase.ts
 
+import { randomUUID } from "crypto"; // <-- Required for generating new checklist item IDs
 import { ITaskRepo } from "../interfaces/ITaskRepo";
 import { TaskPriority } from "../../domain/entities/Task";
 import { TaskMap } from "../../infrastructure/mappers/TaskMap";
 import { TaskDTO } from "../dtos/TaskDTO";
 
+// 1. Define the Checklist Input structure
+export interface ChecklistItemInputDTO {
+  id?: string; // Optional: If missing, the Use Case will generate one
+  label: string;
+}
+
+// 2. Add the checklist to the main Input interface
 export interface UpdateTaskInput {
   id: string;
   title?: string;
@@ -12,6 +20,7 @@ export interface UpdateTaskInput {
   priority?: TaskPriority;
   dueAt?: Date | null;
   assignedCaregiverId?: string | null;
+  checklist?: ChecklistItemInputDTO[]; // <-- Now TypeScript knows about this!
 }
 
 export class UpdateTaskUseCase {
@@ -41,10 +50,20 @@ export class UpdateTaskUseCase {
       }
     }
 
-    // 4. Persist the updated aggregate via the unified Upsert pattern
+    // 4. Update Checklist if provided
+    if (input.checklist) {
+      const mappedChecklist = input.checklist.map(item => ({
+        id: item.id || randomUUID(), // Guarantee every item has an ID before hitting the Domain
+        label: item.label,
+      }));
+      
+      task.updateChecklist(mappedChecklist);
+    }
+
+    // 5. Persist the updated aggregate via the unified Upsert pattern
     await this.taskRepo.save(task); 
 
-    // 5. Safely transform and return the presentation layer payload
+    // 6. Safely transform and return the presentation layer payload
     return { task: TaskMap.toDTO(task) };
   }
 }

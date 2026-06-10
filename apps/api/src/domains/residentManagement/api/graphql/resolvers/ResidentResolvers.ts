@@ -24,6 +24,7 @@ import { UpdateEmergencyContactsUseCase } from "../../../application/useCases/Up
 import { ListResidentsUseCase } from "../../../application/useCases/ListResidentsUseCase";
 import { MobilityLevel } from "../../../domain/entities/Resident";
 import { FindAllTasksUseCase } from "../../../../taskManagement/application/useCases/FindAllTasksUseCase";
+import { GetResidentProfileUseCase } from "../../../application/useCases/GetResidentProfileUseCase";
 
 
 @Resolver(() => ResidentType)
@@ -51,10 +52,11 @@ export class ResidentResolver {
 
   @Query(() => ResidentType, { nullable: true })
   async getResidentById(@Arg("residentId", () => String) residentId: string, @Ctx() ctx: GraphQLContext) {
-    // This is the ONLY place we still use the Mapper, because it bypasses the Use Cases
-    const resident = await ctx.residentManagement.repo.getById(residentId);
+
+    const useCase = new GetResidentProfileUseCase(ctx.residentManagement.repo);
+    const resident = useCase.execute(residentId);
     console.log("REsident Details from resolver: ", resident)
-    return resident ? ResidentMap.toDTO(resident) : null;
+    return resident;
   }
 
   @Mutation(() => ResidentType)

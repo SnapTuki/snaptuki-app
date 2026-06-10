@@ -48,9 +48,6 @@ export class TaskMap {
       checklist: row.checklist.map(ci => ({
         id: ci.id,
         label: ci.label,
-        isRequired: ci.isRequired, 
-        isCompleted: ci.isCompleted, 
-        completedAt: ci.completedAt, 
       })),
       
       createdByUserId: "system", // Or map from Prisma if added later
@@ -87,47 +84,42 @@ export class TaskMap {
         create: state.checklist.map(item => ({
           id: item.id,
           label: item.label,
-          isRequired: item.isRequired,
-          isCompleted: item.isCompleted,
-          completedAt: item.completedAt
         }))
       }
     };
   }
 
-  /**
+ /**
    * 3. DOMAIN -> PRESENTATION (API/GraphQL)
    */
-  static toDTO(row: any): TaskDTO {
+  static toDTO(task: Task): TaskDTO {
+    // 1. Safely extract the raw state from the Domain Aggregate
+    const state = task.snapshot();
 
     return {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      category: row.category,
-      priority: row.priority,
-      status: row.status,
-      residentId: row.residentId,
-      assignedCaregiverId: row.assignedCaregiverId,
-      dueAt: row.dueAt,
-      startedAt: row.startedAt,
-      completedAt: row.completedAt,
-      completedByCaregiverId: row.completedByCaregiverId,
-      completionNotes: row.completionNotes,
+      id: state.id,
+      title: state.title, 
+      description: state.description,
+      category: state.category,
+      priority: state.priority,
+      status: state.status,
+      residentId: state.residentId,
+      assignedCaregiverId: state.assignedCaregiverId,
+      dueAt: state.dueAt,
+      startedAt: state.startedAt,
+      completedAt: state.completedAt,
+      completedByCaregiverId: state.completedByCaregiverId,
+      completionNotes: state.completionNotes,
       
-      // State arrays already contain clean, plain objects!
-      checklist: row.checklist.map((ci:any) => ({
+      // 2. Map the checklist, including the newly added domain fields
+      checklist: (state.checklist || []).map((ci: any) => ({
         id: ci.id,
         label: ci.label,
-        required: ci.isRequired,
-        done: ci.isCompleted,
-        doneAt: ci.completedAt,
-        doneByCaregiverId: ci.completedByCaregiverId,
       })),
       
-      createdByUserId: row.createdByUserId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      createdByUserId: state.createdByUserId,
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
     };
   }
 }

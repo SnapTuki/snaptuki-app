@@ -130,7 +130,7 @@ export class TaskResolver {
       priority: input.priority,
       assignedCaregiverId: input.assignedCaregiverId,
       dueAt: input.dueAt,
-      // explicitly removed the checklist payload to respect Domain bounds
+      checklist: input.checklist,
     });
 
     return result.task;

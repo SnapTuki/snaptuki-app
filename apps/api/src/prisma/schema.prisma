@@ -342,9 +342,6 @@ model Task {
 model ChecklistItem {
   id          String    @id @default(cuid())
   label       String
-  isRequired  Boolean   @default(true)
-  isCompleted Boolean   @default(false)
-  completedAt DateTime?
   taskId      String
   task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 

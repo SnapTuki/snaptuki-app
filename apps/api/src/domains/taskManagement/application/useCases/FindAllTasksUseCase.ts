@@ -67,8 +67,6 @@ export class FindAllTasksUseCase {
       checklist: row.checklist.map((c:any) => ({
         id: c.id,
         label: c.label,
-        isRequired: c.isRequired,
-        isCompleted: c.isCompleted
       }))
     }));
 

@@ -6,10 +6,6 @@ import { TaskCategory, TaskPriority, TaskStatus } from "../../domain/entities/Ta
 export interface ChecklistItemDTO {
   id: string;
   label: string;
-  required: boolean;
-  done: boolean;
-  doneAt: Date | null; // Keep as Date for GraphQLDateTime compatibility
-  doneByCaregiverId: string | null;
 }
 
 // Optional: Define strict nested types if you intend to return joined data
@@ -56,15 +52,13 @@ export interface TaskDTO {
 export interface CreateTaskDTO {
   title: string;
   description?: string | null;
-  category?: TaskCategory; // Replaced 'any' with domain enum
-  priority?: TaskPriority; // Replaced 'any' with domain enum
+  category?: TaskCategory; 
+  priority?: TaskPriority;
   residentId: string;
   assignedCaregiverId: string;
   dueAt: Date;
   createdByUserId: string;
   checklist?: Array<{ 
-    // id is omitted here because the Use Case generates it securely!
     label: string; 
-    required?: boolean; 
   }>;
 }

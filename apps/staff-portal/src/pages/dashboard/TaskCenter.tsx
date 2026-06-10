@@ -434,14 +434,12 @@ function TaskDetailView({ task, onUpdate }: any) {
           checklist: task.checklist?.map((ci: any) => ({
             id: ci.id,
             label: ci.label,
-            required: ci.isRequired ?? true,
-            done: ci.isCompleted ?? false
           })) || []
         }}
         enableReinitialize
         onSubmit={async (values) => {
           if (!canEdit) return; // safety check
-          const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, ...cleanPayload } = values;
+          const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, status, ...cleanPayload } = values;
           if (!dueAt) {
             setMutationStatus('ERROR');
             setErrorMessage("A valid due date and time is required.");
@@ -918,7 +916,6 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
         onSubmit={async (values) => {
           const checklistInput = values.steps.map(label => ({
             label,
-            required: true,
           }));
 
           try {

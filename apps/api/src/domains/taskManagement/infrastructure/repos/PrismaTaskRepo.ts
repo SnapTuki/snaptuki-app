@@ -117,9 +117,6 @@ export class PrismaTaskRepo implements ITaskRepo {
       create: state.checklist.map(item => ({
         id: item.id,
         label: item.label,
-        isRequired: item.isRequired,
-        isCompleted: item.isCompleted,
-        completedAt: item.completedAt
       }))
     }
       },

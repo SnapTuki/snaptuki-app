@@ -129,31 +129,53 @@ export class ResidentMap {
     return persistenceData;
   }
 
-  /**
+/**
    * 3. DOMAIN -> PRESENTATION (API/GraphQL)
    */
-  static toDTO(row: any): ResidentDTO {
+  static toDTO(resident: Resident): ResidentDTO {
+    // 1. Safely extract the raw state from the Domain Aggregate
+    const state = resident.snapshot();
 
     return {
-      residentId: row.residentId,
-      agencyId: row.agencyId,
-      mrn: row.mrn,
-      firstName: row.firstName,
-      lastName: row.lastName,
-      birthDate: row.birthDate,
-      gender: row.gender,
-      status: row.status,
-      mobilityLevel: row.mobilityLevel,
-      room: row.room,
-      tasks: row.tasks,
-      // State arrays already contain clean, plain objects! 
-      // We can map them directly to the DTO without calling getters.
-      allergies: row.allergies,
-      medications: row.medications,
-      emergencyContacts: row.emergencyContacts,
+      residentId: state.residentId, 
+      agencyId: state.agencyId,
+      mrn: state.mrn,
+      firstName: state.firstName,
+      lastName: state.lastName,
+      birthDate: state.birthDate,
+      gender: state.gender,
+      status: state.status,
+      mobilityLevel: state.mobilityLevel,
+      room: state.room,
 
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      allergies: (state.allergies || []).map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        reaction: a.reaction,
+        severity: a.severity,
+        notes: a.notes
+      })),
+      
+      medications: (state.medications || []).map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        startDate: m.startDate,
+        endDate: m.endDate,
+        prescribedBy: m.prescribedBy
+      })),
+      
+      emergencyContacts: (state.emergencyContacts || []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        relation: e.relation,
+        phone: e.phone,
+        isPrimary: e.isPrimary
+      })),
+
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
     };
   }
 }
