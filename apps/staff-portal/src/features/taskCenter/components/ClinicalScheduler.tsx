@@ -8,8 +8,8 @@ export function ClinicalScheduler({ value, onChange }: { value: string; onChange
   // If no value exists, we use now, otherwise we parse the saved ISO string
   const selectedDate = useMemo(() => (value ? new Date(value) : new Date(now.getTime() + 15 * 60000)), [value]);
 
-  const isToday = selectedDate.toDateString() === now.toDateString();
-  const isTomorrow = selectedDate.toDateString() === new Date(now.getTime() + 86400000).toDateString();
+  const isToday = selectedDate.toLocaleDateString() === now.toLocaleDateString();
+  const isTomorrow = selectedDate.toLocaleDateString() === new Date(now.getTime() + 86400000).toLocaleDateString();
 
   const handleDateToggle = (type: 'today' | 'tomorrow') => {
     let newDate = new Date(selectedDate); // Start with currently selected time
@@ -42,7 +42,7 @@ export function ClinicalScheduler({ value, onChange }: { value: string; onChange
       }
     }
     return options;
-  }, [selectedDate.toDateString(), now]);
+  }, [selectedDate.toLocaleDateString(), now]);
 
   return (
     <div className="flex items-center gap-3  p-1.5 rounded-2xl border border-slate-50 w-fit">

@@ -15,7 +15,8 @@ import {
   CREATE_ADHOC_TASK, 
   UPDATE_TASK,
   CANCEL_TASK_MUTATION,
-  COMPLETE_TASK_MUTATION
+  COMPLETE_TASK_MUTATION,
+  REACTIVATE_TASK
 } from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
 
@@ -316,6 +317,7 @@ function StreamItem({ task, active, onClick }: any) {
 // (Ensure you append the rest of the code as it was in the previous turn)
 
 function TaskDetailView({ task, onUpdate }: any) {
+  console.log('Detailed Task: ', task)
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -347,6 +349,20 @@ function TaskDetailView({ task, onUpdate }: any) {
       setErrorMessage(error.message || "Failed to cancel task.");
     }
   });
+
+  const [reactivateTask] = useMutation(REACTIVATE_TASK, {
+    onCompleted: () => {
+      setMutationStatus('SUCCESS');
+      setErrorMessage('Task Reactivated Successfully')
+      if (onUpdate) onUpdate();
+      setTimeout(() => setMutationStatus('IDLE'), 3000);
+    },
+
+    onError: (error) => {
+      setMutationStatus('ERROR');
+      setErrorMessage(error.message || 'Failed to Reactivate Task')
+    }
+  })
 
   const [completeTaskMutation] = useMutation(COMPLETE_TASK_MUTATION, {
     onCompleted: () => {
@@ -380,7 +396,7 @@ function TaskDetailView({ task, onUpdate }: any) {
 
   const handleRetask = () => {
     if (window.confirm("Are you sure you want to bring this task back to life?")) {
-      updateTask({ variables: { input: { id: task.id, status: 'PENDING' } } });
+      reactivateTask({ variables: {taskId: task.id} });
     }
   };
 
@@ -429,8 +445,8 @@ function TaskDetailView({ task, onUpdate }: any) {
           caregiverName: task.assignedCaregiver
             ? `${task.assignedCaregiver.firstName} ${task.assignedCaregiver.lastName}`
             : '',
-          room: task.resident?.room || '402',
-          dueAt: task.dueAt ? new Date(task.dueAt).toISOString() : new Date().toISOString(),
+          room: task.resident?.room || '4002',
+          dueAt: task.dueAt,
           checklist: task.checklist?.map((ci: any) => ({
             id: ci.id,
             label: ci.label,
@@ -449,7 +465,7 @@ function TaskDetailView({ task, onUpdate }: any) {
             variables: {
               input: {
                 ...cleanPayload,
-                dueAt: new Date(values.dueAt).toISOString()
+                dueAt: new Date(values.dueAt)
               }
             }
           });
@@ -609,7 +625,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                       {canEdit && (
                         <button
                           type="button"
-                          onClick={() => push({ id: `new-${Date.now()}`, label: '', required: true, done: false })}
+                          onClick={() => push({ label: ''})}
                           className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
                         >
                           <Plus className="w-4 h-4" /> Add Protocol Step

@@ -4,7 +4,7 @@ import { InputType, Field, ID } from "type-graphql";
 import { GraphQLDateTime } from "graphql-scalars";
 
 // 1. IMPORT ENUMS EXCLUSIVELY FROM THE DOMAIN
-import { TaskCategory, TaskPriority } from "../../../domain/entities/Task";
+import { TaskCategory, TaskPriority, TaskStatus } from "../../../domain/entities/Task";
 
 @InputType()
 export class CreateChecklistItemInput {
@@ -66,7 +66,10 @@ export class UpdateTaskInput {
   @Field(() => String, { nullable: true }) description?: string;
 
   @Field(() => TaskPriority, { nullable: true }) priority?: TaskPriority;
+  @Field(() => TaskStatus, { nullable: true }) status?: TaskStatus;
   @Field(() => String, { nullable: true }) assignedCaregiverId?: string | null;
   @Field(() => GraphQLDateTime, { nullable: true }) dueAt?: Date | null;
   @Field(() => [ChecklistItemInput], { nullable: true })checklist?: ChecklistItemInput[];
+
+
 }

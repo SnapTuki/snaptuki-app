@@ -18,6 +18,7 @@ import { ToggleChecklistItemUseCase } from "../../../../taskManagement/applicati
 import { UpdateTaskUseCase } from "../../../application/useCases/UpdateTaskUseCase";
 import { FindAllTasksUseCase } from "../../../application/useCases/FindAllTasksUseCase";
 import { CancelTaskUseCase } from "../../../application/useCases/CancleUseCase";
+import { ReactivateTaskUseCase } from "../../../application/useCases/ReactivateTaskUseCase";
 
 @Resolver(() => TaskType)
 export class TaskResolver {
@@ -151,4 +152,17 @@ export class TaskResolver {
     
     return result;
   }
+
+  @Mutation(() => TaskType)
+  async reactivateTask(
+    @Arg("taskId", () => String) taskId: string,
+    @Ctx() ctx: GraphQLContext
+  ) {
+    const useCase = new ReactivateTaskUseCase(ctx.taskManagement.repo);
+    
+    const result = await useCase.execute(taskId);
+    
+    return result.task;
+  }
+
 }

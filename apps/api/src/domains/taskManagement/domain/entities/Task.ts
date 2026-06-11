@@ -254,6 +254,24 @@ export class Task {
     this.thisTrackUpdate();
   }
 
+  public reactivateTask(){
+    const currentTime = new Date();
+    if (this.props.status !== TaskStatus.CANCELLED){
+      throw new Error("Only Cancelled tasks can be reactivated");
+    }
+
+    const fifteenMinutesInMs = 15*60*1000;
+
+    if (this.props.dueAt.getTime() < currentTime.getTime()+fifteenMinutesInMs){
+      throw new Error("Cannot reativate Task: The dealine is less than 15 minutes away.")
+    }
+
+    this.props.status = TaskStatus.PENDING;
+    this.props.completionNotes = null;
+    this.thisTrackUpdate();
+  }
+
+
   public markAsMissed(): void {
     if (this.props.status === TaskStatus.COMPLETED || this.props.status === TaskStatus.CANCELLED) {
       return;
@@ -285,6 +303,7 @@ export class Task {
     this.thisTrackUpdate();
   }
 
+  
   private thisTrackUpdate(): void {
     this.props.updatedAt = new Date();
   }

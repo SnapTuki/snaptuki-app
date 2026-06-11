@@ -39,6 +39,7 @@ export class UpdateTaskUseCase {
       description: input.description,
       priority: input.priority,
       dueAt: input.dueAt,
+      
     });
 
     // 3. Trigger specific domain behaviors explicitly
