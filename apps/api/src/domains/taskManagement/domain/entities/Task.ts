@@ -199,6 +199,8 @@ export class Task {
     
     if (props.priority) this.props.priority = props.priority;
 
+    if(props.dueAt) this.props.dueAt = props.dueAt;
+
     this.thisTrackUpdate();
   }
 

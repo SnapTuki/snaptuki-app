@@ -5,7 +5,9 @@ import {
   Plus, Search, Activity, Loader2, Trash2, ClipboardCheck,
   Clock, Save, Info, MapPin, Briefcase, Users, X, UserPlus,
   ChevronDown, AlertCircle, ChevronRight, Check, User, CheckCircle2,
-  Calendar, BarChart3, History as HistoryIcon, Filter, RefreshCcw
+  Calendar, BarChart3, History as HistoryIcon, Filter, RefreshCcw,
+  MoreHorizontal, ChevronUp, LayoutList, Kanban, CalendarDays,
+  ArrowUpRight, Inbox
 } from "lucide-react";
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
@@ -26,7 +28,7 @@ export default function TaskCenter() {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
 
-  // --- NEW: Schedule View State ---
+  // Schedule View State
   const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
 
   // Filtering states for Today Tab
@@ -40,9 +42,8 @@ export default function TaskCenter() {
     variables: { search: searchTerm },
   });
 
-  error ? console.log("Error ", error): console.log("No error");
   const allTasks = data?.taskList || [];
-  console.log('Tasks ALL : ', allTasks)
+
   // Filtered tasks for Today View (Now with Date filtering)
   const filteredTasks = useMemo(() => {
     // Calculate date boundaries
@@ -65,51 +66,41 @@ export default function TaskCenter() {
     });
   }, [allTasks, statusFilter, priorityFilter, scheduleView]);
 
-  const completionRate = Math.round((allTasks.filter((t: any) => t.status === "COMPLETED").length / allTasks.length) * 100) || 0;
+  // Group tasks by status for the new UI layout
+  const pendingTasks = filteredTasks.filter((t: any) => t.status === 'PENDING');
+  const assignedTasks = filteredTasks.filter((t: any) => t.status === 'ASSIGNED');
+  const completedTasks = filteredTasks.filter((t: any) => t.status === 'COMPLETED');
+  const cancelledTasks = filteredTasks.filter((t: any) => t.status === 'CANCELLED');
 
   return (
-    <div className="flex flex-col h-screen bg-slate-100 text-slate-800 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
 
-      {/* HEADER SECTION */}
-      <div className="shrink-0 flex flex-col gap-5 pb-4 pt-4 z-[60] bg-white border-b border-slate-200 px-6 md:px-10">
-        <div className="max-w-[1920px] mx-auto px-10 pt-6 pb-2">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-4">
-            <div className="flex items-center gap-5">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">Clinical Flow</h1>
-                <p className="text-[10px] font-bold uppercase text-slate-400 mt-1 tracking-widest">Elder Care Command Center</p>
-              </div>
-            </div>
+      {/* HEADER SECTION (Matching screenshot layout) */}
+      <div className="shrink-0 z-[50] bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            Tasks
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">Track and organize all your team's clinical projects in one place</p>
+        </div>
 
-            <div className="flex items-center gap-4">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search stream..."
-                  className="pl-11 pr-4 py-2 bg-slate-100 border-transparent rounded-xl w-64 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm font-medium"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <button
-                onClick={() => setIsDispatchOpen(true)}
-                className="bg-slate-900 hover:bg-black text-white px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
-              >
-                <Plus className="w-4 h-4" /> Quick Dispatch
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+           <div className="relative group flex items-center">
+             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
+             <input
+               type="text"
+               placeholder="Search..."
+               className="pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg w-64 outline-none focus:bg-white focus:border-slate-300 transition-all text-sm"
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             />
+             <div className="absolute right-2 px-1.5 py-0.5 border border-slate-200 rounded text-[10px] text-slate-400 font-bold bg-white">⌘K</div>
+           </div>
 
-          {/* TAB NAVIGATION */}
-          <div className="flex items-center gap-8 mt-2">
-            <TabItem label="Schedule" active={activeTab === 'Today'} onClick={() => setActiveTab('Today')} icon={<Clock className="w-4 h-4" />} />
-            <TabItem label="Performance" active={activeTab === 'Performance'} onClick={() => setActiveTab('Performance')} icon={<BarChart3 className="w-4 h-4" />} />
-            <TabItem label="History" active={activeTab === 'History'} onClick={() => setActiveTab('History')} icon={<HistoryIcon className="w-4 h-4" />} />
-          </div>
+           <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+             <button className="p-2 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-full"><Info className="w-4 h-4" /></button>
+             <button className="p-2 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-full"><Activity className="w-4 h-4" /></button>
+           </div>
         </div>
       </div>
 
@@ -118,206 +109,246 @@ export default function TaskCenter() {
 
         {/* TODAY TAB VIEW */}
         {activeTab === 'Today' && (
-          <div className="flex flex-1 overflow-hidden">
-            {/* LEFT SIDE: FILTERABLE LIST */}
-            <section className="w-[450px] shrink-0 border-r border-slate-200 bg-white flex flex-col">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 space-y-4">
-                
-                {/* --- NEW: TODAY / TOMORROW TOGGLE --- */}
-                <div className="flex bg-slate-200/60 p-1 rounded-xl mb-2">
-                  <button
-                    onClick={() => setScheduleView('Today')}
-                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${scheduleView === 'Today' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={() => setScheduleView('Tomorrow')}
-                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${scheduleView === 'Tomorrow' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Tomorrow
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between mt-2">
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                    <Filter className="w-3 h-3" /> Live Filters
-                  </h2>
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{filteredTasks.length} Tasks</span>
-                </div>
+          <div className="flex-1 overflow-y-auto bg-slate-50 p-8 scrollbar-hide">
+            
+            <div className="max-w-7xl mx-auto space-y-6">
+              
+              {/* Toolbar */}
+              <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-100">
                 <div className="flex gap-2">
-                  <select
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider outline-none"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <option value="ALL">All Status</option>
-                    <option value="PENDING">Pending</option>
-                    <option value="ASSIGNED">Assigned</option>
-                    <option value="COMPLETED">Completed</option>
-                  </select>
-                  <select
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider outline-none"
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value)}
-                  >
-                    <option value="ALL">All Priority</option>
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-white">
-                {filteredTasks.length === 0 ? (
-                  <div className="text-center py-10 text-slate-400">
-                    <Inbox className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                    <p className="text-xs font-bold uppercase tracking-widest">No tasks for {scheduleView}</p>
-                  </div>
-                ) : (
-                  filteredTasks.map((task: any) => (
-                    <StreamItem
-                      key={task.id}
-                      task={task}
-                      active={selectedTask?.id === task.id}
-                      onClick={() => setSelectedTask(task)}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search Task..." 
+                      className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm w-56 outline-none focus:border-slate-300 transition-all"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                  ))
-                )}
-              </div>
-            </section>
+                  </div>
+                  <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors">
+                    <Filter className="w-4 h-4" /> Filter
+                  </button>
 
-            {/* RIGHT SIDE: SELECTED TASK PREVIEW/EDITOR */}
-            <section className="flex-1 bg-slate-50 overflow-y-auto">
-              {selectedTask ? (
-                <div className="max-w-4xl mx-auto py-12 px-10">
-                  <div className="">
-                    <TaskDetailView task={selectedTask} key={selectedTask.id} onUpdate={() => refetch()} />
+                  {/* Added Schedule Toggle here to maintain logic while fitting new design */}
+                  <div className="flex bg-slate-100 p-1 rounded-lg ml-2">
+                    <button
+                      onClick={() => setScheduleView('Today')}
+                      className={`px-4 text-xs font-semibold rounded-md transition-all ${scheduleView === 'Today' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => setScheduleView('Tomorrow')}
+                      className={`px-4 text-xs font-semibold rounded-md transition-all ${scheduleView === 'Tomorrow' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Tomorrow
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <ClipboardCheck className="w-10 h-10 text-slate-300" />
+
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-200">
+                     <button className="flex items-center gap-2 px-4 py-1.5 bg-white shadow-sm rounded-md text-sm font-semibold text-slate-800">
+                       <LayoutList className="w-4 h-4" /> List
+                     </button>
+                     <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-800">
+                       <Kanban className="w-4 h-4" /> Kanban
+                     </button>
+                     <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-800">
+                       <CalendarDays className="w-4 h-4" /> Calendar
+                     </button>
                   </div>
-                  <p className="text-sm font-bold uppercase tracking-widest">Select a task to view details</p>
+
+                  <button
+                    onClick={() => setIsDispatchOpen(true)}
+                    className="bg-[#00c9c9] hover:bg-[#00b0b0] text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all active:scale-95 shadow-sm shadow-[#00c9c9]/30"
+                  >
+                    <Plus className="w-4 h-4" /> Add Task
+                  </button>
+                </div>
+              </div>
+
+              {filteredTasks.length === 0 ? (
+                 <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-slate-700">No tasks found for {scheduleView}</h3>
+                    <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or dispatch a new task.</p>
+                 </div>
+              ) : (
+                <div className="space-y-6 pb-20">
+                  {/* Task Groups */}
+                  {pendingTasks.length > 0 && <TaskGroup title="To Do" count={pendingTasks.length} tasks={pendingTasks} colorClass="bg-slate-800" textClass="text-slate-800" onRowClick={setSelectedTask} />}
+                  {assignedTasks.length > 0 && <TaskGroup title="In Progress" count={assignedTasks.length} tasks={assignedTasks} colorClass="bg-amber-400" textClass="text-amber-500" onRowClick={setSelectedTask} />}
+                  {completedTasks.length > 0 && <TaskGroup title="Completed" count={completedTasks.length} tasks={completedTasks} colorClass="bg-[#00c9c9]" textClass="text-[#00c9c9]" onRowClick={setSelectedTask} />}
+                  {cancelledTasks.length > 0 && <TaskGroup title="Cancelled" count={cancelledTasks.length} tasks={cancelledTasks} colorClass="bg-rose-500" textClass="text-rose-500" onRowClick={setSelectedTask} />}
                 </div>
               )}
-            </section>
-          </div>
-        )}
-
-        {/* HISTORY TAB VIEW */}
-        {activeTab === 'History' && (
-          <div className="flex-1 flex flex-col p-10 max-w-6xl mx-auto w-full">
-            <div className="flex items-center justify-between mb-10 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">Archives</h2>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Audit previous care records</p>
-              </div>
-              <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                <Calendar className="w-5 h-5 text-slate-400 ml-2" />
-                <input
-                  type="date"
-                  value={historyDate}
-                  onChange={(e) => setHistoryDate(e.target.value)}
-                  className="bg-transparent border-none outline-none font-bold text-sm text-slate-700"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <p className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest border-2 border-dashed border-slate-200 rounded-[40px]">
-                Showing records for {new Date(historyDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* PERFORMANCE TAB VIEW */}
-        {activeTab === 'Performance' && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100">
-                <BarChart3 className="w-8 h-8" />
-              </div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">Analytics Dashboard</h2>
-              <p className="text-sm text-slate-400 font-bold mt-2">Metrics will be available once the shift ends.</p>
             </div>
           </div>
         )}
 
       </main>
 
+      {/* TASK DETAIL DRAWER (Replaces the split pane to maintain full-width table view) */}
+      {selectedTask && (
+        <div className="fixed inset-0 z-[80] flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedTask(null)} />
+          <div className="w-full max-w-2xl h-full bg-white shadow-2xl relative flex flex-col animate-in slide-in-from-right-4 duration-300">
+             <div className="absolute top-4 right-4 z-10">
+                <button onClick={() => setSelectedTask(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                   <X className="w-5 h-5" />
+                </button>
+             </div>
+             <TaskDetailView task={selectedTask} key={selectedTask.id} onUpdate={() => refetch()} />
+          </div>
+        </div>
+      )}
+
+      {/* DISPATCH DRAWER */}
       <DispatchDrawer
         isOpen={isDispatchOpen}
         onClose={() => setIsDispatchOpen(false)}
-        onSuccess={() => refetch()} />
+        onSuccess={() => refetch()} 
+      />
     </div>
   );
 }
 
 // =========================================
-// HELPER COMPONENTS
+// NEW: TASK GROUP COMPONENT
 // =========================================
-import { Inbox } from 'lucide-react'; // Make sure to add this to the top imports
+function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: { title: string, count: number, tasks: any[], colorClass: string, textClass: string, onRowClick: (t: any) => void }) {
+  const [isOpen, setIsOpen] = useState(true);
 
-function TabItem({ label, active, onClick, icon }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2.5 px-2 py-4 transition-all relative group`}
-    >
-      <div className={`${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
-        {icon}
-      </div>
-      <span className={`text-[11px] font-black uppercase tracking-[0.15em] ${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
-        {label}
-      </span>
-      {active && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full animate-in fade-in slide-in-from-bottom-1" />
-      )}
-    </button>
-  );
-}
-
-function StreamItem({ task, active, onClick }: any) {
-  const isHigh = task.priority === "HIGH";
-  return (
-    <div
-      onClick={onClick}
-      className={`p-5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${active
-        ? "bg-slate-900 border-slate-900 shadow-xl shadow-slate-200 translate-x-2"
-        : isHigh
-          ? "bg-rose-50 border-rose-100 hover:border-rose-300"
-          : "bg-white border-slate-100 hover:border-slate-300"
-        }`}
-    >
-      <div className={`flex justify-between mb-3 text-[9px] font-black uppercase tracking-widest ${active ? 'text-slate-400' : 'text-slate-500'}`}>
-        <span className={`${task.status === 'CANCELLED' ? 'text-rose-400' : ''}`}>{task.status}</span>
-        <span>{new Date(task.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-      <h4 className={`text-sm font-black mb-2 leading-snug ${active ? 'text-white' : 'text-slate-800'} ${task.status === 'CANCELLED' ? 'line-through opacity-70' : ''}`}>
-        {task.title}
-      </h4>
-      <div className={`flex items-center gap-2 text-[10px] font-bold ${active ? 'text-indigo-400' : 'text-slate-500'}`}>
-        <Users className="w-3 h-3" />
-        {task.resident?.firstName} {task.resident?.lastName}
-      </div>
-      {active && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <ChevronRight className="w-5 h-5 text-indigo-500" />
+  if (!isOpen) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setIsOpen(true)}>
+        <div className="flex items-center gap-4">
+           <div className={`w-1 h-5 rounded-full ${colorClass}`} />
+           <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
+           <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
+           <ChevronDown className="w-4 h-4 text-slate-400" />
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setIsOpen(false)}>
+           <div className={`w-1 h-5 rounded-full ${colorClass}`} />
+           <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
+           <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
+           <ChevronUp className="w-4 h-4 text-slate-400" />
+        </div>
+        <button className="text-sm font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors">
+          View All <ArrowUpRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-100 text-[13px] text-slate-500 font-medium">
+              <th className="py-3 px-6 w-12"><div className="w-4 h-4 border-2 border-slate-200 rounded flex-shrink-0" /></th>
+              <th className="py-3 px-4 font-medium flex items-center gap-2">Task ID <ChevronDown className="w-3 h-3" /></th>
+              <th className="py-3 px-4 font-medium min-w-[200px]">Task Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium min-w-[150px]">Assignee <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium min-w-[150px]">Resident Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium">Progress <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium">Deadline <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium">Priority <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map(task => {
+              // Calculate mock progress from checklist
+              let progressStr = "0%";
+              if (task.status === 'COMPLETED') progressStr = "100%";
+              else if (task.checklist?.length > 0) {
+                const done = task.checklist.filter((c: any) => c.done).length;
+                progressStr = `${Math.round((done / task.checklist.length) * 100)}%`;
+              } else if (task.status === 'ASSIGNED') {
+                 progressStr = "50%";
+              }
+
+              // Priority formatting
+              const prioMap: Record<string, string> = {
+                'HIGH': 'bg-rose-50 text-rose-500',
+                'CRITICAL': 'bg-rose-50 text-rose-500',
+                'MEDIUM': 'bg-teal-50 text-teal-500', // Using teal/cyan for medium as requested by screenshot
+                'LOW': 'bg-purple-50 text-purple-500'
+              };
+              const prioClass = prioMap[task.priority] || 'bg-slate-100 text-slate-600';
+
+              return (
+                <tr 
+                  key={task.id} 
+                  className="border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                  onClick={() => onRowClick(task)}
+                >
+                  <td className="py-4 px-6">
+                    <div className="w-4 h-4 border-2 border-slate-200 rounded flex-shrink-0 group-hover:border-slate-300" />
+                  </td>
+                  <td className="py-4 px-4 text-sm font-medium text-slate-500">
+                    P{task.id?.slice(0,6) || "000000"}
+                  </td>
+                  <td className="py-4 px-4 text-sm font-semibold text-slate-700 truncate max-w-[250px]">
+                    {task.title}
+                  </td>
+                  <td className="py-4 px-4">
+                    {task.assignedCaregiver ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-white shrink-0 shadow-sm">
+                          {task.assignedCaregiver.firstName[0]}
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700 truncate max-w-30">
+                          {task.assignedCaregiver.firstName} {task.assignedCaregiver.lastName}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-medium text-slate-400 italic">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-sm font-medium text-slate-500 truncate max-w-45">
+                    {task.assignedResident?.firstName} {task.assignedResident?.lastName}
+                  </td>
+                  <td className="py-4 px-4 text-sm font-semibold text-slate-700">
+                    {progressStr}
+                  </td>
+                  <td className="py-4 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
+                    {task.dueAt ? new Date(task.dueAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${prioClass}`}>
+                      {task.priority?.charAt(0) + task.priority?.slice(1).toLowerCase()}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    <button className="p-1 border border-slate-200 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" onClick={(e) => { e.stopPropagation(); onRowClick(task); }}>
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-// ... [The rest of the file: TaskDetailView, CaregiverSelect, PrioritySelect, DispatchDrawer stay exactly the same]
-// (Ensure you append the rest of the code as it was in the previous turn)
+// =========================================
+// HELPER COMPONENTS (Preserved entirely from original logic)
+// =========================================
 
 function TaskDetailView({ task, onUpdate }: any) {
-  console.log('Detailed Task: ', task)
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -401,7 +432,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden relative">
+    <div className="h-full flex flex-col overflow-hidden relative">
       
       {/* SUCCESS NOTIFICATION OVERLAY */}
       {mutationStatus === 'SUCCESS' && (
@@ -475,7 +506,7 @@ function TaskDetailView({ task, onUpdate }: any) {
           <Form className="flex flex-col h-full">
 
             {/* 1. HEADER SECTION */}
-            <header className="px-10 py-8 border-b border-slate-100 bg-white">
+            <header className="px-10 py-8 border-b border-slate-100 bg-white pt-14">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-xl ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
@@ -493,7 +524,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end gap-2">
                   <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
                     <ClinicalScheduler
                       value={values.dueAt}
@@ -805,85 +836,6 @@ function CaregiverSelect({ value, onChange, disabled }: any) {
               </button>
             ))
           )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// =========================================
-// HELPER COMPONENTS
-// =========================================
-
-interface PrioritySelectProps {
-  value: 'LOW' | 'MEDIUM' | 'HIGH';
-  onChange: (value: string) => void;
-}
-
-function PrioritySelect({ value, onChange }: PrioritySelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const options = [
-    { label: 'Low', value: 'LOW', color: 'bg-slate-500', bg: 'bg-slate-50', text: 'text-slate-600' },
-    { label: 'Medium', value: 'MEDIUM', color: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-600' },
-    { label: 'High', value: 'HIGH', color: 'bg-rose-500', bg: 'bg-rose-50', text: 'text-rose-600' },
-  ];
-
-  const current = options.find(opt => opt.value === value) || options[0];
-
-  return (
-    <div className="relative w-full" ref={containerRef}>
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">
-        Task Priority
-      </label>
-
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all group ${isOpen ? 'bg-white border-indigo-200 ring-4 ring-indigo-500/5' : `${current.bg} border-slate-100`
-          }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${current.color} shadow-sm group-hover:scale-125 transition-transform`} />
-          <span className={`text-xs font-black uppercase tracking-tight ${current.text}`}>
-            {current.label} Priority
-          </span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-[70] mt-2 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className="w-full text-left px-5 py-3.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-between group border-b border-slate-50 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-1.5 h-1.5 rounded-full ${option.color}`} />
-                <span className={option.value === value ? 'text-slate-900' : 'text-slate-500'}>
-                  {option.label}
-                </span>
-              </div>
-              {option.value === value && (
-                <Check className="w-4 h-4 text-indigo-500" />
-              )}
-            </button>
-          ))}
         </div>
       )}
     </div>
