@@ -1,5 +1,5 @@
 services:
-  snaptuki-api:
+  api:
     build:
       context: ./apps/api
 
@@ -24,6 +24,24 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  staff-portal:
+    build:
+      context: ./apps/staff-portal
+    
+    ports:
+      - "5173:5173"
+
+    volumes:
+      - type: bind
+        source: ./apps/staff-portal
+        target: /app/staff-portal
+
+    environment:
+      - API_URL=http://localhost:4000/graphql
+
+    depends_on:
+      - postgres
+      - api
 
 volumes:
   pgdata:
