@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
-  AlertOctagon, 
-  UserPlus, 
-  CheckCircle2, 
-  Clock, 
   X,
-  FileWarning,
-  User,
-  Activity,
-  RotateCcw,
-  Check,
   Loader2,
-  Zap,
-  ClipboardType,
-  Megaphone,
-  Users,
-  Siren,
   ShieldAlert,
-  ArrowRight
+  Search,
+  Filter,
+  ArrowLeft,
+  Edit2,
+  Flag,
+  Trash2,
+  MailOpen,
+  Download,
+  Share,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Reply,
+  Forward,
+  Check,
+  RotateCcw,
+  UserPlus
 } from 'lucide-react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { gql, type TypedDocumentNode } from '@apollo/client';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-/**
- * --- TYPESCRIPT INTERFACES ---
- */
+// --- TYPESCRIPT INTERFACES ---
 interface TriageTask {
   id: string;
   title: string;
@@ -40,11 +40,11 @@ interface TriageTask {
 
 interface Incident {
   id: string;
-  type: 'FALL' | 'MED_ERROR' | 'BEHAVIORAL' | 'OTHER';
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  type: string;
+  severity: string;
   reportedAt: string;
   description: string;
-  status: 'UNRESOLVED' | 'UNDER_REVIEW';
+  status: string;
   resident: { firstName: string; lastName: string; room: string };
   reportedBy: { firstName: string; lastName: string };
 }
@@ -54,19 +54,30 @@ interface TriageDashboardData {
   cancelledTasks: TriageTask[];
 }
 
-/**
- * --- GRAPHQL OPERATIONS ---
- */
+interface UnifiedMessage {
+  id: string;
+  type: 'INCIDENT' | 'OVERDUE' | 'REVIEW';
+  senderName: string;
+  senderEmail: string;
+  subject: string;
+  snippet: string;
+  body: string;
+  date: string;
+  isNew: boolean;
+  raw: any;
+}
+
+// --- GRAPHQL OPERATIONS ---
 const GET_TRIAGE_DASHBOARD: TypedDocumentNode<TriageDashboardData> = gql`
   query GetTriageDashboard {
     overdueTasks: taskList(status: "MISSED") {
-      id title priority dueAt category
-      resident { firstName lastName }
+      id title priority dueAt
+      assignedResident { firstName lastName }
       assignedCaregiver { firstName lastName }
     }
     cancelledTasks: taskList(status: "CANCELLED") {
       id title priority dueAt category completionNotes
-      resident { firstName lastName }
+      assignedResident { firstName lastName }
       assignedCaregiver { firstName lastName }
     }
   }
@@ -78,68 +89,27 @@ const CANCEL_TASK_MUTATION = gql`
   }
 `;
 
-const UPDATE_TASK_MUTATION = gql`
-  mutation UpdateTask($input: UpdateTaskInput!) {
-    updateTask(input: $input) { id status dueAt assignedCaregiverId }
-  }
-`;
-
-/**
- * --- HELPER UI COMPONENTS ---
- */
-function StatusBadge({ priority }: { priority: string }) {
-  const styles: Record<string, string> = {
-    URGENT: 'bg-red-100 text-red-700 border-red-200',
-    HIGH: 'bg-orange-100 text-orange-700 border-orange-200',
-    MEDIUM: 'bg-blue-100 text-blue-700 border-blue-200',
-    LOW: 'bg-slate-100 text-slate-700 border-slate-200',
-    CRITICAL: 'bg-rose-600 text-white border-rose-700 animate-pulse', // Added for incidents
-  };
-  const style = styles[priority] || styles.LOW;
-  return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${style}`}>
-      {priority}
-    </span>
-  );
-}
-
-function QuickActionButton({ icon: Icon, label, onClick, colorClass }: { icon: any, label: string, onClick: () => void, colorClass: string }) {
-  return (
-    <button 
-      onClick={onClick}
-      className="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-slate-300 transition-all group"
-    >
-      <div className={`p-3 rounded-full mb-3 transition-colors ${colorClass}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">{label}</span>
-    </button>
-  );
-}
-
-/**
- * --- MAIN PAGE COMPONENT ---
- */
+// --- MAIN PAGE COMPONENT ---
 export const Overview = () => {
-  const [activeModal, setActiveModal] = useState<'REASSIGN' | 'CANCEL' | 'RESCHEDULE' | 'REVIEW_INCIDENT' | null>(null);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  // UI State
+  const [activeTab, setActiveTab] = useState<'Primary' | 'Alerts' | 'Tasks'>('Primary');
+  const [activeModal, setActiveModal] = useState<'CANCEL' | 'REVIEW_INCIDENT' | 'RESCHEDULE' | 'REASSIGN' | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
 
-  // 1. Fetch real data for tasks from the backend
+  // Queries & Mutations
   const { data, loading, error, refetch } = useQuery(GET_TRIAGE_DASHBOARD, {
     fetchPolicy: 'cache-and-network',
   });
-
   const [cancelTask] = useMutation(CANCEL_TASK_MUTATION);
-  const [updateTask] = useMutation(UPDATE_TASK_MUTATION);
 
-  // 2. MOCK DATA: Active Incidents for today (Awaiting Backend Endpoint)
+  // MOCK DATA (Incidents)
   const mockIncidents: Incident[] = [
     {
       id: 'inc_101',
       type: 'FALL',
       severity: 'CRITICAL',
-      reportedAt: new Date(Date.now() - 15 * 60000).toISOString(), // 15 mins ago
-      description: 'Found on floor next to bed. Conscious but complaining of hip pain. Vitals stable.',
+      reportedAt: new Date(Date.now() - 15 * 60000).toISOString(), 
+      description: 'Found on floor next to bed. Conscious but complaining of hip pain. Vitals stable. Awaiting physician review.',
       status: 'UNRESOLVED',
       resident: { firstName: 'Elsa', lastName: 'Niemi', room: '204B' },
       reportedBy: { firstName: 'Sarah', lastName: 'Jenkins' }
@@ -148,7 +118,7 @@ export const Overview = () => {
       id: 'inc_102',
       type: 'BEHAVIORAL',
       severity: 'HIGH',
-      reportedAt: new Date(Date.now() - 120 * 60000).toISOString(), // 2 hours ago
+      reportedAt: new Date(Date.now() - 120 * 60000).toISOString(), 
       description: 'Severe agitation during lunch. Threw tray, refused redirection from staff.',
       status: 'UNDER_REVIEW',
       resident: { firstName: 'Lars', lastName: 'Olsen', room: '110A' },
@@ -156,398 +126,382 @@ export const Overview = () => {
     }
   ];
 
-  // 3. Map backend data
-  const triageData = {
-    overdueTasks: data?.overdueTasks || [],
-    cancelledTasks: data?.cancelledTasks || [],
-    incidents: mockIncidents // Injected mock data here
+  // Map Data to Unified Message Format
+  const messages: UnifiedMessage[] = useMemo(() => {
+    const list: UnifiedMessage[] = [];
+    
+    // Map Incidents
+    mockIncidents.forEach(inc => {
+      list.push({
+        id: inc.id,
+        type: 'INCIDENT',
+        senderName: `${inc.reportedBy.firstName} ${inc.reportedBy.lastName}`,
+        senderEmail: `${inc.reportedBy.firstName.toLowerCase()}@snaptuki.care`,
+        subject: `Critical Alert: ${inc.type.replace('_', ' ')}`,
+        snippet: `Resident ${inc.resident.firstName} involved in incident. Room ${inc.resident.room}.`,
+        body: `Dear Triage Admin,\n\nPlease review the following incident report:\n\nResident: ${inc.resident.firstName} ${inc.resident.lastName}\nLocation: Room ${inc.resident.room}\nSeverity: ${inc.severity}\n\nDescription:\n${inc.description}\n\nPlease ensure that the resident is securely monitored and forward to the attending physician if required.\n\nWarm regards,\n${inc.reportedBy.firstName} ${inc.reportedBy.lastName}`,
+        date: inc.reportedAt,
+        isNew: true,
+        raw: inc
+      });
+    });
+
+    // Map Overdue
+    data?.overdueTasks?.forEach(task => {
+      list.push({
+        id: task.id,
+        type: 'OVERDUE',
+        senderName: 'System Scheduler',
+        senderEmail: 'noreply@snaptuki.care',
+        subject: `Overdue Task: ${task.title}`,
+        snippet: `Task assigned to ${task.assignedCaregiver?.firstName || 'unassigned'} is overdue.`,
+        body: `Hello,\n\nThe following clinical task has missed its scheduled delivery window and requires immediate action.\n\nTask: ${task.title}\nResident: ${task.resident?.firstName || 'N/A'}\nAssigned to: ${task.assignedCaregiver?.firstName || 'Unassigned'}\n\nPlease reassign this task to an available caregiver or dismiss it if no longer relevant.\n\nRegards,\nSystem Administrator`,
+        date: task.dueAt,
+        isNew: false,
+        raw: task
+      });
+    });
+
+    // Map Cancelled/Review
+    data?.cancelledTasks?.forEach(task => {
+      const sender = task.assignedCaregiver ? `${task.assignedCaregiver.firstName} ${task.assignedCaregiver.lastName}` : 'System';
+      list.push({
+        id: task.id,
+        type: 'REVIEW',
+        senderName: sender,
+        senderEmail: `${sender.split(' ')[0]?.toLowerCase() || 'sys'}@snaptuki.care`,
+        subject: `Task Dismissed: ${task.title}`,
+        snippet: task.completionNotes?.[0] || 'Caregiver cancelled this action.',
+        body: `Hi Admin,\n\nI needed to cancel the scheduled action for the resident. \n\nTask: ${task.title}\nReason provided:\n"${task.completionNotes?.[0] || 'No reason provided.'}"\n\nPlease advise if this needs to be rescheduled or completely removed from the care plan.\n\nThanks,\n${sender}`,
+        date: task.dueAt,
+        isNew: true,
+        raw: task
+      });
+    });
+
+    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [data]);
+
+  const filteredMessages = messages.filter(msg => {
+    if (activeTab === 'Primary') return true;
+    if (activeTab === 'Alerts') return msg.type === 'INCIDENT';
+    if (activeTab === 'Tasks') return msg.type === 'OVERDUE' || msg.type === 'REVIEW';
+    return true;
+  });
+
+  const selectedMessage = messages.find(m => m.id === selectedMessageId) || null;
+
+  // Formatting Helpers
+  const formatListDate = (isoString: string) => {
+    const date = new Date(isoString);
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   };
 
-  const openModal = (type: 'REASSIGN' | 'CANCEL' | 'RESCHEDULE' | 'REVIEW_INCIDENT', item: any) => {
-    setSelectedItem(item);
-    setActiveModal(type);
+  const formatDetailDate = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' • ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // --- FORMIK: Cancel Task Form ---
+  const getAvatarInitials = (name: string) => {
+    const parts = name.split(' ');
+    return parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0][0];
+  };
+
+  // Modals Actions
+  const handleActionClick = (action: 'CANCEL' | 'REVIEW_INCIDENT' | 'RESCHEDULE' | 'REASSIGN') => {
+    if (selectedMessage) setActiveModal(action);
+  };
+
+  // Forms
   const cancelFormik = useFormik({
     initialValues: { reason: '' },
-    validationSchema: Yup.object({
-      reason: Yup.string().required('A cancellation reason is required.'),
-    }),
+    validationSchema: Yup.object({ reason: Yup.string().required('Required') }),
     onSubmit: async (values, { resetForm }) => {
-      try {
-        await cancelTask({ variables: { id: selectedItem.id, reason: values.reason } });
+      if(selectedMessage) {
+        await cancelTask({ variables: { id: selectedMessage.raw.id, reason: values.reason } });
         await refetch();
         setActiveModal(null);
+        setSelectedMessageId(null);
         resetForm();
-      } catch (err) { console.error("Failed to cancel task", err); }
+      }
     },
   });
 
-  // --- FORMIK: Reschedule Task Form ---
-  const rescheduleFormik = useFormik({
-    initialValues: { newDueAt: '', caregiverId: '' },
-    validationSchema: Yup.object({
-      newDueAt: Yup.string().required('Please select a new time.'),
-      caregiverId: Yup.string().required('Please assign a caregiver.'),
-    }),
-    onSubmit: async (values, { resetForm }) => {
-      try {
-        const [hours, minutes] = values.newDueAt.split(':');
-        const newDate = new Date();
-        newDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
-        await updateTask({
-          variables: { input: { id: selectedItem.id, dueAt: newDate.toISOString(), assignedCaregiverId: values.caregiverId } }
-        });
-        await refetch();
-        setActiveModal(null);
-        resetForm();
-      } catch (err) { console.error("Failed to reschedule task", err); }
-    },
-  });
-
-  // --- FORMIK: Review Incident Form (MOCK) ---
   const incidentFormik = useFormik({
     initialValues: { actionTaken: '' },
-    validationSchema: Yup.object({
-      actionTaken: Yup.string().required('Please log the action taken to resolve this incident.'),
-    }),
+    validationSchema: Yup.object({ actionTaken: Yup.string().required('Required') }),
     onSubmit: async (values, { resetForm }) => {
-      console.log(`Incident ${selectedItem.id} marked as resolved with note: ${values.actionTaken}`);
-      // In future: await resolveIncidentMutation(...)
+      console.log(`Incident resolved: ${values.actionTaken}`);
       setActiveModal(null);
+      setSelectedMessageId(null);
       resetForm();
     },
   });
 
-  if (error) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto text-center border border-red-200 bg-red-50 text-red-600 rounded-xl">
-        Failed to load Triage Center data. Please refresh the page.
-      </div>
-    );
-  }
-
-  const totalActionItems = triageData.overdueTasks.length + triageData.cancelledTasks.length + triageData.incidents.length;
+  if (error) return <div className="p-8 text-center text-red-600">Failed to load data.</div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
+    <div className="flex h-screen bg-white font-sans overflow-hidden text-slate-800">
       
-      {/* 1. Header & System Status */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Triage Center</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            {new Date().toLocaleDateString('en-FI', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
+      {/* =========================================
+          LEFT PANE (Inbox List)
+          ========================================= */}
+      <div className="w-[320px] lg:w-[380px] border-r border-slate-200 flex flex-col h-full bg-white shrink-0">
         
-        {loading ? (
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-500 border border-slate-200 rounded-lg shadow-sm">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="font-semibold text-sm">Syncing with facility...</span>
+        {/* Mail Header */}
+        <div className="px-6 py-5 flex items-center justify-between">
+          <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Inbox</h1>
+          <button className="p-2 border border-slate-200 rounded-full hover:bg-slate-50 transition-colors text-slate-600">
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Segmented Tabs */}
+        <div className="px-4 mb-2">
+          <div className="flex bg-slate-100 p-1 rounded-full">
+            {(['Primary', 'Alerts', 'Tasks'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-1.5 text-[13px] font-semibold rounded-full transition-all ${
+                  activeTab === tab ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-        ) : totalActionItems === 0 ? (
-          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg shadow-sm">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="font-semibold text-sm">All Clear - Zero Action Items</span>
-          </div>
+        </div>
+
+        {/* Message List */}
+        <div className="flex-1 overflow-y-auto mt-2">
+          {loading ? (
+             <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></div>
+          ) : filteredMessages.length === 0 ? (
+             <div className="p-8 text-center text-sm text-slate-400">No messages in {activeTab}.</div>
+          ) : (
+            filteredMessages.map((msg) => {
+              const isSelected = selectedMessageId === msg.id;
+              return (
+                <div 
+                  key={msg.id}
+                  onClick={() => setSelectedMessageId(msg.id)}
+                  className={`px-6 py-4 border-b border-slate-100 cursor-pointer transition-colors relative ${
+                    isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ${msg.type === 'INCIDENT' ? 'bg-rose-500' : msg.type === 'OVERDUE' ? 'bg-orange-500' : 'bg-purple-500'}`}>
+                          {getAvatarInitials(msg.senderName)}
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                      </div>
+                      <span className={`text-[15px] text-slate-900 truncate max-w-[150px] ${msg.isNew ? 'font-bold' : 'font-semibold'}`}>
+                        {msg.senderName}
+                      </span>
+                    </div>
+                    <span className={`text-xs ${msg.isNew ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>
+                      {formatListDate(msg.date)}
+                    </span>
+                  </div>
+                  
+                  <div className="pl-12">
+                    <div className="flex items-start justify-between gap-2">
+                       <div className="min-w-0">
+                         <div className={`text-sm truncate mb-0.5 ${msg.isNew ? 'font-bold text-slate-800' : 'font-medium text-slate-700'}`}>
+                           {msg.subject}
+                         </div>
+                         <div className="text-[13px] text-slate-500 truncate line-clamp-1 leading-snug">
+                           {msg.snippet}
+                         </div>
+                       </div>
+                       {msg.isNew && (
+                         <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-1">
+                           New
+                         </span>
+                       )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* =========================================
+          RIGHT PANE (Detail View)
+          ========================================= */}
+      <div className="flex-1 flex flex-col h-full bg-white relative">
+        {selectedMessage ? (
+          <>
+            {/* Top Toolbar */}
+            <div className="h-16 border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+              <div className="flex items-center gap-6 text-slate-500">
+                <button onClick={() => setSelectedMessageId(null)} className="hover:text-slate-800 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+                <div className="w-px h-5 bg-slate-200" />
+                <button className="hover:text-slate-800 transition-colors"><Edit2 className="w-[18px] h-[18px]" /></button>
+                <button className="hover:text-amber-500 transition-colors"><Flag className="w-[18px] h-[18px]" /></button>
+                <button className="hover:text-rose-600 transition-colors"><Trash2 className="w-[18px] h-[18px]" /></button>
+                <div className="w-px h-5 bg-slate-200" />
+                <button className="hover:text-slate-800 transition-colors"><MailOpen className="w-[18px] h-[18px]" /></button>
+                <button className="hover:text-slate-800 transition-colors"><Download className="w-[18px] h-[18px]" /></button>
+                <button className="hover:text-slate-800 transition-colors"><Share className="w-[18px] h-[18px]" /></button>
+              </div>
+              <div className="flex items-center gap-4 text-sm text-slate-500">
+                <span className="font-medium">
+                  {filteredMessages.findIndex(m => m.id === selectedMessage.id) + 1} of {filteredMessages.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button className="p-1 hover:bg-slate-100 rounded-full"><ChevronLeft className="w-5 h-5" /></button>
+                  <button className="p-1 hover:bg-slate-100 rounded-full"><ChevronRight className="w-5 h-5" /></button>
+                </div>
+                <button className="p-1 hover:bg-slate-100 rounded-full"><MoreVertical className="w-5 h-5" /></button>
+              </div>
+            </div>
+
+            {/* Message Content Area */}
+            <div className="flex-1 overflow-y-auto px-10 lg:px-16 py-10">
+              
+              {/* Header Info */}
+              <div className="flex justify-between items-start mb-8">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-sm ${selectedMessage.type === 'INCIDENT' ? 'bg-rose-500' : selectedMessage.type === 'OVERDUE' ? 'bg-orange-500' : 'bg-purple-500'}`}>
+                    {getAvatarInitials(selectedMessage.senderName)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="font-bold text-slate-900 text-[15px]">{selectedMessage.senderName}</h3>
+                      <span className="text-xs text-slate-400 font-medium">&lt;{selectedMessage.senderEmail}&gt;</span>
+                    </div>
+                    <p className="text-[13px] text-slate-500">to Triage Admin</p>
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-slate-500 pt-1">
+                  {formatDetailDate(selectedMessage.date)}
+                </div>
+              </div>
+
+              {/* Subject */}
+              <h2 className="text-[26px] font-normal text-slate-900 mb-8 leading-tight">
+                {selectedMessage.subject}
+              </h2>
+
+              {/* Body */}
+              <div className="text-[15px] text-slate-800 whitespace-pre-wrap leading-relaxed mb-12 max-w-4xl">
+                {selectedMessage.body}
+              </div>
+
+              {/* Action Buttons mimicking Reply/Forward */}
+              <div className="flex gap-4 border-t border-slate-100 pt-8 mt-auto">
+                {selectedMessage.type === 'INCIDENT' && (
+                  <button onClick={() => handleActionClick('REVIEW_INCIDENT')} className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                    <Reply className="w-4 h-4" /> Resolve Incident
+                  </button>
+                )}
+                
+                {selectedMessage.type === 'OVERDUE' && (
+                  <>
+                    <button onClick={() => handleActionClick('REASSIGN')} className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                      <UserPlus className="w-4 h-4" /> Reassign Task
+                    </button>
+                    <button onClick={() => handleActionClick('CANCEL')} className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                      <X className="w-4 h-4" /> Dismiss
+                    </button>
+                  </>
+                )}
+
+                {selectedMessage.type === 'REVIEW' && (
+                  <>
+                    <button className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                      <Check className="w-4 h-4" /> Acknowledge
+                    </button>
+                    <button onClick={() => handleActionClick('RESCHEDULE')} className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                      <RotateCcw className="w-4 h-4" /> Reschedule
+                    </button>
+                  </>
+                )}
+
+                {/* Generic Forward */}
+                <button className="px-5 py-2 border border-slate-200 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                  <Forward className="w-4 h-4" /> Forward
+                </button>
+              </div>
+
+            </div>
+          </>
         ) : (
-          <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg shadow-sm">
-            <Siren className="w-5 h-5 animate-pulse" />
-            <span className="font-semibold text-sm">{totalActionItems} Action Items Pending</span>
+          <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50">
+            <MailOpen className="w-16 h-16 text-slate-200 mb-4" />
+            <p className="text-slate-500 font-medium">Select an item to read</p>
           </div>
         )}
       </div>
 
-      {/* 2. QUICK ACTION PANEL */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <QuickActionButton 
-          icon={Zap} 
-          label="Dispatch Urgent" 
-          colorClass="bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white"
-          onClick={() => console.log('Open Urgent Task Form')} 
-        />
-        <QuickActionButton 
-          icon={ClipboardType} 
-          label="Log Incident" 
-          colorClass="bg-amber-100 text-amber-600 group-hover:bg-amber-500 group-hover:text-white"
-          onClick={() => console.log('Open Incident Form')} 
-        />
-        <QuickActionButton 
-          icon={Megaphone} 
-          label="Broadcast Shift" 
-          colorClass="bg-indigo-100 text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white"
-          onClick={() => console.log('Open Broadcast Form')} 
-        />
-        <QuickActionButton 
-          icon={Users} 
-          label="On-Duty Roster" 
-          colorClass="bg-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white"
-          onClick={() => console.log('Open Roster Modal')} 
-        />
-      </section>
-
-      {/* 3. CRITICAL INCIDENTS (Full Width Section - Only shows if incidents exist) */}
-      {triageData.incidents.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-rose-100">
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <ShieldAlert className="w-6 h-6 text-rose-600" /> 
-              Active Clinical Incidents
-              <span className="bg-rose-100 text-rose-700 text-xs py-0.5 px-2 rounded-full ml-2">{triageData.incidents.length}</span>
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {triageData.incidents.map((incident) => (
-              <div key={incident.id} className="bg-white border-2 border-rose-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500" />
-                
-                <div className="flex justify-between items-start mb-3">
-                  <StatusBadge priority={incident.severity} />
-                  <div className="text-rose-600 text-xs font-bold flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-md">
-                    <Clock className="w-3.5 h-3.5" /> 
-                    {Math.round((Date.now() - new Date(incident.reportedAt).getTime()) / 60000)} mins ago
-                  </div>
-                </div>
-                
-                <h3 className="font-bold text-slate-900 text-lg">{incident.type.replace('_', ' ')}: {incident.resident.firstName} {incident.resident.lastName}</h3>
-                <p className="text-sm font-semibold text-slate-500 mb-3">Room {incident.resident.room}</p>
-                
-                <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-sm text-slate-700 mb-4">
-                  "{incident.description}"
-                </div>
-
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                  <span className="text-xs text-slate-500 font-medium">Logged by {incident.reportedBy.firstName}</span>
-                  <button onClick={() => openModal('REVIEW_INCIDENT', incident)} className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm">
-                    Review Action <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 4. TASK BACKLOG (2 Columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
-        
-        {/* LEFT COLUMN: Overdue Tasks */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <AlertOctagon className="w-5 h-5 text-orange-600" /> 
-              Overdue Tasks
-              <span className="bg-orange-100 text-orange-700 text-xs py-0.5 px-2 rounded-full ml-2">{triageData.overdueTasks.length}</span>
-            </h2>
-          </div>
-
-          {loading ? (
-             <div className="p-8 border border-dashed border-slate-200 rounded-xl flex justify-center items-center">
-               <Loader2 className="w-8 h-8 text-slate-300 animate-spin" />
-             </div>
-          ) : triageData.overdueTasks.length === 0 ? (
-            <div className="p-8 border border-dashed border-slate-200 rounded-xl text-center text-slate-500">
-              No overdue tasks.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {triageData.overdueTasks.map((task: any) => (
-                <div key={task.id} className="bg-white border border-orange-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
-                  
-                  <div className="flex justify-between items-start mb-3">
-                    <StatusBadge priority={task.priority} />
-                    <div className="flex items-center text-orange-600 text-xs font-bold gap-1 bg-orange-50 px-2 py-1 rounded-md">
-                      <Clock className="w-3.5 h-3.5" /> 
-                      Late
-                    </div>
-                  </div>
-                  
-                  <h3 className="font-bold text-slate-900 text-base">{task.title}</h3>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-sm text-slate-600 flex items-center gap-1.5 font-medium">
-                      <User className="w-4 h-4 text-slate-400" /> Resident: {task.resident?.firstName} {task.resident?.lastName}
-                    </p>
-                    <p className="text-sm text-slate-500 flex items-center gap-1.5">
-                      <Activity className="w-4 h-4 text-slate-400" /> Assigned: {task.assignedCaregiver?.firstName} {task.assignedCaregiver?.lastName}
-                    </p>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                    <button onClick={() => openModal('REASSIGN', task)} className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 py-2 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2">
-                      <UserPlus className="w-4 h-4" /> Reassign
-                    </button>
-                    <button onClick={() => openModal('CANCEL', task)} className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2">
-                      <X className="w-4 h-4" /> Cancel
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* RIGHT COLUMN: Cancelled Tasks */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <FileWarning className="w-5 h-5 text-purple-600" /> 
-              Task Review Required
-              <span className="bg-purple-100 text-purple-700 text-xs py-0.5 px-2 rounded-full ml-2">{triageData.cancelledTasks.length}</span>
-            </h2>
-          </div>
-
-          {loading ? (
-             <div className="p-8 border border-dashed border-slate-200 rounded-xl flex justify-center items-center">
-               <Loader2 className="w-8 h-8 text-slate-300 animate-spin" />
-             </div>
-          ) : triageData.cancelledTasks.length === 0 ? (
-            <div className="p-8 border border-dashed border-slate-200 rounded-xl text-center text-slate-500">
-              No tasks require review.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {triageData.cancelledTasks.map((task: any) => (
-                <div key={task.id} className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
-                  
-                  <div className="flex justify-between items-start mb-3">
-                    <StatusBadge priority={task.priority} />
-                    <div className="text-slate-500 text-xs font-semibold flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> 
-                      Orig. Due: {new Date(task.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                  
-                  <h3 className="font-bold text-slate-900 text-base line-through opacity-80">{task.title}</h3>
-                  
-                  <div className="mt-3 p-3 bg-purple-50 border border-purple-100 rounded-lg">
-                    <p className="text-xs font-bold text-purple-800 uppercase mb-1">Cancellation Reason</p>
-                    <p className="text-sm text-purple-900 font-medium italic">
-                      "{task.completionNotes?.[0] || 'No reason provided.'}"
-                    </p>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                    <button className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 py-2 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2 shadow-sm">
-                      <Check className="w-4 h-4 text-emerald-600" /> Ack
-                    </button>
-                    <button onClick={() => openModal('RESCHEDULE', task)} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white border border-purple-700 py-2 rounded-lg text-sm font-semibold transition-colors flex justify-center items-center gap-2 shadow-sm">
-                      <RotateCcw className="w-4 h-4" /> Reschedule
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
       {/* --- FORMIK MODALS --- */}
-      
-      {/* 1. Incident Review Modal */}
+      {/* Incident Review Modal */}
       {activeModal === 'REVIEW_INCIDENT' && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-rose-100 rounded-full text-rose-600"><ShieldAlert className="w-6 h-6" /></div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">Resolve Incident</h3>
-                <p className="text-sm font-medium text-slate-500">{selectedItem?.type.replace('_', ' ')} - {selectedItem?.resident.firstName} {selectedItem?.resident.lastName}</p>
+             <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-rose-50 rounded-xl text-rose-600"><ShieldAlert className="w-5 h-5" /></div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Resolve Incident</h3>
+                </div>
               </div>
+              <button onClick={() => setActiveModal(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><X className="w-4 h-4" /></button>
             </div>
-            
             <form onSubmit={incidentFormik.handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Action Taken & Review Notes</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Action Taken & Notes</label>
                 <textarea 
                   name="actionTaken"
                   rows={4}
-                  className={`w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 transition-all text-sm ${incidentFormik.errors.actionTaken && incidentFormik.touched.actionTaken ? 'border-red-300 focus:ring-red-500/20 bg-red-50' : 'border-slate-300 focus:ring-rose-500/20 bg-white'}`}
-                  placeholder="E.g., Resident assessed by RN, family notified, fall protocol initiated..."
+                  className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 border-slate-200 bg-slate-50 focus:border-rose-300 focus:ring-rose-500/10 text-sm"
+                  placeholder="E.g., Resident assessed by RN, family notified..."
                   value={incidentFormik.values.actionTaken}
                   onChange={incidentFormik.handleChange}
-                  onBlur={incidentFormik.handleBlur}
                 />
-                {incidentFormik.errors.actionTaken && incidentFormik.touched.actionTaken && (
-                  <p className="text-xs text-red-600 mt-1 font-medium">{incidentFormik.errors.actionTaken}</p>
-                )}
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setActiveModal(null)} className="flex-1 px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2.5 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700 transition-colors shadow-sm">Mark as Resolved</button>
-              </div>
+              <button type="submit" className="w-full py-2.5 bg-rose-600 text-white font-semibold text-sm rounded-xl hover:bg-rose-700 transition-colors shadow-sm">Mark as Resolved</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* 2. Cancel Task Modal */}
+      {/* Cancel Task Modal */}
       {activeModal === 'CANCEL' && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Cancel Task</h3>
-            <p className="text-sm text-slate-500 mb-5">You are about to cancel <strong>{selectedItem?.title}</strong> for {selectedItem?.resident?.firstName}.</p>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-2">
+               <h3 className="text-lg font-bold text-slate-900">Dismiss Action</h3>
+               <button onClick={() => setActiveModal(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><X className="w-4 h-4"/></button>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">You are about to dismiss the selected action.</p>
+            
             <form onSubmit={cancelFormik.handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Cancellation Reason</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Dismissal Reason</label>
                 <textarea 
                   name="reason"
                   rows={3}
-                  className="w-full px-3 py-2 border rounded-lg border-slate-300 focus:ring-blue-500/20 outline-none text-sm"
+                  className="w-full px-4 py-3 border rounded-xl border-slate-200 bg-slate-50 focus:border-red-300 focus:ring-red-500/10 outline-none text-sm transition-all"
                   value={cancelFormik.values.reason}
                   onChange={cancelFormik.handleChange}
                 />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setActiveModal(null)} className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg">Abort</button>
-                <button type="submit" className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-lg">Confirm Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Reschedule Task Modal */}
-      {activeModal === 'RESCHEDULE' && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Reschedule Task</h3>
-            <p className="text-sm text-slate-500 mb-5">Create a new instance of <strong>{selectedItem?.title}</strong>.</p>
-            <form onSubmit={rescheduleFormik.handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">New Target Time</label>
-                <input 
-                  type="time"
-                  name="newDueAt"
-                  className="w-full px-3 py-2 border rounded-lg border-slate-300 outline-none text-sm"
-                  value={rescheduleFormik.values.newDueAt}
-                  onChange={rescheduleFormik.handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Assign Caregiver</label>
-                <select 
-                  name="caregiverId"
-                  className="w-full px-3 py-2.5 border rounded-lg border-slate-300 outline-none text-sm"
-                  value={rescheduleFormik.values.caregiverId}
-                  onChange={rescheduleFormik.handleChange}
-                >
-                  <option value="" disabled>-- Select Caregiver --</option>
-                  <option value="user_123">Sarah Jenkins (Nurse, Floor 2)</option>
-                </select>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setActiveModal(null)} className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-purple-600 text-white font-semibold rounded-lg">Reschedule</button>
-              </div>
+              <button type="submit" className="w-full py-2.5 bg-red-600 text-white text-sm font-bold rounded-xl shadow-sm hover:bg-red-700 transition-colors">Confirm Dismissal</button>
             </form>
           </div>
         </div>
       )}
     </div>
   );
-}
+};

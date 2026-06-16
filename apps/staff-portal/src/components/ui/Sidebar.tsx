@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
+  InboxIcon, 
   Users, 
   HeartPulse, 
   ClipboardCheck, 
@@ -14,7 +14,7 @@ import type { Query } from '../../lib/graphql/generated';
 import { useQuery } from '@apollo/client/react';
 // Define the navigation links
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
+  { path: '/dashboard', label: 'Inbox', icon: InboxIcon, exact: true },
   { path: '/dashboard/residents', label: 'Residents', icon: HeartPulse },
   { path: '/dashboard/caregivers', label: 'Caregivers', icon: Users },
   { path: '/dashboard/tasks', label: 'Task Center', icon: ClipboardCheck },

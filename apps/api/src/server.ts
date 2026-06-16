@@ -113,7 +113,7 @@ export async function startGatewayServer() {
 
 
     const PORT = config.serverPort || 4000;
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Gateway server running at http://localhost:${PORT}/graphql`);
 
         console.log('⏳ Booting up background services...');

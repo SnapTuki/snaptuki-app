@@ -4,7 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev src/index.ts",
+    "dev": "npx prisma generate && ts-node-dev src/index.ts",
     "compile": "tsc",
     "start": "npm run compile && node ./dist/index.js",
     "prisma": "prisma"
