@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "npx prisma generate && ts-node-dev src/index.ts",
+    "build": "rimraf dist && tsc",
     "compile": "tsc",
     "start": "npm run compile && node ./dist/index.js",
     "prisma": "prisma"

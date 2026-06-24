@@ -1,11 +1,11 @@
 import { Field, InputType, ID } from 'type-graphql';
-import { RoleGQL } from '../types/roleGQL';
+import { UserRole } from '../types/userAuthData';
 
 @InputType()
 export class AssignRoleInput {
   @Field(() => ID)
   userId!: string;
 
-  @Field(() => RoleGQL)
-  role!: RoleGQL;
+  @Field(() => UserRole)
+  role!: UserRole;
 }

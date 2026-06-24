@@ -1,0 +1,44 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /usr/app/api/
+
+COPY package*.json .
+
+# 1. FIX: Path matched to your structure (src/prisma)
+COPY ./src/prisma ./src/prisma/
+
+# Install all dependencies
+RUN npm ci
+
+# Copy the rest of the application source code
+COPY . .
+
+# 2. FIX: Direct Prisma to look inside the src directory
+RUN npx prisma generate --schema=./src/prisma/schema.prisma
+
+# Build typescript codes into js
+RUN npm run build
+
+RUN npm prune --production
+
+FROM node:20-alpine AS runner
+
+RUN apk add --no-cache openssl
+
+ENV NODE_ENV=production
+WORKDIR /usr/app/api
+
+USER node
+
+# Copy ONLY the necessary production artifacts from Stage 1
+COPY --chown=node:node package*.json ./
+COPY --chown=node:node --from=builder /usr/app/api/node_modules ./node_modules
+COPY --chown=node:node --from=builder /usr/app/api/dist ./dist
+
+COPY --chown=node:node --from=builder /usr/app/api/src/prisma/ ./src/prisma/
+COPY --chown=node:node --from=builder /usr/app/api/src/generated ./dist/generated/
+
+# Expose application's internal network port
+EXPOSE 4000
+
+CMD [ "node", "dist/index.js" ]
