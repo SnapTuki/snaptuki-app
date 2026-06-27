@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Calendar as CalendarIcon, Clock, ChevronRight } from 'lucide-react';
+import { Clock,} from 'lucide-react';
 
 export function ClinicalScheduler({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   // Use useMemo to ensure 'now' doesn't change on every micro-render

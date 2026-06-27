@@ -14,7 +14,7 @@ import {
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-import { GET_RESIDENT_SUGGESTIONS, GET_RESIDENTS } from '../../../features/residents/graphql/queries';
+import { GET_RESIDENT_SUGGESTIONS} from '../../../features/residents/graphql/queries';
 import { type ResidentType } from '../../../lib/graphql/generated';
 import { REGISTER_RESIDENT } from '../../../features/residents/graphql/mutations';
 import { useAuthStore } from '../../../lib/store/authStore';

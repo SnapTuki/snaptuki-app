@@ -76,6 +76,11 @@ export type ChangePasswordInput = {
   userId: Scalars['ID']['input'];
 };
 
+export type ChecklistItemInput = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+  label: Scalars['String']['input'];
+};
+
 export type CompleteTaskInputGql = {
   completedByCaregiverId: Scalars['ID']['input'];
   id: Scalars['ID']['input'];
@@ -155,6 +160,7 @@ export type Mutation = {
   completeTask: Task;
   createTask: Task;
   dischargeResident: ResidentType;
+  reactivateTask: Task;
   registerCaregiver: StaffType;
   registerResident: ResidentType;
   registerUser: User;
@@ -204,6 +210,11 @@ export type MutationCreateTaskArgs = {
 
 export type MutationDischargeResidentArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationReactivateTaskArgs = {
+  taskId: Scalars['String']['input'];
 };
 
 
@@ -287,6 +298,7 @@ export type QueryTaskByIdArgs = {
 
 export type QueryTaskListArgs = {
   caregiverId?: InputMaybe<Scalars['String']['input']>;
+  dueAt?: InputMaybe<Scalars['DateTime']['input']>;
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   residentId?: InputMaybe<Scalars['String']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
@@ -387,6 +399,7 @@ export type Task = {
   __typename?: 'Task';
   assignedCaregiver?: Maybe<TaskCaregiverProfile>;
   assignedCaregiverId?: Maybe<Scalars['String']['output']>;
+  assignedResident?: Maybe<TaskResidentProfile>;
   category: TaskCategory;
   checklist: Array<TaskChecklistItem>;
   completedAt?: Maybe<Scalars['DateTime']['output']>;
@@ -398,7 +411,6 @@ export type Task = {
   dueAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['ID']['output'];
   priority: TaskPriority;
-  resident?: Maybe<TaskResidentProfile>;
   residentId?: Maybe<Scalars['String']['output']>;
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   status: TaskStatus;
@@ -422,12 +434,8 @@ export enum TaskCategory {
 
 export type TaskChecklistItem = {
   __typename?: 'TaskChecklistItem';
-  done: Scalars['Boolean']['output'];
-  doneAt?: Maybe<Scalars['DateTime']['output']>;
-  doneByCaregiverId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   label: Scalars['String']['output'];
-  required: Scalars['Boolean']['output'];
 };
 
 export enum TaskPriority {
@@ -473,10 +481,12 @@ export type UpdateResidentIdentityInput = {
 
 export type UpdateTaskInput = {
   assignedCaregiverId?: InputMaybe<Scalars['String']['input']>;
+  checklist?: InputMaybe<Array<ChecklistItemInput>>;
   description?: InputMaybe<Scalars['String']['input']>;
   dueAt?: InputMaybe<Scalars['DateTime']['input']>;
   id: Scalars['ID']['input'];
   priority?: InputMaybe<TaskPriority>;
+  status?: InputMaybe<TaskStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -545,13 +555,13 @@ export type CompleteTaskMutationVariables = Exact<{
 
 export type CompleteTaskMutation = { __typename?: 'Mutation', completeTask: { __typename?: 'Task', id: string, status: TaskStatus } };
 
-export type CancelTaskMutationVariables = Exact<{
+export type CancelResidentTaskMutationVariables = Exact<{
   id: Scalars['String']['input'];
   reason?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type CancelTaskMutation = { __typename?: 'Mutation', cancelTask: { __typename?: 'Task', id: string, status: TaskStatus } };
+export type CancelResidentTaskMutation = { __typename?: 'Mutation', cancelTask: { __typename?: 'Task', id: string, status: TaskStatus } };
 
 export type UpdateTaskMutationVariables = Exact<{
   input: UpdateTaskInput;
@@ -586,7 +596,7 @@ export type GetResidentByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, birthDate: any, gender: Gender, status: ResidentStatus, room?: string | null, mobilityLevel: MobilityLevel, createdAt: any, allergies: Array<{ __typename?: 'AllergyType', id: string, name: string, reaction: string, severity: AllergySeverity }>, medications: Array<{ __typename?: 'MedicationType', id: string, name: string, dosage: string, frequency: string, startDate: any, endDate?: any | null }>, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, relation: string, phone: string }>, tasks: Array<{ __typename?: 'Task', title: string, status: TaskStatus, category: TaskCategory, createdAt: any }> } | null };
+export type GetResidentByIdQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string } | null };
 
 export type GetTaskListResidentQueryVariables = Exact<{
   residentId?: InputMaybe<Scalars['String']['input']>;
@@ -605,14 +615,34 @@ export type SearchCaregiversQueryVariables = Exact<{
 
 export type SearchCaregiversQuery = { __typename?: 'Query', caregiverList: Array<{ __typename?: 'StaffType', id: string, firstName: string, lastName: string }> };
 
-export type GetTaskListQueryVariables = Exact<{
-  search?: InputMaybe<Scalars['String']['input']>;
-  status?: InputMaybe<Scalars['String']['input']>;
-  residentId?: InputMaybe<Scalars['String']['input']>;
+export type GetResidentIdentityProfileQueryVariables = Exact<{
+  residentId: Scalars['String']['input'];
 }>;
 
 
-export type GetTaskListQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, category: TaskCategory, priority: TaskPriority, description?: string | null, status: TaskStatus, dueAt?: any | null, resident?: { __typename?: 'TaskResidentProfile', firstName: string, lastName: string } | null, assignedCaregiver?: { __typename?: 'TaskCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
+export type GetResidentIdentityProfileQuery = { __typename?: 'Query', getResidentById?: { __typename?: 'ResidentType', residentId: string, mrn: string, firstName: string, lastName: string, room?: string | null, gender: Gender, birthDate: any, mobilityLevel: MobilityLevel, emergencyContacts: Array<{ __typename?: 'EmergencyContactType', id: string, name: string, phone: string, relation: string }> } | null };
+
+export type CancelTaskMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CancelTaskMutation = { __typename?: 'Mutation', cancelTask: { __typename?: 'Task', id: string } };
+
+export type ReactivateTaskMutationVariables = Exact<{
+  taskId: Scalars['String']['input'];
+}>;
+
+
+export type ReactivateTaskMutation = { __typename?: 'Mutation', reactivateTask: { __typename?: 'Task', id: string } };
+
+export type GetTodayTasksQueryVariables = Exact<{
+  todayDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+
+export type GetTodayTasksQuery = { __typename?: 'Query', taskList: Array<{ __typename?: 'Task', id: string, title: string, priority: TaskPriority, description?: string | null, status: TaskStatus, dueAt?: any | null, assignedResident?: { __typename?: 'TaskResidentProfile', firstName: string, lastName: string } | null, assignedCaregiver?: { __typename?: 'TaskCaregiverProfile', firstName: string, lastName: string } | null, checklist: Array<{ __typename?: 'TaskChecklistItem', id: string, label: string }> }> };
 
 export type SearchResidentsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']['input']>;
@@ -883,41 +913,41 @@ export function useCompleteTaskMutation(baseOptions?: Apollo.MutationHookOptions
 export type CompleteTaskMutationHookResult = ReturnType<typeof useCompleteTaskMutation>;
 export type CompleteTaskMutationResult = Apollo.MutationResult<CompleteTaskMutation>;
 export type CompleteTaskMutationOptions = Apollo.BaseMutationOptions<CompleteTaskMutation, CompleteTaskMutationVariables>;
-export const CancelTaskDocument = gql`
-    mutation CancelTask($id: String!, $reason: String) {
+export const CancelResidentTaskDocument = gql`
+    mutation CancelResidentTask($id: String!, $reason: String) {
   cancelTask(id: $id, reason: $reason) {
     id
     status
   }
 }
     `;
-export type CancelTaskMutationFn = Apollo.MutationFunction<CancelTaskMutation, CancelTaskMutationVariables>;
+export type CancelResidentTaskMutationFn = Apollo.MutationFunction<CancelResidentTaskMutation, CancelResidentTaskMutationVariables>;
 
 /**
- * __useCancelTaskMutation__
+ * __useCancelResidentTaskMutation__
  *
- * To run a mutation, you first call `useCancelTaskMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useCancelTaskMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useCancelResidentTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCancelResidentTaskMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [cancelTaskMutation, { data, loading, error }] = useCancelTaskMutation({
+ * const [cancelResidentTaskMutation, { data, loading, error }] = useCancelResidentTaskMutation({
  *   variables: {
  *      id: // value for 'id'
  *      reason: // value for 'reason'
  *   },
  * });
  */
-export function useCancelTaskMutation(baseOptions?: Apollo.MutationHookOptions<CancelTaskMutation, CancelTaskMutationVariables>) {
+export function useCancelResidentTaskMutation(baseOptions?: Apollo.MutationHookOptions<CancelResidentTaskMutation, CancelResidentTaskMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<CancelTaskMutation, CancelTaskMutationVariables>(CancelTaskDocument, options);
+        return Apollo.useMutation<CancelResidentTaskMutation, CancelResidentTaskMutationVariables>(CancelResidentTaskDocument, options);
       }
-export type CancelTaskMutationHookResult = ReturnType<typeof useCancelTaskMutation>;
-export type CancelTaskMutationResult = Apollo.MutationResult<CancelTaskMutation>;
-export type CancelTaskMutationOptions = Apollo.BaseMutationOptions<CancelTaskMutation, CancelTaskMutationVariables>;
+export type CancelResidentTaskMutationHookResult = ReturnType<typeof useCancelResidentTaskMutation>;
+export type CancelResidentTaskMutationResult = Apollo.MutationResult<CancelResidentTaskMutation>;
+export type CancelResidentTaskMutationOptions = Apollo.BaseMutationOptions<CancelResidentTaskMutation, CancelResidentTaskMutationVariables>;
 export const UpdateTaskDocument = gql`
     mutation UpdateTask($input: UpdateTaskInput!) {
   updateTask(input: $input) {
@@ -1096,38 +1126,6 @@ export const GetResidentByIdDocument = gql`
     mrn
     firstName
     lastName
-    birthDate
-    gender
-    status
-    room
-    mobilityLevel
-    createdAt
-    allergies {
-      id
-      name
-      reaction
-      severity
-    }
-    medications {
-      id
-      name
-      dosage
-      frequency
-      startDate
-      endDate
-    }
-    emergencyContacts {
-      id
-      name
-      relation
-      phone
-    }
-    tasks {
-      title
-      status
-      category
-      createdAt
-    }
   }
 }
     `;
@@ -1276,17 +1274,139 @@ export type SearchCaregiversQueryHookResult = ReturnType<typeof useSearchCaregiv
 export type SearchCaregiversLazyQueryHookResult = ReturnType<typeof useSearchCaregiversLazyQuery>;
 export type SearchCaregiversSuspenseQueryHookResult = ReturnType<typeof useSearchCaregiversSuspenseQuery>;
 export type SearchCaregiversQueryResult = Apollo.QueryResult<SearchCaregiversQuery, SearchCaregiversQueryVariables>;
-export const GetTaskListDocument = gql`
-    query GetTaskList($search: String, $status: String, $residentId: String) {
-  taskList(search: $search, status: $status, residentId: $residentId) {
+export const GetResidentIdentityProfileDocument = gql`
+    query GetResidentIdentityProfile($residentId: String!) {
+  getResidentById(residentId: $residentId) {
+    residentId
+    mrn
+    firstName
+    lastName
+    room
+    gender
+    birthDate
+    emergencyContacts {
+      id
+      name
+      phone
+      relation
+    }
+    mobilityLevel
+  }
+}
+    `;
+
+/**
+ * __useGetResidentIdentityProfileQuery__
+ *
+ * To run a query within a React component, call `useGetResidentIdentityProfileQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetResidentIdentityProfileQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetResidentIdentityProfileQuery({
+ *   variables: {
+ *      residentId: // value for 'residentId'
+ *   },
+ * });
+ */
+export function useGetResidentIdentityProfileQuery(baseOptions: Apollo.QueryHookOptions<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables> & ({ variables: GetResidentIdentityProfileQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>(GetResidentIdentityProfileDocument, options);
+      }
+export function useGetResidentIdentityProfileLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>(GetResidentIdentityProfileDocument, options);
+        }
+// @ts-ignore
+export function useGetResidentIdentityProfileSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>): Apollo.UseSuspenseQueryResult<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>;
+export function useGetResidentIdentityProfileSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>): Apollo.UseSuspenseQueryResult<GetResidentIdentityProfileQuery | undefined, GetResidentIdentityProfileQueryVariables>;
+export function useGetResidentIdentityProfileSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>(GetResidentIdentityProfileDocument, options);
+        }
+export type GetResidentIdentityProfileQueryHookResult = ReturnType<typeof useGetResidentIdentityProfileQuery>;
+export type GetResidentIdentityProfileLazyQueryHookResult = ReturnType<typeof useGetResidentIdentityProfileLazyQuery>;
+export type GetResidentIdentityProfileSuspenseQueryHookResult = ReturnType<typeof useGetResidentIdentityProfileSuspenseQuery>;
+export type GetResidentIdentityProfileQueryResult = Apollo.QueryResult<GetResidentIdentityProfileQuery, GetResidentIdentityProfileQueryVariables>;
+export const CancelTaskDocument = gql`
+    mutation CancelTask($id: String!, $reason: String) {
+  cancelTask(id: $id, reason: $reason) {
+    id
+  }
+}
+    `;
+export type CancelTaskMutationFn = Apollo.MutationFunction<CancelTaskMutation, CancelTaskMutationVariables>;
+
+/**
+ * __useCancelTaskMutation__
+ *
+ * To run a mutation, you first call `useCancelTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCancelTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [cancelTaskMutation, { data, loading, error }] = useCancelTaskMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      reason: // value for 'reason'
+ *   },
+ * });
+ */
+export function useCancelTaskMutation(baseOptions?: Apollo.MutationHookOptions<CancelTaskMutation, CancelTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CancelTaskMutation, CancelTaskMutationVariables>(CancelTaskDocument, options);
+      }
+export type CancelTaskMutationHookResult = ReturnType<typeof useCancelTaskMutation>;
+export type CancelTaskMutationResult = Apollo.MutationResult<CancelTaskMutation>;
+export type CancelTaskMutationOptions = Apollo.BaseMutationOptions<CancelTaskMutation, CancelTaskMutationVariables>;
+export const ReactivateTaskDocument = gql`
+    mutation ReactivateTask($taskId: String!) {
+  reactivateTask(taskId: $taskId) {
+    id
+  }
+}
+    `;
+export type ReactivateTaskMutationFn = Apollo.MutationFunction<ReactivateTaskMutation, ReactivateTaskMutationVariables>;
+
+/**
+ * __useReactivateTaskMutation__
+ *
+ * To run a mutation, you first call `useReactivateTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useReactivateTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [reactivateTaskMutation, { data, loading, error }] = useReactivateTaskMutation({
+ *   variables: {
+ *      taskId: // value for 'taskId'
+ *   },
+ * });
+ */
+export function useReactivateTaskMutation(baseOptions?: Apollo.MutationHookOptions<ReactivateTaskMutation, ReactivateTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ReactivateTaskMutation, ReactivateTaskMutationVariables>(ReactivateTaskDocument, options);
+      }
+export type ReactivateTaskMutationHookResult = ReturnType<typeof useReactivateTaskMutation>;
+export type ReactivateTaskMutationResult = Apollo.MutationResult<ReactivateTaskMutation>;
+export type ReactivateTaskMutationOptions = Apollo.BaseMutationOptions<ReactivateTaskMutation, ReactivateTaskMutationVariables>;
+export const GetTodayTasksDocument = gql`
+    query GetTodayTasks($todayDate: DateTime) {
+  taskList(dueAt: $todayDate) {
     id
     title
-    category
     priority
     description
     status
     dueAt
-    resident {
+    assignedResident {
       firstName
       lastName
     }
@@ -1303,42 +1423,40 @@ export const GetTaskListDocument = gql`
     `;
 
 /**
- * __useGetTaskListQuery__
+ * __useGetTodayTasksQuery__
  *
- * To run a query within a React component, call `useGetTaskListQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetTaskListQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetTodayTasksQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetTodayTasksQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetTaskListQuery({
+ * const { data, loading, error } = useGetTodayTasksQuery({
  *   variables: {
- *      search: // value for 'search'
- *      status: // value for 'status'
- *      residentId: // value for 'residentId'
+ *      todayDate: // value for 'todayDate'
  *   },
  * });
  */
-export function useGetTaskListQuery(baseOptions?: Apollo.QueryHookOptions<GetTaskListQuery, GetTaskListQueryVariables>) {
+export function useGetTodayTasksQuery(baseOptions?: Apollo.QueryHookOptions<GetTodayTasksQuery, GetTodayTasksQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetTaskListQuery, GetTaskListQueryVariables>(GetTaskListDocument, options);
+        return Apollo.useQuery<GetTodayTasksQuery, GetTodayTasksQueryVariables>(GetTodayTasksDocument, options);
       }
-export function useGetTaskListLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetTaskListQuery, GetTaskListQueryVariables>) {
+export function useGetTodayTasksLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetTodayTasksQuery, GetTodayTasksQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetTaskListQuery, GetTaskListQueryVariables>(GetTaskListDocument, options);
+          return Apollo.useLazyQuery<GetTodayTasksQuery, GetTodayTasksQueryVariables>(GetTodayTasksDocument, options);
         }
 // @ts-ignore
-export function useGetTaskListSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetTaskListQuery, GetTaskListQueryVariables>): Apollo.UseSuspenseQueryResult<GetTaskListQuery, GetTaskListQueryVariables>;
-export function useGetTaskListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTaskListQuery, GetTaskListQueryVariables>): Apollo.UseSuspenseQueryResult<GetTaskListQuery | undefined, GetTaskListQueryVariables>;
-export function useGetTaskListSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTaskListQuery, GetTaskListQueryVariables>) {
+export function useGetTodayTasksSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetTodayTasksQuery, GetTodayTasksQueryVariables>): Apollo.UseSuspenseQueryResult<GetTodayTasksQuery, GetTodayTasksQueryVariables>;
+export function useGetTodayTasksSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTodayTasksQuery, GetTodayTasksQueryVariables>): Apollo.UseSuspenseQueryResult<GetTodayTasksQuery | undefined, GetTodayTasksQueryVariables>;
+export function useGetTodayTasksSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetTodayTasksQuery, GetTodayTasksQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetTaskListQuery, GetTaskListQueryVariables>(GetTaskListDocument, options);
+          return Apollo.useSuspenseQuery<GetTodayTasksQuery, GetTodayTasksQueryVariables>(GetTodayTasksDocument, options);
         }
-export type GetTaskListQueryHookResult = ReturnType<typeof useGetTaskListQuery>;
-export type GetTaskListLazyQueryHookResult = ReturnType<typeof useGetTaskListLazyQuery>;
-export type GetTaskListSuspenseQueryHookResult = ReturnType<typeof useGetTaskListSuspenseQuery>;
-export type GetTaskListQueryResult = Apollo.QueryResult<GetTaskListQuery, GetTaskListQueryVariables>;
+export type GetTodayTasksQueryHookResult = ReturnType<typeof useGetTodayTasksQuery>;
+export type GetTodayTasksLazyQueryHookResult = ReturnType<typeof useGetTodayTasksLazyQuery>;
+export type GetTodayTasksSuspenseQueryHookResult = ReturnType<typeof useGetTodayTasksSuspenseQuery>;
+export type GetTodayTasksQueryResult = Apollo.QueryResult<GetTodayTasksQuery, GetTodayTasksQueryVariables>;
 export const SearchResidentsDocument = gql`
     query SearchResidents($search: String) {
   residentList(search: $search) {

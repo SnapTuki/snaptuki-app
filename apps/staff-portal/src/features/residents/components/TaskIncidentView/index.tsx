@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-    Plus,
-    ShieldAlert,
-    CheckCircle2,
-    Clock,
-    MoreHorizontal,
+
     ListTodo,
-    History,
-    Zap,
-    LayoutGrid,
+
     AlertCircle,
-    ChevronRight,
-    Filter
+
 } from 'lucide-react';
 
 // Import the new component
@@ -19,13 +12,10 @@ import CareTaskView from './CareTaskView';
 import IncidentView from './IncidentView';
 
 const TaskIncidentView = ({residentId}: {residentId: string | null}) => {
-    const [filterType, setFilterType] = useState('ALL');
+    //const [filterType, setFilterType] = useState('ALL');
     const [activeSidebarTab, setActiveSidebarTab] = useState('tasks'); // Default to tasks
 
-    const logs = [
-        { id: 1, type: 'INCIDENT', level: 'CRITICAL', time: '09:00 AM', title: 'Unwitnessed fall in bathroom', staff: 'S. Jenkins', status: 'In Review' },
-        { id: 4, type: 'INCIDENT', level: 'MINOR', time: 'Yesterday', title: 'Refusal of physical therapy', staff: 'J. Doe', status: 'Closed' },
-    ];
+   
 
     const sidebarItems = [
         { id: 'tasks', label: 'Care Tasks', icon: <ListTodo className="w-4 h-4" />, count: 12 },

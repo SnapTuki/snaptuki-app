@@ -42,7 +42,7 @@ export function Sidebar() {
     navigate('/login', { replace: true });
   };
    // 2. Execute the GQL Query
-  const { data, loading, error } = useQuery(GET_STAFF_NAME, {
+  const { data} = useQuery(GET_STAFF_NAME, {
       variables: { id: user?.userId || '' },
       skip: !user?.userId, // Prevent fetching if user isn't loaded yet
       fetchPolicy: 'cache-and-network',

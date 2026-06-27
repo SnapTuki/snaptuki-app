@@ -51,7 +51,7 @@ export const COMPLETE_TASK_MUTATION: TypedDocumentNode<Mutation> = gql`
 `;
 
 export const CANCEL_TASK_MUTATION: TypedDocumentNode<Mutation> = gql`
-  mutation CancelTask($id: String!, $reason: String) {
+  mutation CancelResidentTask($id: String!, $reason: String) {
     cancelTask(id: $id, reason: $reason) {
       id
       status

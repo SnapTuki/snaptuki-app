@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
-  ShieldAlert, Calendar, X, User, MapPin, 
-  Clock, AlertCircle, FileText, CheckCircle, 
-  Search, ArrowRight, Filter, ChevronDown, 
+  ShieldAlert, Calendar, X, MapPin, 
+   AlertCircle, FileText, CheckCircle, 
   Send, Save
 } from 'lucide-react';
 

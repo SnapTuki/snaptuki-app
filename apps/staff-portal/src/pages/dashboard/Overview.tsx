@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   X,
   Loader2,
   ShieldAlert,
-  Search,
   Filter,
   ArrowLeft,
   Edit2,
@@ -250,7 +249,7 @@ export const Overview = () => {
       {/* =========================================
           LEFT PANE (Inbox List)
           ========================================= */}
-      <div className="w-[320px] lg:w-[380px] border-r border-slate-200 flex flex-col h-full bg-white shrink-0">
+      <div className="w-[320px] lg:w-95 border-r border-slate-200 flex flex-col h-full bg-white shrink-0">
         
         {/* Mail Header */}
         <div className="px-6 py-5 flex items-center justify-between">

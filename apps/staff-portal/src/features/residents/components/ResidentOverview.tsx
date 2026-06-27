@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { User, Save, Plus, Trash2, Users, Shield, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { User, Plus, Trash2, Users, Shield, RotateCcw } from 'lucide-react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Formik, Form, FieldArray, Field } from 'formik';
 // Ensure you have a GET_RESIDENT query defined in your mutations/queries file

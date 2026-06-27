@@ -4,7 +4,6 @@ import * as Yup from 'yup';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import { 
-  UserPlus, 
   Search, 
   MapPin,
   X,

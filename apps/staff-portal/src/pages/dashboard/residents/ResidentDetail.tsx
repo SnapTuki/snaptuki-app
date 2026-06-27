@@ -1,20 +1,18 @@
-import React, { useState, useRef, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client/react';
-import { useFormik } from 'formik';
+import { useQuery} from '@apollo/client/react';
 import {
-  Info, Pill, Phone, History, Save, Trash2, CheckCircle,
-  ChevronLeft, Calendar, Bed, Stethoscope, Activity,
-  Clock, ShieldAlert, Loader2, Edit3, ClipboardList, AlertTriangle
+  Info,
+  ChevronLeft, Activity,
+   Loader2
 } from 'lucide-react';
 import ResidentOverview from '../../../features/residents/components/ResidentOverview';
 import MedicationManager from '../../../features/residents/components/MedicationManager';
 import TaskIncidentView from '../../../features/residents/components/TaskIncidentView';
 import { GET_RESIDENT_BY_ID } from '../../../features/residents/graphql/queries';
-import type { ResidentType } from '../../../lib/graphql/generated';
 
 
-import { AlertCircle, RefreshCw, XCircle } from 'lucide-react';
+import { RefreshCw, XCircle } from 'lucide-react';
 
 export default function ResidentDetail() {
   const { id } = useParams<{ id: string }>();

@@ -8,7 +8,8 @@ import { ErrorLink } from "@apollo/client/link/error";
 import Cookies from "js-cookie";
 
 const httpLink = new HttpLink({
-  uri: "http://localhost:4000/graphql", 
+  
+  uri: import.meta.env.VITE_API_URI, 
 });
 
 // Create an Auth Link to inject the token from react-auth-kit into every GraphQL request
@@ -25,7 +26,7 @@ const authLink = new SetContextLink((prevContext, _) => {
 });
 
 // Log any GraphQL errors, protocol errors, or network error that occurred
- const errorLink = new ErrorLink(({ error, operation }) => {
+ const errorLink = new ErrorLink(({ error, }) => {
    if (CombinedGraphQLErrors.is(error)) {
      error.errors.forEach(({ message, locations, path }) =>
        console.log(

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import{ useState } from 'react';
 import { 
   Pill, Clock, AlertCircle, CheckCircle2, 
-  ChevronRight, History, Info, ClipboardCheck, 
-  Activity, Thermometer, FlaskConical, Search
+  ChevronRight, Info, 
+  Activity, Thermometer, FlaskConical,
 } from 'lucide-react';
 
 interface Medication {

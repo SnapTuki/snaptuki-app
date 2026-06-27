@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  
+  # ==========================================
+  # 1. The PostgreSQL Database
+  # ==========================================
+
+  db:
+    image: postgres:15-alpine
+    container_name: snaptuki-db
+    restart: always
+    env_file:
+      - ./apps/api/.env
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ==========================================
+  # 2. The Node.js API 
+  # ==========================================
+
+  api:
+    image: hamidaebadi/snaptuki-api:latest
+    container_name: snaptuki-api
+    restart: always
+    depends_on:
+      - db
+
+    environment:
+      - NODE_ENV=PRODUCTION
+
+    env_file:
+      - ./apps/api/.env
+
+  # ==========================================
+  # 3. The React/Nginx Frontend 
+  # ==========================================
+
+  web:
+    image: hamidaebadi/snaptuki-web:latest
+    container_name: snaptuki-web
+    restart: always
+    depends_on:
+      - api
+
+    ports:
+      - 80:80
+
+  
+volumes:
+  pgdata:

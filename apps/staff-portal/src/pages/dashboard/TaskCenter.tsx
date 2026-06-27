@@ -2,10 +2,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
-  Plus, Search, Activity, Loader2, Trash2, ClipboardCheck,
-  Clock, Save, Info, MapPin, Briefcase, Users, X, UserPlus,
-  ChevronDown, AlertCircle, ChevronRight, Check, User, CheckCircle2,
-  Calendar, BarChart3, History as HistoryIcon, Filter, RefreshCcw,
+  Plus, Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X,
+  ChevronDown, AlertCircle, Check, User, CheckCircle2,Filter, RefreshCcw,
   MoreHorizontal, ChevronUp, LayoutList, Kanban, CalendarDays,
   ArrowUpRight, Inbox
 } from "lucide-react";
@@ -23,7 +21,7 @@ import {
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
 
 export default function TaskCenter() {
-  const [activeTab, setActiveTab] = useState('Today'); // Today, Performance, History
+  const [activeTab] = useState('Today'); // Today, Performance, History
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
@@ -32,13 +30,13 @@ export default function TaskCenter() {
   const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
 
   // Filtering states for Today Tab
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [statusFilter] = useState('ALL');
+  const [priorityFilter] = useState('ALL');
 
   // History states
-  const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]);
+  //const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const { data, error, refetch } = useQuery(GET_ALL_TASKS, {
+  const { data, refetch } = useQuery(GET_ALL_TASKS, {
     variables: { search: searchTerm },
   });
 
@@ -76,7 +74,7 @@ export default function TaskCenter() {
     <div className="flex flex-col h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
 
       {/* HEADER SECTION (Matching screenshot layout) */}
-      <div className="shrink-0 z-[50] bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
+      <div className="shrink-0 z-50 bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-[22px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
             Tasks
@@ -192,7 +190,7 @@ export default function TaskCenter() {
 
       {/* TASK DETAIL DRAWER (Replaces the split pane to maintain full-width table view) */}
       {selectedTask && (
-        <div className="fixed inset-0 z-[80] flex justify-end">
+        <div className="fixed inset-0 z-80 flex justify-end">
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedTask(null)} />
           <div className="w-full max-w-2xl h-full bg-white shadow-2xl relative flex flex-col animate-in slide-in-from-right-4 duration-300">
              <div className="absolute top-4 right-4 z-10">
@@ -254,11 +252,11 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-100 text-[13px] text-slate-500 font-medium">
-              <th className="py-3 px-6 w-12"><div className="w-4 h-4 border-2 border-slate-200 rounded flex-shrink-0" /></th>
+              <th className="py-3 px-6 w-12"><div className="w-4 h-4 border-2 border-slate-200 rounded shrink-0" /></th>
               <th className="py-3 px-4 font-medium flex items-center gap-2">Task ID <ChevronDown className="w-3 h-3" /></th>
-              <th className="py-3 px-4 font-medium min-w-[200px]">Task Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
-              <th className="py-3 px-4 font-medium min-w-[150px]">Assignee <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
-              <th className="py-3 px-4 font-medium min-w-[150px]">Resident Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium min-w-50">Task Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium min-w-37.5">Assignee <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
+              <th className="py-3 px-4 font-medium min-w-37.5">Resident Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Progress <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Deadline <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Priority <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
@@ -293,12 +291,12 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                   onClick={() => onRowClick(task)}
                 >
                   <td className="py-4 px-6">
-                    <div className="w-4 h-4 border-2 border-slate-200 rounded flex-shrink-0 group-hover:border-slate-300" />
+                    <div className="w-4 h-4 border-2 border-slate-200 rounded shrink-0 group-hover:border-slate-300" />
                   </td>
                   <td className="py-4 px-4 text-sm font-medium text-slate-500">
                     P{task.id?.slice(0,6) || "000000"}
                   </td>
-                  <td className="py-4 px-4 text-sm font-semibold text-slate-700 truncate max-w-[250px]">
+                  <td className="py-4 px-4 text-sm font-semibold text-slate-700 truncate max-w-62">
                     {task.title}
                   </td>
                   <td className="py-4 px-4">
@@ -436,7 +434,7 @@ function TaskDetailView({ task, onUpdate }: any) {
       
       {/* SUCCESS NOTIFICATION OVERLAY */}
       {mutationStatus === 'SUCCESS' && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-emerald-200 flex items-center gap-3 border border-emerald-400">
             <CheckCircle2 className="w-5 h-5" />
             <span className="text-xs font-black uppercase tracking-widest">Clinical Record Synchronized</span>
@@ -502,7 +500,7 @@ function TaskDetailView({ task, onUpdate }: any) {
           });
         }}
       >
-        {({ values, setFieldValue, dirty, isSubmitting }) => (
+        {({ values, setFieldValue, dirty }) => (
           <Form className="flex flex-col h-full">
 
             {/* 1. HEADER SECTION */}
@@ -614,7 +612,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                   as="textarea"
                   name="description"
                   disabled={!canEdit}
-                  className="w-full min-h-[120px] p-8 bg-slate-50 border border-slate-100 rounded-[32px] text-base font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none leading-relaxed disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full min-h-30 p-8 bg-slate-50 border border-slate-100 rounded-4xl text-base font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none leading-relaxed disabled:opacity-70 disabled:cursor-not-allowed"
                   placeholder="No description provided..."
                 />
               </div>
@@ -813,7 +811,7 @@ function CaregiverSelect({ value, onChange, disabled }: any) {
       )}
 
       {open && isFocused && !disabled && (query.length > 0 || caregivers.length > 0) && (
-        <div className="absolute z-[70] mt-2 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 max-h-64 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+        <div className="absolute z-70 mt-2 w-full bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 max-h-64 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
           {caregivers.length === 0 && !loading ? (
             <div className="px-5 py-4 text-xs font-bold text-slate-400 italic">
               No medical personnel found
@@ -864,7 +862,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
 
       <Formik
@@ -931,7 +929,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
               {/* LEFT: CONTENT (Protocol) */}
               <section className="flex-[1.5] overflow-y-auto p-12 border-r border-slate-100 space-y-12">
                 <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 font-black">01. Task Definition</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">01. Task Definition</h3>
                   <Field
                     name="title"
                     placeholder="Task Title (e.g. Wound Care)"
@@ -941,12 +939,12 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                     as="textarea"
                     name="description"
                     placeholder="Clinical notes..."
-                    className="w-full min-h-[100px] text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none border-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                    className="w-full min-h-25 text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none border-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
                   />
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 font-black">02. Execution Checklist</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">02. Execution Checklist</h3>
                   <FieldArray name="steps">
                     {({ push, remove }) => (
                       <div className="space-y-3">
@@ -979,7 +977,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
               {/* RIGHT: LOGISTICS */}
               <section className="flex-1 overflow-y-auto p-12 bg-slate-50/30 space-y-10">
                 <div className="space-y-8">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
 
                   <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resident</label>
@@ -1035,7 +1033,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                 </div>
 
                 <div className="space-y-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
+                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
                   
                   <ClinicalScheduler
                     value={values.dueAt}
@@ -1075,7 +1073,7 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
               <button
                 type="submit"
                 disabled={loading || !values.residentId || !values.title}
-                className="px-12 py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-200 transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center gap-3 active:scale-95"
+                className="px-12 py-5 bg-slate-900 text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-200 transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center gap-3 active:scale-95"
               >
                 {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm Dispatch'}
               </button>

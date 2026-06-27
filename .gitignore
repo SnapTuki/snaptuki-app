@@ -13,7 +13,7 @@ pnpm-debug.log*
 .env.development
 .env.production
 .env.test
-*.env
+*.enn
 
 # Build outputs
 dist/

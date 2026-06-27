@@ -19,7 +19,9 @@ const config: CodegenConfig = {
         withHooks: true, // Generates custom React hooks (e.g., useAuthenticateUserMutation)
         withHOC: false,
         withComponent: false,
-      }
+        enumsAsTypes: false
+      },
+      
     }
   },
   

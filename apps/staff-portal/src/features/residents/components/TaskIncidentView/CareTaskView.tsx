@@ -3,10 +3,10 @@ import { useQuery, useMutation, useLazyQuery } from '@apollo/client/react';
 import { Formik, Form, Field, ErrorMessage, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import {
-  Plus, Calendar, Filter, Search, Loader2,
-  Clock, ChevronRight, ClipboardList, User,
-  AlertCircle, Edit3, Trash2, Check, X,
-  ArrowUpCircle, Inbox, Send, RotateCcw
+  Plus, Search, Loader2,
+  Clock, ChevronRight, 
+ Edit3, Trash2, Check, X,
+   Inbox, Send, RotateCcw
 } from 'lucide-react';
 
 import { GET_TASK_LIST } from '../../graphql/queries';
@@ -535,7 +535,7 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
                       <FieldArray name="steps">
                         {({ push, remove }) => (
                           <div className="space-y-3">
-                            {values.steps.map((step: any, index: number) => (
+                            {values.steps.map((index: number) => (
                               <div key={index} className="flex gap-3 items-start">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-medium mt-1 ${isCancelled ? 'bg-slate-200 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
                                   {index + 1}
