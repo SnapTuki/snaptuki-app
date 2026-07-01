@@ -4,7 +4,7 @@ This document outlines the software architecture of the SnapTuki elder-care plat
 
 ---
 
-## 1. System Context (Level 1)
+## 1. System Context
 
 The System Context provides a high-level, 30,000-foot view of the SnapTuki platform. It defines the core users of the system and how they interact with the primary platform to manage care agency operations.
 
@@ -70,6 +70,51 @@ C4Container
   Rel(api, db, "Reads from and writes to", "Prisma Client / TCP")
 ```
 
+
+## 3. Component View (Level 3: SnapTuki API)
+
+The Component View zooms into the `SnapTuki API` container to illustrate its internal structure. 
+
+Because we follow Domain-Driven Design (DDD), we do not diagram individual classes or files. Instead, we map out our **Bounded Contexts**. This ensures that business logic remains strictly encapsulated within its specific domain.
+
+### Core Components
+* **GraphQL API Layer:** The entry point for all client requests. It houses our schemas and resolvers, delegating actual business logic to the appropriate domain context.
+* **Identity & Access Context:** Manages authentication, authorization (Admin vs. Caregiver permissions), and session security.
+* **Task Management Context:** The core operational engine. Handles the creation, assignment, tracking, and completion of care tasks.
+* **Resident Management Context:** The system of record for resident profiles, overarching care plans, and medical protocols.
+* **Caregiver Management Context:** Manages staff profiles, availability, and shift assignments.
+* **Prisma ORM Layer:** A tightly integrated data access layer utilized by all domains to interact with the PostgreSQL database.
+
+### Component Diagram
+
+```mermaid
+C4Component
+  title Component diagram for SnapTuki API (Bounded Contexts)
+
+  Container_Boundary(api, "SnapTuki API Container") {
+    Component(graphql, "GraphQL API Layer", "TypeScript / Node.js", "Provides the unified schema and routes requests to domain services.")
+    
+    Component(identity, "Identity & Access Context", "DDD Module", "Handles auth, JWTs, and role-based access control.")
+    Component(task, "Task Management Context", "DDD Module", "Manages the lifecycle of daily care tasks.")
+    Component(resident, "Resident Management Context", "DDD Module", "Manages resident profiles and care plans.")
+    Component(caregiver, "Caregiver Management Context", "DDD Module", "Manages staff profiles and shift availability.")
+    
+    Component(prisma, "Prisma ORM Layer", "Prisma Client", "Provides type-safe database access for all bounded contexts.")
+  }
+  
+  ContainerDb(db, "SnapTuki Database", "PostgreSQL", "Stores all relational application data.")
+
+  Rel(graphql, identity, "Delegates auth requests to")
+  Rel(graphql, task, "Delegates task mutations/queries to")
+  Rel(graphql, resident, "Delegates resident mutations/queries to")
+  Rel(graphql, caregiver, "Delegates staff mutations/queries to")
+
+  Rel(identity, prisma, "Reads/Writes")
+  Rel(task, prisma, "Reads/Writes")
+  Rel(resident, prisma, "Reads/Writes")
+  Rel(caregiver, prisma, "Reads/Writes")
+  
+  Rel(prisma, db, "Executes queries via TCP")
 ---
 
 ## 3. Architectural Principles & Patterns
