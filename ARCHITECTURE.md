@@ -69,7 +69,7 @@ C4Container
   
   Rel(api, db, "Reads from and writes to", "Prisma Client / TCP")
 ```
-
+---
 
 ## 3. Component View (Level 3: SnapTuki API)
 
@@ -115,7 +115,9 @@ C4Component
   Rel(caregiver, prisma, "Reads/Writes")
   
   Rel(prisma, db, "Executes queries via TCP")
----
+  ```
+
+  ---
 
 ## 3. Architectural Principles & Patterns
 
