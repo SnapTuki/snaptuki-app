@@ -1,6 +1,6 @@
 // src/domains/residentManagement/domain/entities/Task.ts
 
-// 1. DEFINE ENUMS IN THE DOMAIN (Sever the Prisma dependency!)
+// 1. DEFINE ENUMS IN THE DOMAIN 
 export enum TaskStatus {
   PENDING = "PENDING",
   IN_PROGRESS = "IN_PROGRESS",
