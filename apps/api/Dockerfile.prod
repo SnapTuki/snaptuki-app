@@ -1,36 +1,37 @@
-FROM node:20-alpine AS builder
+# Stage 1: Install dependencies
+FROM node:20-alpine AS deps
 
 WORKDIR /usr/app/api/
-
 COPY package*.json .
-
 # 1. FIX: Path matched to your structure (src/prisma)
 COPY ./src/prisma ./src/prisma/
-
 # Install all dependencies
 RUN npm ci
-
 # Copy the rest of the application source code
 COPY . .
-
 # 2. FIX: Direct Prisma to look inside the src directory
 RUN npx prisma generate --schema=./src/prisma/schema.prisma
 
+
+# ---- Stage 2: Test Runner -----
+FROM deps AS test
+RUN npm run test
+# if success below line will be executed
+RUN echo "UNITE Tests Passed" >> /usr/app/api/test.log
+
+# Stage 3: Build the application
+FROM deps AS builder
 # Build typescript codes into js
-RUN npm run build
+RUN npm run build && npm prune --production
 
-RUN npm prune --production
-
+# Stage 4: Production image, copy all the files and run next
 FROM node:20-alpine AS runner
-
 RUN apk add --no-cache openssl
-
 ENV NODE_ENV=production
 WORKDIR /usr/app/api
-
 USER node
 
-# Copy ONLY the necessary production artifacts from Stage 1
+# Copy ONLY the necessary production artifacts from the builder stage
 COPY --chown=node:node package*.json ./
 COPY --chown=node:node --from=builder /usr/app/api/node_modules ./node_modules
 COPY --chown=node:node --from=builder /usr/app/api/dist ./dist
@@ -40,5 +41,4 @@ COPY --chown=node:node --from=builder /usr/app/api/src/generated ./dist/generate
 
 # Expose application's internal network port
 EXPOSE 4000
-
 CMD [ "node", "dist/index.js" ]

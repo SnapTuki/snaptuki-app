@@ -22,7 +22,7 @@ We will use cross-platform powershell to run build process with one command!
 ### Phase 1: Continuous Integration (The PR Pipeline)
 Ensures no breaking changes, failing use cases, or invalid Prisma schemas make it into the production branch.
 
-**Trigger:** Opening or updating a Pull Request with changes in `apps/api/**`.
+**Trigger:** Opening or updating a Pull Request with changes in codes.
 
 **Workflow Steps:**
 1. **Local Development:** Developer creates branches and works on features .
