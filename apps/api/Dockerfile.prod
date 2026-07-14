@@ -15,7 +15,7 @@ RUN npx prisma generate --schema=./src/prisma/schema.prisma
 
 # ---- Stage 2: Test Runner -----
 FROM deps AS test
-RUN npm run test
+RUN npm run test:unit
 # if success below line will be executed
 RUN echo "UNITE Tests Passed" >> /usr/app/api/test.log
 

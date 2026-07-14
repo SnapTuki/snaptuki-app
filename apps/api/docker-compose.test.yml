@@ -1,0 +1,21 @@
+services:
+  test-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"
+
+
+  integration-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: deps
+    depends_on:
+      - test-db
+    environment:
+      DATABASE_URL: "postgresql://test_user:test_password@test-db:5432/snaptuki_test?schema=public"
+    command: sh -c "npx prisma db push --accept-data-loss && npm run test:integration"

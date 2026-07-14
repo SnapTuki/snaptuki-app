@@ -8,7 +8,8 @@
     "build": "rimraf dist && tsc",
     "compile": "tsc",
     "start": "npm run compile && node ./dist/index.js",
-    "test": "vitest",
+    "test:unit": "vitest run -c vitest.config.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
     "prisma": "prisma"
   },
   "dependencies": {
