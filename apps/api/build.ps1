@@ -54,7 +54,7 @@ else {
 
 Write-Host "`n📦 Building final production Docker image..." -ForegroundColor Yellow
 # Update this registry name to your lowercase GitHub username
-$Registry = "ghcr.io/yourlowercaseusername"
+$Registry = "ghcr.io/snaptuki"
 $ImageName = "$Registry/snaptuki-backend:latest"
 
 docker build --target runner -f Dockerfile.prod -t $ImageName .
