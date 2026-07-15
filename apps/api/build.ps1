@@ -1,94 +1,108 @@
 param(
-    [switch]$Push
+    [switch]$Push,
+    [Switch]$SkipTests
 )
 # build.ps1 - Backend Builder Script for SnapTuki API
 
 # Exit the script immediately if any command fails
 $ErrorActionPreference = "Stop"
 
-Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "🚀 SnapTuki Backend: Starting Unit Tests..." -ForegroundColor Cyan
-Write-Host "=============================================" -ForegroundColor Cyan
+if (-not $SkipTests) {
+    Write-Host "=============================================" -ForegroundColor Cyan
+    Write-Host "🚀 SnapTuki Backend: Starting Unit Tests..." -ForegroundColor Cyan
+    Write-Host "=============================================" -ForegroundColor Cyan
 
-# Step 1: Build the Dockerfile until the 'test' target stage
+    # Step 1: Build the Dockerfile until the 'test' target stage
 
-Write-Host "📦 Building multi-stage Docker image up to 'test' target..." -ForegroundColor Yellow
-docker build --target test -f Dockerfile.prod -t snaptuki-backend-test .
+    Write-Host "📦 Building multi-stage Docker image up to 'test' target..." -ForegroundColor Yellow
+    docker build --target test -f Dockerfile.prod -t snaptuki-backend-test .
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "=============================================" -ForegroundColor Red
-    Write-Host "❌ ERROR: Tests failed or image failed to build!" -ForegroundColor Red
-    Write-Host "=============================================" -ForegroundColor Red
-    # Exit the script with the error code so GitHub Actions also knows it failed
-    exit $LASTEXITCODE
-}
-Write-Host "=============================================" -ForegroundColor Green
-Write-Host "✅ Success: All unit tests passed cleanly!" -ForegroundColor Green
-Write-Host "=============================================" -ForegroundColor Green
-
-
-Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "🚀 SnapTuki Backend: Starting Integration Tests..." -ForegroundColor Cyan
-write-Host "=============================================" -ForegroundColor Cyan
-
-docker compose -f docker-compose.test.yml down -v
-
-# Run the integration suite. 
-# --abort-on-container-exit ensures the DB shuts down as soon as tests finish.
-# --exit-code-from integration-runner passes the test result back to PowerShell.
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from integration-runner
-
-$integrationExitCode = $LASTEXITCODE
-
-#clean up the databae and volumes explicitly after the tests are done
-Write-Host "Cleaning up test containers and volumes..." -ForegroundColor Yellow
-docker compose -f docker-compose.test.yml down -v
-
-if($integrationExitCode -ne 0) {
-    Write-Host "=============================================" -ForegroundColor Red
-    Write-Host "❌ ERROR: Integration tests failed!" -ForegroundColor Red
-    Write-Host "=============================================" -ForegroundColor Red
-    exit $integrationExitCode
-}
-
-Write-Host "=============================================" -ForegroundColor Green
-Write-Host "✅ Success: All integration tests passed cleanly!" -ForegroundColor Green
-Write-Host "=============================================" -ForegroundColor Green
-
-
-# Step 2: Build the final production image
-Write-Host "📦 Building final production Docker image..." -ForegroundColor Yellow
-$Registery = "snaptuki"
-$ImageName = "$Registery/snaptuki-backend:latest"
-
-docker build --target runner -f Dockerfile.prod -t $ImageName .
-
-if($LASTEXITCODE -ne 0) {
-    Write-Host "=============================================" -ForegroundColor Red
-    Write-Host "❌ ERROR: Production image failed to build!" -ForegroundColor Red
-    Write-Host "=============================================" -ForegroundColor Red
-    exit $LASTEXITCODE
-}
-
-if(-not $Push) {
-    Write-Host "✅ Success: Production image built successfully!" -ForegroundColor Green
-    rite-Host "`n✅ Build complete! Image '$ImageName' is available locally." -ForegroundColor Green
-    Write-Host "🛑 Skipping GHCR Push (run with -Push to push to registry)." -ForegroundColor DarkGray
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "=============================================" -ForegroundColor Red
+        Write-Host "❌ ERROR: Tests failed or image failed to build!" -ForegroundColor Red
+        Write-Host "=============================================" -ForegroundColor Red
+        # Exit the script with the error code so GitHub Actions also knows it failed
+        exit $LASTEXITCODE
+    }
     Write-Host "=============================================" -ForegroundColor Green
-    exit 0
+    Write-Host "✅ Success: All unit tests passed cleanly!" -ForegroundColor Green
+    Write-Host "=============================================" -ForegroundColor Green
+
+
+    Write-Host "=============================================" -ForegroundColor Cyan
+    Write-Host "🚀 SnapTuki Backend: Starting Integration Tests..." -ForegroundColor Cyan
+    write-Host "=============================================" -ForegroundColor Cyan
+
+    docker compose -f docker-compose.test.yml down -v
+
+    # Run the integration suite. 
+    # --abort-on-container-exit ensures the DB shuts down as soon as tests finish.
+    # --exit-code-from integration-runner passes the test result back to PowerShell.
+    docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from integration-runner
+
+    $integrationExitCode = $LASTEXITCODE
+
+    #clean up the databae and volumes explicitly after the tests are done
+    Write-Host "Cleaning up test containers and volumes..." -ForegroundColor Yellow
+    docker compose -f docker-compose.test.yml down -v
+
+    if ($integrationExitCode -ne 0) {
+        Write-Host "=============================================" -ForegroundColor Red
+        Write-Host "❌ ERROR: Integration tests failed!" -ForegroundColor Red
+        Write-Host "=============================================" -ForegroundColor Red
+        exit $integrationExitCode
+    }
+
+    Write-Host "=============================================" -ForegroundColor Green
+    Write-Host "✅ Success: All integration tests passed cleanly!" -ForegroundColor Green
+    Write-Host "=============================================" -ForegroundColor Green
+
+}
+else {
+    Write-Host "=============================================" -ForegroundColor Yellow
+    Write-Host "⚠️  SnapTuki Backend: Skipping Tests as per user request." -ForegroundColor Yellow
+    Write-Host "=============================================" -ForegroundColor Yellow
+
+
+
+    # Step 2: Build the final production image
+    Write-Host "📦 Building final production Docker image..." -ForegroundColor Yellow
+    $Registery = "snaptuki"
+    $ImageName = "$Registery/snaptuki-backend:latest"
+
+    docker build --target runner -f Dockerfile.prod -t $ImageName .
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "=============================================" -ForegroundColor Red
+        Write-Host "❌ ERROR: Production image failed to build!" -ForegroundColor Red
+        Write-Host "=============================================" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+
+    if (-not $Push) {
+        Write-Host "✅ Success: Production image built successfully!" -ForegroundColor Green
+        rite-Host "`n✅ Build complete! Image '$ImageName' is available locally." -ForegroundColor Green
+        Write-Host "🛑 Skipping GHCR Push (run with -Push to push to registry)." -ForegroundColor DarkGray
+        Write-Host "=============================================" -ForegroundColor Green
+        exit 0
+    }
+
+    # Step 3: Push the image to GitHub Container Registry (GHCR)
+    Write-Host "📤 Pushing production image to GitHub Container Registry (GHCR)..." -ForegroundColor Yellow
+    docker push $ImageName
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "=============================================" -ForegroundColor Red
+        Write-Host "❌ ERROR: Failed to push production image to GHCR!" -ForegroundColor Red
+        Write-Host "=============================================" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+
+    Write-Host "=============================================" -ForegroundColor Green
+    Write-Host "`n🎉 SUCCESS: Image successfully pushed to GHCR!" -ForegroundColor Green
+    Write-Host "✅ Build and push complete! Image '$ImageName' is now available in GHCR." -ForegroundColor Green
+    Write-Host "=============================================" -ForegroundColor Green
+
+
 }
 
-# Step 3: Push the image to GitHub Container Registry (GHCR)
-Write-Host "📤 Pushing production image to GitHub Container Registry (GHCR)..." -ForegroundColor Yellow
-docker push $ImageName
-if($LASTEXITCODE -ne 0) {
-    Write-Host "=============================================" -ForegroundColor Red
-    Write-Host "❌ ERROR: Failed to push production image to GHCR!" -ForegroundColor Red
-    Write-Host "=============================================" -ForegroundColor Red
-    exit $LASTEXITCODE
-}
 
-Write-Host "=============================================" -ForegroundColor Green
-Write-Host "`n🎉 SUCCESS: Image successfully pushed to GHCR!" -ForegroundColor Green
-Write-Host "✅ Build and push complete! Image '$ImageName' is now available in GHCR." -ForegroundColor Green
-Write-Host "=============================================" -ForegroundColor Green

@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies
-FROM node:24.20.0-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /usr/app/api/
 COPY package*.json .
@@ -24,7 +24,7 @@ FROM deps AS builder
 RUN npm run build && npm prune --production
 
 # Stage 4: Production image, copy all the files and run next
-FROM node:24.20.0-alpine AS runner
+FROM node:24-alpine AS runner
 
 ENV NODE_ENV=production
 WORKDIR /usr/app/api
