@@ -11,8 +11,8 @@ COPY ./src/prisma ./src/prisma/
 RUN npm ci
 # Copy the rest of the application source code
 COPY . .
-# Direct Prisma to look inside the src directory
-RUN npx prisma generate --schema=./src/prisma/schema.prisma
+# Provide a dummy URL just to satisfy Prisma's parser during generation
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate --schema=./src/prisma/schema.prisma
 
 # ---- Stage 2: Test Runner -----
 FROM deps AS test
