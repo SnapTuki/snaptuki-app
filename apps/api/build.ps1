@@ -1,3 +1,6 @@
+param(
+    [switch]$Push
+)
 # build.ps1 - Backend Builder Script for SnapTuki API
 
 # Exit the script immediately if any command fails
@@ -50,4 +53,42 @@ if($integrationExitCode -ne 0) {
 
 Write-Host "=============================================" -ForegroundColor Green
 Write-Host "✅ Success: All integration tests passed cleanly!" -ForegroundColor Green
+Write-Host "=============================================" -ForegroundColor Green
+
+
+# Step 2: Build the final production image
+Write-Host "📦 Building final production Docker image..." -ForegroundColor Yellow
+$Registery = "snaptuki"
+$ImageName = "$Registery/snaptuki-backend:latest"
+
+docker build --target runner -f Dockerfile.prod -t $ImageName .
+
+if($LASTEXITCODE -ne 0) {
+    Write-Host "=============================================" -ForegroundColor Red
+    Write-Host "❌ ERROR: Production image failed to build!" -ForegroundColor Red
+    Write-Host "=============================================" -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+if(-not $Push) {
+    Write-Host "✅ Success: Production image built successfully!" -ForegroundColor Green
+    rite-Host "`n✅ Build complete! Image '$ImageName' is available locally." -ForegroundColor Green
+    Write-Host "🛑 Skipping GHCR Push (run with -Push to push to registry)." -ForegroundColor DarkGray
+    Write-Host "=============================================" -ForegroundColor Green
+    exit 0
+}
+
+# Step 3: Push the image to GitHub Container Registry (GHCR)
+Write-Host "📤 Pushing production image to GitHub Container Registry (GHCR)..." -ForegroundColor Yellow
+docker push $ImageName
+if($LASTEXITCODE -ne 0) {
+    Write-Host "=============================================" -ForegroundColor Red
+    Write-Host "❌ ERROR: Failed to push production image to GHCR!" -ForegroundColor Red
+    Write-Host "=============================================" -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+Write-Host "=============================================" -ForegroundColor Green
+Write-Host "`n🎉 SUCCESS: Image successfully pushed to GHCR!" -ForegroundColor Green
+Write-Host "✅ Build and push complete! Image '$ImageName' is now available in GHCR." -ForegroundColor Green
 Write-Host "=============================================" -ForegroundColor Green

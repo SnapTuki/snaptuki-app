@@ -1,0 +1,31 @@
+name: Backend CD- Build and Push
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+    
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Portable Build Script
+        shell: pwsh
+        run: ./build.ps1 -Push

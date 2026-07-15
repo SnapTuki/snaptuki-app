@@ -1,0 +1,21 @@
+name: Backend CI 
+on:
+ pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+jobs:
+  test:
+    name: Run Unit & Integration Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Portable Build & Test Script
+        shell: pwsh
+        run: ./build.ps1
