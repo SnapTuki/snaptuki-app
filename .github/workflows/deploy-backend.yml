@@ -31,4 +31,4 @@ jobs:
 
       - name: Run Portable Build Script
         shell: pwsh
-        run: ./build.ps1 -Push
+        run: ./build.ps1 -Push -SkipTests

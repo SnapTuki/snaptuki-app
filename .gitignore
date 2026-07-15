@@ -58,8 +58,7 @@ __pycache__/
 *.bak
 *.tmp
 
-# Package lock files (optional — if you prefer consistent deps, remove this)
-package-lock.json
+
 yarn.lock
 pnpm-lock.yaml
 
