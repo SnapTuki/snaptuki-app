@@ -1,6 +1,8 @@
 # Stage 1: Install dependencies
 FROM node:24-alpine AS deps
 
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /usr/app/api/
 COPY package*.json .
 # Path matched to your structure (src/prisma)
@@ -25,6 +27,8 @@ RUN npm run build && npm prune --production
 
 # Stage 4: Production image, copy all the files and run next
 FROM node:24-alpine AS runner
+
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 WORKDIR /usr/app/api
