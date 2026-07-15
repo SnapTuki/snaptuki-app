@@ -3,15 +3,14 @@ FROM node:20-slim AS deps
 
 WORKDIR /usr/app/api/
 COPY package*.json .
-# 1. FIX: Path matched to your structure (src/prisma)
+# Path matched to your structure (src/prisma)
 COPY ./src/prisma ./src/prisma/
 # Install all dependencies
 RUN npm ci
 # Copy the rest of the application source code
 COPY . .
-# 2. FIX: Direct Prisma to look inside the src directory
+# Direct Prisma to look inside the src directory
 RUN npx prisma generate --schema=./src/prisma/schema.prisma
-
 
 # ---- Stage 2: Test Runner -----
 FROM deps AS test
@@ -26,10 +25,15 @@ RUN npm run build && npm prune --production
 
 # Stage 4: Production image, copy all the files and run next
 FROM node:20-slim AS runner
-RUN apk add --no-cache openssl
+
+# FIX 1: Use apt-get for Debian-based slim image, and clean up afterwards to keep image small
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 WORKDIR /usr/app/api
-USER node2
+
+# FIX 2: Use the correct default user 'node'
+USER node
 
 # Copy ONLY the necessary production artifacts from the builder stage
 COPY --chown=node:node package*.json ./
