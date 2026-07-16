@@ -1,0 +1,20 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/staff-portal/**'
+
+jobs:
+  test-frontend:
+    name: Run Frontend Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Portable Frontend Script
+        shell: pwsh
+        run: ./build.ps1 -SkipTests

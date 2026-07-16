@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS deps
 
 WORKDIR /usr/app/staff-portal/
 
@@ -8,7 +8,15 @@ RUN npm ci
 # Copy the rest of your frontend code
 COPY . .
 
+FROM deps AS test
+#RUN npx tsc --noEmit
+# RUN npm run lint (Uncomment if you have ESLint configured)
+# RUN npm run test:unit (Uncomment if you have Vitest/Jest configured)
+
+
+FROM deps AS builder
 RUN npm run build
+
 
 FROM nginx:alpine
 

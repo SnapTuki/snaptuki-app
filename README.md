@@ -80,11 +80,11 @@ Open `apps/api/.env` and ensure the database credentials match your local setup.
 
 ## Step 3: Start the Infrastructure
 
-Return to the root directory of the project and start the Docker environment:
+Return to the root directory of the project and start the Development environment:
 
 ```bash
 cd ../../  # Return to the snaptuki/ root folder
-docker compose up
+npm run dev
 ```
 
 # 4. 🗄️ Database Initialization

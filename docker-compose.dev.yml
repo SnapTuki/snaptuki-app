@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      # If using your multi-stage Dockerfile, stop at the 'deps' stage for development
+      # target: deps 
+    ports:
+      - "4000:4000"
+    volumes:
+      - type: bind
+        source: ./apps/api/
+        target: /app/api/
+      # CRITICAL: Protects the container's native Linux node_modules
+      - /app/api/node_modules
+    # Ensure it runs the hot-reloading dev script, not the production build
+    command: npm run dev
+    depends_on:
+      postgres:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./apps/api/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  staff-portal:
+    build:
+      context: ./apps/staff-portal
+    ports:
+      - "5173:5173"
+    volumes:
+      - type: bind
+        source: ./apps/staff-portal
+        target: /app/staff-portal
+      # CRITICAL: Protects the frontend's native Linux node_modules
+      - /app/staff-portal/node_modules
+    environment:
+      # Use the Docker internal network name 'api' instead of localhost, 
+      # but only if this is fetched server-side. (If React fetches this directly 
+      # from the browser, localhost:4000 is still correct!)
+      - API_URL=http://localhost:4000/graphql
+    # Ensure Vite runs in dev mode
+    command: npm run dev
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
