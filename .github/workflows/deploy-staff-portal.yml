@@ -2,31 +2,34 @@ name: Deploy Staff Portal
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
     paths:
       - 'apps/staff-portal/**'
 
 
 jobs:
-    build-push-staff-portal:
-        name: Build and Push Staff Portal Docker Image
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
+  build-push-staff-portal:
+    name: Build and Push Staff Portal Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-        defaults:
-            run:
-                working-directory: ./apps/staff-portal
-        steps:
-            - uses: actions/checkout@v4
-            - name: Log in to GitHub Container Registry
-              uses: docker/login-action@v2
-              with:
-               registry: ghcr.io
-               username: ${{ github.actor }}
-               password: ${{ secrets.GITHUB_TOKEN }}
+    defaults:
+      run:
+        working-directory: ./apps/staff-portal
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Run Portable Frontend Script
-              shell: pwsh
-              run: ./build.ps1 -SkipTests -Push
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Portable Frontend Script
+        shell: pwsh
+        run: ./build.ps1 -SkipTests -Push
