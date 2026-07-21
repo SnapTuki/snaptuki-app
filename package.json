@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "docker compose -f docker-compose.dev.yml up --build",
     "down": "docker compose -f docker-compose.dev.yml down",
-    "clean": "docker compose -f docker-compose.dev.yml down -v --rmi local && docker system prune -f"
+    "clean": "docker compose -f docker-compose.dev.yml down -v --rmi local && docker system prune -f",
+    "db:setup": "docker compose -f docker-compose.dev.yml exec api npx prisma db push && docker compose -f docker-compose.dev.yml exec api npx prisma db seed"
   }
 }
