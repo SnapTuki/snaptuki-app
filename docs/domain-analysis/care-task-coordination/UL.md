@@ -370,7 +370,6 @@ A CareTask has one current status at a time.
 ### Suggested statuses
 
 ```text
-Draft
 Planned
 Assigned
 Completed
@@ -385,39 +384,17 @@ Cancelled
 
 # 6. CareTask Status Definitions
 
-## Draft
-
-The CareTask has been created but is not yet part of Today’s CareTaskList.
-
-### Example
-
-```text
-The CareCoordinator saves a CareTask as Draft before publishing it.
-```
-
 ---
 
 ## Planned
 
 The CareTask is part of Today’s CareTaskList but has not yet been assigned to a Caregiver.
 
-### Example
-
-```text
-The CareTask is Planned for today but still unassigned.
-```
-
 ---
 
 ## Assigned
 
-The CareTask has been assigned to a Caregiver.
-
-### Example
-
-```text
-The CareTask is Assigned to Caregiver Maria.
-```
+A planned / new care task CareTask has been assigned to a Caregiver.
 
 ---
 
@@ -436,13 +413,6 @@ Completion must record:
 ### Important distinction
 
 If a CareTask is completed after its DueTime, it can still have the status `Completed`. The system can calculate that it was completed late by comparing `completedAt` with `dueTime`.
-
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as Completed.
-```
-
 ---
 
 ## UnableToComplete
@@ -465,12 +435,6 @@ This status should be used when the CareTask cannot be completed because of a cl
 
 UnableToComplete should require a reason.
 
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as UnableToComplete because the resident refused.
-```
-
 ---
 
 ## NeedAssistance
@@ -492,19 +456,11 @@ This does not necessarily mean the CareTask has failed. It means the Caregiver c
 
 NeedAssistance should be visible immediately to the CareCoordinator.
 
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as NeedAssistance because two staff members are required.
-```
-
 ---
 
 ## Overdue
 
 The CareTask has passed its DueTime and has not been completed, cancelled, or marked as missed.
-
-### Meaning
 
 Overdue means the task is late but may still be completed or handled during the current shift.
 
@@ -522,19 +478,6 @@ AND status is not Missed
 ### Overdue duration
 
 The dashboard should show how long the CareTask has been overdue.
-
-Examples:
-
-```text
-Overdue by 12 minutes
-Overdue by 1 hour 20 minutes
-```
-
-### Example sentence
-
-```text
-The CareTask becomes Overdue because the DueTime has passed.
-```
 
 ---
 
@@ -561,12 +504,6 @@ AND CareTask is not Cancelled
 
 Missed CareTasks should be reviewed by a CareCoordinator.
 
-### Example sentence
-
-```text
-The CareTask becomes Missed because it remained incomplete when the Caregiver’s shift ended.
-```
-
 ---
 
 ## Cancelled
@@ -585,12 +522,6 @@ Cancellation requires a reason.
 - Created by mistake.
 - Replaced by another CareTask.
 - Care plan changed.
-
-### Example sentence
-
-```text
-The CareCoordinator cancels the CareTask because it was created by mistake.
-```
 
 ---
 
