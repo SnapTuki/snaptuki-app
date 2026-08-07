@@ -7,8 +7,7 @@
 3. A CareTask must have a due time.
 4. A CareTask must have a priority.
 5. A CareTask must be linked to a Resident and lcoation (room).
-6. A CareTask might have a list of instruction lines.
-7. A CareTask must be created in advanced.
+
 
 ## Due time rules
 
@@ -19,9 +18,9 @@
 ## Today's CareTaskList Rules
 
 1. A CareCoordinator can add a CareTask to Today's CareTaskList.
-2. A CareTask in Today's CareTaskList can be assigned to a Caregiver.
-3. A CareTask can be selected by a caregiver
-4. Today's CareTaskList should be priotrized by status and duetime.
+2. Today's CareTaskList show all CareTasks for today and can be filtered out by different criteria.
+3. A CareTask in Today's CareTaskList can be assigned to a Caregiver.
+4. Today's CareTaskList should be priotrized by priority and duetime.
 
 ## Assignment Rules
 
