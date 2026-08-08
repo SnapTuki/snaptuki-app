@@ -10,6 +10,11 @@ The CareTask is part of Today's CareTaskList but has not yet been assigned to a 
 
 The CareTask has been assigned to a Caregiver.
 
+### InProgress
+
+The caregiver has started the CareTask. -> They have clicked the "Start" button from the task details.
+
+
 ### Completed
 
 The assigned Caregiver completed the CareTask.

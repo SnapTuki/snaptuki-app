@@ -1,6 +1,6 @@
 # Ubiquitous Language: Care Task Coordination
 
-## 1. Purpose
+# 1. Purpose
 
 This document defines the Ubiquitous Language for the **Care Task Coordination** bounded context in Snaptuki.
 
@@ -21,7 +21,7 @@ The goal is to avoid generic task-management language and instead use terminolog
 
 ---
 
-## 2. Bounded Context Name
+# 2. Bounded Context Name
 
 ```text
 Care Task Coordination
@@ -42,15 +42,15 @@ The Care Task Coordination context answers the following business questions:
 
 ---
 
-## 4. Primary Actors
+# 4. Primary Actors
 
-## CareCoordinator
+### CareCoordinator
 
 A staff member responsible for planning, creating, assigning, monitoring, cancelling, and reviewing CareTasks.
 
 A CareCoordinator may be a nurse in charge, senior caregiver, team leader, or another responsible staff member depending on the nursing home’s operational structure.
 
-### Responsibilities
+#### Responsibilities
 
 - Create CareTasks.
 - Add CareTasks to Today’s CareTaskList.
@@ -62,21 +62,17 @@ A CareCoordinator may be a nurse in charge, senior caregiver, team leader, or an
 - Reactivate Cancelled CareTasks when appropriate.
 - Respond to NeedAssistance cases.
 
-### Example sentence
 
-```text
-The CareCoordinator assigns the morning hygiene CareTask to Maria.
-```
 
 ---
 
-## Caregiver
+### Caregiver
 
 A staff member responsible for completing assigned CareTasks.
 
 A Caregiver receives CareTasks in My Tasks and updates the task status based on what happened during care work.
 
-### Responsibilities
+#### Responsibilities
 
 - View assigned CareTasks.
 - Open CareTask details.
@@ -85,41 +81,32 @@ A Caregiver receives CareTasks in My Tasks and updates the task status based on 
 - Mark a CareTask as NeedAssistance when help is required.
 - Add notes or reasons when required.
 
-### Example sentence
-
-```text
-The Caregiver completes the hydration check CareTask.
-```
 
 ---
 
-## Resident
+### Resident
 
 A person living in the nursing home who receives care.
 
 In this bounded context, Resident is usually referenced only as the person connected to a CareTask. The full Resident profile belongs to the Resident Profile Management supporting subdomain.
 
-### Important distinction
+#### Important distinction
 
 The Care Task Coordination context should not own the full medical or personal record of a Resident. It should only use the resident information required for task coordination.
 
-### Example sentence
 
-```text
-The CareTask is linked to Resident Anna Virtanen in room 204.
-```
 
 ---
 
-## 5. Main Domain Concepts
+# 5. Main Domain Concepts
 
-## CareTask
+### CareTask
 
 A care-related responsibility that should be completed by a Caregiver or care team.
 
 A CareTask is not a generic task. It is a care operation item connected to nursing home work. It may be linked to a Resident, Room, Location, Caregiver, due time, priority, and status.
 
-### Examples
+#### Examples
 
 - Morning hygiene support
 - Meal assistance
@@ -130,7 +117,7 @@ A CareTask is not a generic task. It is a care operation item connected to nursi
 - Medication-related reminder
 - Evening routine support
 
-### Required information for a published CareTask
+#### Required information for a published CareTask
 
 - title
 - due time
@@ -138,7 +125,7 @@ A CareTask is not a generic task. It is a care operation item connected to nursi
 - creator
 - status
 
-### Optional information
+#### Optional information
 
 - description
 - resident reference
@@ -148,19 +135,14 @@ A CareTask is not a generic task. It is a care operation item connected to nursi
 - note
 - delay/unable reason
 
-### Example sentence
-
-```text
-The CareCoordinator creates a CareTask for Anna’s morning hygiene support.
-```
 
 ---
 
-## CareTask Title
+### CareTask Title
 
 A short name describing the care responsibility.
 
-### Examples
+#### Examples
 
 ```text
 Morning hygiene support
@@ -170,29 +152,29 @@ Safety round
 Mobility support
 ```
 
-### Rule
+#### Rule
 
 The title must be clear enough for a Caregiver to understand the purpose of the CareTask quickly.
 
 ---
 
-## CareTask Description
+### CareTask Description
 
 Additional details explaining what should be done.
 
-### Example
+#### Example
 
 ```text
 Assist the resident with morning hygiene and ensure the call bell is reachable before leaving the room.
 ```
 
-### Rule
+#### Rule
 
 The description should be practical and short. It should not contain unnecessary sensitive medical information.
 
 ---
 
-## CareTask Details
+### CareTask Details
 
 The information that describes a CareTask.
 
@@ -208,55 +190,39 @@ CareTask Details may include:
 - assignment
 - notes
 
-### Example sentence
-
-```text
-The CareCoordinator updates the CareTask details before the due time.
-```
-
 ---
 
-## Today’s CareTaskList
+### Today’s CareTaskList
 
 The list of CareTasks planned for the current day or current operational period.
 
 A CareTask may exist as a draft before it is added to Today’s CareTaskList.
 
-### Purpose
+#### Purpose
 
 Today’s CareTaskList helps CareCoordinators plan and monitor the day’s care work.
 
-### Example sentence
-
-```text
-The CareCoordinator adds the hydration check to Today’s CareTaskList.
-```
 
 ---
 
-## My Tasks
+### My Tasks
 
 The Caregiver’s personal view of assigned CareTasks.
 
-### Purpose
+#### Purpose
 
 My Tasks helps a Caregiver see what they are responsible for during their shift.
 
-### Example sentence
-
-```text
-The Caregiver opens My Tasks and sees three assigned CareTasks.
-```
 
 ---
 
-## CareAssignment
+### CareAssignment
 
 The assignment of a CareTask to a specific Caregiver.
 
 A CareTask may be unassigned when it is still planned, but it should be assigned before a Caregiver is expected to complete it.
 
-### Example sentence
+#### Example sentence
 
 ```text
 The CareAssignment connects the CareTask to Caregiver Maria.
@@ -264,67 +230,50 @@ The CareAssignment connects the CareTask to Caregiver Maria.
 
 ---
 
-## AssignedCaregiver
+### AssignedCaregiver
 
 The Caregiver currently responsible for completing a CareTask.
 
-### Rule
+#### Rule
 
 Only the assigned Caregiver should normally complete the CareTask unless the nursing home allows another authorized staff member to complete it.
 
-### Example sentence
-
-```text
-The AssignedCaregiver marks the CareTask as Completed.
-```
-
 ---
 
-## Creator
+### Creator
 
 The CareCoordinator who originally created the CareTask.
 
-### Rule
+#### Rule
 
 The Creator may have special permissions, such as cancelling or editing the CareTask, depending on business rules.
 
-### Example sentence
-
-```text
-Only the Creator or an authorized CareCoordinator can cancel the CareTask.
-```
 
 ---
 
-## DueTime
+### DueTime
 
 The time by which a CareTask should be completed.
 
-### Example
+#### Example
 
 ```text
 2026-07-25 09:00
 ```
 
-### Rule
+#### Rule
 
 A published CareTask must have a DueTime.
 
-### Example sentence
-
-```text
-The CareTask has a DueTime of 09:00.
-```
-
 ---
 
-## Deadline
+### Deadline
 
 A business-friendly word for DueTime.
 
 In this bounded context, **DueTime** is preferred in the domain model, while **deadline** may be used in user interface text.
 
-### Example
+#### Example
 
 ```text
 UI label: Deadline
@@ -333,11 +282,11 @@ Domain term: DueTime
 
 ---
 
-## TaskPriority
+### TaskPriority
 
 The importance or urgency level of a CareTask.
 
-### Suggested values
+#### Suggested values
 
 ```text
 Low
@@ -346,33 +295,28 @@ High
 Critical
 ```
 
-### Meaning
+#### Meaning
 
 - `Low`: Should be done, but not urgent.
 - `Normal`: Standard care task.
 - `High`: Important and should be prioritized.
 - `Critical`: Requires urgent attention.
 
-### Example sentence
-
-```text
-The CareCoordinator sets the CareTask priority to High.
-```
 
 ---
 
-## CareTaskStatus
+### CareTaskStatus
 
 The current state of a CareTask.
 
 A CareTask has one current status at a time.
 
-### Suggested statuses
+#### Suggested statuses
 
 ```text
-Draft
 Planned
 Assigned
+InProgress
 Completed
 UnableToComplete
 NeedAssistance
@@ -383,216 +327,6 @@ Cancelled
 
 ---
 
-# 6. CareTask Status Definitions
-
-## Draft
-
-The CareTask has been created but is not yet part of Today’s CareTaskList.
-
-### Example
-
-```text
-The CareCoordinator saves a CareTask as Draft before publishing it.
-```
-
----
-
-## Planned
-
-The CareTask is part of Today’s CareTaskList but has not yet been assigned to a Caregiver.
-
-### Example
-
-```text
-The CareTask is Planned for today but still unassigned.
-```
-
----
-
-## Assigned
-
-The CareTask has been assigned to a Caregiver.
-
-### Example
-
-```text
-The CareTask is Assigned to Caregiver Maria.
-```
-
----
-
-## Completed
-
-The CareTask has been completed by a Caregiver.
-
-### Rule
-
-Completion must record:
-
-- who completed the CareTask
-- when it was completed
-- optional completion note
-
-### Important distinction
-
-If a CareTask is completed after its DueTime, it can still have the status `Completed`. The system can calculate that it was completed late by comparing `completedAt` with `dueTime`.
-
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as Completed.
-```
-
----
-
-## UnableToComplete
-
-The Caregiver could not complete the CareTask.
-
-This status should be used when the CareTask cannot be completed because of a clear reason.
-
-### Example reasons
-
-- Resident refused.
-- Resident was sleeping.
-- Equipment was missing.
-- Caregiver needed nurse support.
-- Caregiver could not access the room.
-- Not enough time.
-- Other.
-
-### Rule
-
-UnableToComplete should require a reason.
-
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as UnableToComplete because the resident refused.
-```
-
----
-
-## NeedAssistance
-
-The Caregiver needs help to complete the CareTask.
-
-This does not necessarily mean the CareTask has failed. It means the Caregiver cannot safely or properly continue alone.
-
-### Example reasons
-
-- Need another Caregiver.
-- Need nurse support.
-- Resident is aggressive or distressed.
-- Equipment is needed.
-- Care task requires two people.
-- Unclear instruction.
-
-### Rule
-
-NeedAssistance should be visible immediately to the CareCoordinator.
-
-### Example sentence
-
-```text
-The Caregiver marks the CareTask as NeedAssistance because two staff members are required.
-```
-
----
-
-## Overdue
-
-The CareTask has passed its DueTime and has not been completed, cancelled, or marked as missed.
-
-### Meaning
-
-Overdue means the task is late but may still be completed or handled during the current shift.
-
-### Rule
-
-The system marks a CareTask as Overdue when:
-
-```text
-current time > DueTime
-AND status is not Completed
-AND status is not Cancelled
-AND status is not Missed
-```
-
-### Overdue duration
-
-The dashboard should show how long the CareTask has been overdue.
-
-Examples:
-
-```text
-Overdue by 12 minutes
-Overdue by 1 hour 20 minutes
-```
-
-### Example sentence
-
-```text
-The CareTask becomes Overdue because the DueTime has passed.
-```
-
----
-
-## Missed
-
-The CareTask was not completed before the assigned Caregiver’s working shift ended.
-
-### Meaning
-
-Missed is stronger than Overdue. It means the task was not completed during the responsible working shift.
-
-### Rule
-
-The system marks a CareTask as Missed when:
-
-```text
-CareTask is incomplete
-AND assigned Caregiver’s shift has ended
-AND CareTask is not Completed
-AND CareTask is not Cancelled
-```
-
-### Business meaning
-
-Missed CareTasks should be reviewed by a CareCoordinator.
-
-### Example sentence
-
-```text
-The CareTask becomes Missed because it remained incomplete when the Caregiver’s shift ended.
-```
-
----
-
-## Cancelled
-
-The CareTask was cancelled by the Creator or an authorized CareCoordinator.
-
-### Rule
-
-Cancellation requires a reason.
-
-### Example cancellation reasons
-
-- Task no longer needed.
-- Resident unavailable.
-- Duplicate CareTask.
-- Created by mistake.
-- Replaced by another CareTask.
-- Care plan changed.
-
-### Example sentence
-
-```text
-The CareCoordinator cancels the CareTask because it was created by mistake.
-```
-
----
 
 # 7. Actions / Commands
 
@@ -906,27 +640,6 @@ A Cancelled CareTask was reactivated by an authorized CareCoordinator.
 
 # 9. Reasons
 
-## DelayReason
-
-A reason explaining why a CareTask was delayed or not completed on time.
-
-For MVP, DelayReason may be used when a CareTask becomes UnableToComplete or when a late update happens.
-
-### Suggested values
-
-```text
-ResidentSleeping
-ResidentRefused
-NeedNurseSupport
-NeedAnotherCaregiver
-EquipmentMissing
-NotEnoughTime
-ResidentUnavailable
-InstructionUnclear
-Other
-```
-
----
 
 ## CancellationReason
 
@@ -990,12 +703,6 @@ The time when the CareTask was created.
 
 ---
 
-## AddedToTodayListAt
-
-The time when the CareTask was added to Today’s CareTaskList.
-
----
-
 ## AssignedAt
 
 The time when the CareTask was assigned to a Caregiver.
@@ -1020,12 +727,6 @@ The time when the CareTask was cancelled.
 
 ---
 
-## BecameOverdueAt
-
-The time when the CareTask became Overdue.
-
----
-
 ## MarkedMissedAt
 
 The time when the CareTask became Missed.
@@ -1035,8 +736,6 @@ The time when the CareTask became Missed.
 ## OverdueDuration
 
 The amount of time between DueTime and the current time, if the CareTask is Overdue.
-
-### Example
 
 ```text
 OverdueDuration = currentTime - dueTime
@@ -1061,6 +760,7 @@ The view used by CareCoordinators to monitor CareTask progress.
 - Overdue CareTasks
 - Missed CareTasks
 - Cancelled CareTasks
+- InProgress CareTasks
 
 ---
 
@@ -1099,161 +799,9 @@ A filtered list of CareTasks where Caregivers requested assistance.
 
 ---
 
-# 12. Business Rules
 
-## Creation Rules
 
-1. Only a CareCoordinator can create a CareTask.
-2. A CareTask must have a title.
-3. A published CareTask must have a DueTime.
-4. A published CareTask must have a TaskPriority.
-5. A CareTask may be linked to a Resident, Room, or Location.
-
----
-
-## Planning Rules
-
-1. A CareTask can be saved as Draft.
-2. A CareTask becomes Planned when it is added to Today’s CareTaskList.
-3. A Planned CareTask may be unassigned.
-4. A Planned CareTask should be assigned before it is expected to be completed.
-
----
-
-## Assignment Rules
-
-1. A CareTask can be assigned to a Caregiver.
-2. A CareTask should not be assigned to an inactive Caregiver.
-3. A CareTask should not be assigned to a Caregiver outside the allowed Facility or Unit.
-4. A Completed, Missed, or Cancelled CareTask cannot be assigned again without special reactivation or follow-up logic.
-5. Reassignment should be recorded in the audit trail.
-
----
-
-## Completion Rules
-
-1. A Caregiver can complete an assigned CareTask.
-2. Completion records who completed the CareTask and when.
-3. A Cancelled CareTask cannot be completed.
-4. A Missed CareTask cannot be completed unless it is reactivated or replaced by a follow-up CareTask.
-5. If a CareTask is completed after DueTime, it is considered completed late.
-
----
-
-## UnableToComplete Rules
-
-1. A Caregiver can mark an assigned CareTask as UnableToComplete.
-2. UnableToComplete requires a reason.
-3. UnableToComplete CareTasks should be visible to the CareCoordinator.
-4. A CareCoordinator should review UnableToComplete CareTasks.
-
----
-
-## NeedAssistance Rules
-
-1. A Caregiver can request assistance for an assigned CareTask.
-2. NeedAssistance should be visible immediately in the CareCoordinatorDashboard.
-3. A CareCoordinator may respond by reassigning the task, contacting another staff member, or adding a note.
-4. A NeedAssistance CareTask may later become Completed, UnableToComplete, Overdue, Missed, or Cancelled.
-
----
-
-## Overdue Rules
-
-1. A CareTask becomes Overdue when the DueTime passes and it has not been Completed, Cancelled, or Missed.
-2. OverdueDuration should be shown in minutes and hours.
-3. Overdue CareTasks should be visible in the CareCoordinatorDashboard.
-4. An Overdue CareTask can still be Completed if the shift has not ended and the task is still valid.
-
----
-
-## Missed Rules
-
-1. A CareTask becomes Missed if it remains incomplete when the assigned Caregiver’s working shift ends.
-2. Missed CareTasks require CareCoordinator review.
-3. A Missed CareTask should not disappear from the dashboard.
-4. A Missed CareTask may lead to a follow-up CareTask or incident handling in future versions.
-
----
-
-## Cancellation Rules
-
-1. A CareTask can be cancelled only by the Creator or an authorized CareCoordinator.
-2. Cancellation requires a reason.
-3. A Cancelled CareTask cannot be completed.
-4. Cancellation is recorded in the audit trail.
-5. A Cancelled CareTask may be reactivated only if allowed by business rules.
-
----
-
-## Reactivation Rules
-
-1. Reactivation is an action, not a status.
-2. A Cancelled CareTask may be reactivated by an authorized CareCoordinator.
-3. A CareTask should only be reactivated if the DueTime has not passed.
-4. Reactivating a CareTask returns it to Planned or Assigned status.
-5. Reactivation is recorded in the audit trail.
-
----
-
-## Late Change Rules
-
-1. CareTask details may be updated before DueTime.
-2. If CareTask details are updated less than 15 minutes before DueTime, a LateChangeReason is required.
-3. Late changes must be recorded in the audit trail.
-4. Late changes should be visible to the AssignedCaregiver if they affect the task.
-
----
-
-# 14. Example Sentences Using the Ubiquitous Language
-
-```text
-The CareCoordinator creates a CareTask for morning hygiene support.
-```
-
-```text
-The CareCoordinator adds the CareTask to Today’s CareTaskList.
-```
-
-```text
-The CareCoordinator assigns the CareTask to Caregiver Maria.
-```
-
-```text
-The Caregiver sees the CareTask in My Tasks.
-```
-
-```text
-The Caregiver marks the CareTask as Completed.
-```
-
-```text
-The Caregiver marks the CareTask as UnableToComplete because the Resident refused.
-```
-
-```text
-The Caregiver marks the CareTask as NeedAssistance because another Caregiver is required.
-```
-
-```text
-The CareTask becomes Overdue when the DueTime passes.
-```
-
-```text
-The CareTask becomes Missed when the assigned Caregiver’s shift ends and the CareTask is still incomplete.
-```
-
-```text
-The CareCoordinator cancels the CareTask with a CancellationReason.
-```
-
-```text
-The CareCoordinator reactivates the Cancelled CareTask, and the CareTask returns to Planned status.
-```
-
----
-
-# 15. Suggested Code Naming Alignment
+# 12. Suggested Code Naming Alignment
 
 The Ubiquitous Language should influence code names.
 
@@ -1314,7 +862,7 @@ CareTaskReactivated
 
 ---
 
-# 16. Open Questions
+# 13. Open Questions
 
 The following questions should be answered through domain discovery and pilot feedback.
 
@@ -1350,7 +898,7 @@ The following questions should be answered through domain discovery and pilot fe
 
 ---
 
-# 17. Current MVP Scope
+# 14. Current MVP Scope
 
 For the MVP, this bounded context should focus only on:
 
