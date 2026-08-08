@@ -327,7 +327,6 @@ Cancelled
 
 ---
 
-
 # 7. Actions / Commands
 
 Commands represent user or system intentions. They are written as verbs.
