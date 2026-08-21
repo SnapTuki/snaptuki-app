@@ -19,7 +19,6 @@ enum Gender {
   MALE
   FEMALE
   OTHER
-  UNSPECIFIED
 }
 
 enum ROLE {
@@ -31,19 +30,6 @@ enum ROLE {
   PRACTICAL_NURSE
 }
 
-enum VisitStatus {
-  PLANNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  MISSED
-}
-
-enum TaskFrequency {
-  DAILY
-  ON_DEMAND
-  WEEKLY
-}
 
 enum TaskPriority {
   LOW
@@ -60,19 +46,6 @@ enum TaskStatus {
   MISSED
 }
 
-enum TaskCategory {
-  CARE
-  MEDICATION
-  HYGIENE
-  ADMIN
-  OTHER
-}
-
-enum RiskLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
 
 enum ResidentStatus {
   ACTIVE
@@ -96,7 +69,6 @@ model CareHomeAgency {
   address       String?
   users         User[]
   residents     Resident[]
-  taskTemplates TaskTemplate[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -144,7 +116,7 @@ model Staff {
   title      String?
 
   certifications Certification[]
-  assignedTasks  Task[]          @relation("CaregiverAssignments")
+  assignedTasks  CareTask[]          @relation("CaregiverAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -175,11 +147,6 @@ enum MobilityLevel {
   MEMORY
 }
 
-enum AllergySeverity {
-  MILD
-  MODERATE
-  SEVERE
-}
 
 model Resident {
   residentId String         @id @default(cuid()) @map("resident_id")
@@ -197,11 +164,8 @@ model Resident {
   agencyId Int            @map("care_home_agency_id")
   agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
 
-  allergies         Allergy[]
-  medications       Medication[]
-  emergencyContacts EmergencyContact[]
-  taskAssignments   ResidentTaskAssignment[]
-  tasks             Task[]                   @relation("ResidentAssignments")
+  
+  tasks             CareTask[]                   @relation("ResidentAssignments")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -209,31 +173,6 @@ model Resident {
   @@map("residents")
 }
 
-model Allergy {
-  id         String          @id @default(cuid())
-  name       String
-  reaction   String
-  severity   AllergySeverity
-  residentId String
-  resident   Resident        @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
-  notes      String?
-
-  @@map("allergies")
-}
-
-model Medication {
-  id           String    @id @default(cuid())
-  name         String
-  dosage       String
-  frequency    String
-  startDate    DateTime  @map("start_date")
-  endDate      DateTime? @map("end_date")
-  prescribedBy String?   @map("prescribed_by")
-  residentId   String
-  resident     Resident  @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
-
-  @@map("medications")
-}
 
 model EmergencyContact {
   id         String   @id @default(cuid())
@@ -251,134 +190,35 @@ model EmergencyContact {
 // CARE PLAN & UNIFIED TASK PIPELINE
 // -----------------------------------------------------------------------------
 
-model TaskTemplate {
-  id          Int           @id @default(autoincrement())
-  name        String
-  description String?
-  category    TaskCategory
-  frequency   TaskFrequency
-  priority    TaskPriority  @default(MEDIUM)
-  riskLevel   RiskLevel     @default(LOW)
 
-  requiresInput Boolean @default(false) @map("requires_input")
-  inputSchema   Json?   @map("input_schema")
-
-  agencyId Int
-  agency   CareHomeAgency @relation(fields: [agencyId], references: [id])
-
-  defaultChecklist ChecklistTemplateItem[]
-  assignments      ResidentTaskAssignment[]
-  tasks            Task[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("task_templates")
-}
-
-model ChecklistTemplateItem {
-  id             String       @id @default(cuid())
-  label          String
-  isRequired     Boolean      @default(true)
-  sortOrder      Int          @default(0)
-  taskTemplateId Int
-  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Cascade)
-
-  @@map("checklist_template_items")
-}
-
-model ResidentTaskAssignment {
-  id             Int          @id @default(autoincrement())
-  residentId     String
-  resident       Resident     @relation(fields: [residentId], references: [residentId])
-  taskTemplateId Int
-  taskTemplate   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
-  isActive       Boolean      @default(true)
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("resident_task_assignments")
-}
-
-model Task {
-  id         String        @id @default(cuid())
+model CareTask {
+  id         String        @id
   title      String
-  // Link to template if scheduled, null if ad-hoc
-  templateId Int?          @map("template_id")
-  template   TaskTemplate? @relation(fields: [templateId], references: [id])
-
+ 
   residentId String   @map("resident_id")
   resident   Resident @relation("ResidentAssignments", fields: [residentId], references: [residentId])
 
-  description         String?
+  description         String
   // The foreign key field
   assignedStaffId String    @map("assigned_staff_id")
   // The relation field (points to the Caregiver model)
   assignedStaff   Staff @relation("CaregiverAssignments", fields: [assignedStaffId], references: [id])
 
-  visitId String? @map("visit_id")
-  visit   Visit?  @relation(fields: [visitId], references: [visitId])
-
-  status   TaskStatus   @default(PENDING)
+  status   TaskStatus
   priority TaskPriority
-  category TaskCategory
+
 
   dueAt       DateTime  @map("due_at")
   startedAt   DateTime? @map("started_at")
   completedAt DateTime? @map("completed_at")
 
-  completionNotes String[] @map("completion_notes")
+  completionNote String @map("completion_note")
 
-  checklist     ChecklistItem[]
-  actionRecords ActionRecord[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([residentId])
   @@index([status])
-  @@map("tasks")
-}
-
-model ChecklistItem {
-  id          String    @id @default(cuid())
-  label       String
-  taskId      String
-  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@map("checklist_items")
-}
-
-// -----------------------------------------------------------------------------
-// EXECUTION & AUDIT
-// -----------------------------------------------------------------------------
-
-model Visit {
-  visitId     String    @id @default(cuid()) @map("visit_id")
-
-  status         VisitStatus @default(PLANNED)
-  scheduledStart DateTime    @map("scheduled_start")
-  scheduledEnd   DateTime    @map("scheduled_end")
-  actualStart    DateTime?   @map("actual_start")
-  actualEnd      DateTime?   @map("actual_end")
-
-  tasks Task[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("visits")
-}
-
-model ActionRecord {
-  id          Int       @id @default(autoincrement())
-  taskId      String    @map("task_id")
-  task        Task      @relation(fields: [taskId], references: [id])
-
-  value Json? // Stores clinical data (e.g. { bpm: 72 })
-  notes String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("action_records")
+  @@map("care_tasks")
 }
