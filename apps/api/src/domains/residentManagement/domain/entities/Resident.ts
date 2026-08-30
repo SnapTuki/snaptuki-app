@@ -41,12 +41,6 @@ export interface ResidentState {
   room: string | null;
   status: ResidentStatus;
 
-  // Assuming child entities also have snapshot() methods returning their state interfaces
-  allergies: any[]; 
-  medications: any[];
-  emergencyContacts: any[];
-  taskAssignments: any[];
-  tasks: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,11 +58,6 @@ export interface ResidentProps {
   mobilityLevel: MobilityLevel;
   room: string | null;
   status: ResidentStatus;
-  allergies: Allergy[];
-  medications: Medication[];
-  emergencyContacts: EmergencyContact[];
-  taskAssignments: TaskAssignment[]; 
-  tasks: Task[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -101,11 +90,6 @@ export class Resident {
     return new Resident({
       ...props,
       status: ResidentStatus.Active, // Always active upon admission
-      allergies: props.allergies ?? [],
-      medications: props.medications ?? [],
-      emergencyContacts: props.emergencyContacts ?? [],
-      taskAssignments: [], // Start empty
-      tasks: [],           // Start empty
       createdAt: now,
       updatedAt: now,
     });
@@ -127,13 +111,6 @@ export class Resident {
       mobilityLevel: snapshot.mobilityLevel,
       room: snapshot.room,
       status: snapshot.status,
-      
-      // Assuming child entities have restore methods
-      allergies: snapshot.allergies.map(a => Allergy.restore(a)), 
-      medications: snapshot.medications.map(m => Medication.restore(m)),
-      emergencyContacts: snapshot.emergencyContacts.map(e => EmergencyContact.restore(e)),
-      taskAssignments: snapshot.taskAssignments.map(t => TaskAssignment.restore(t)),
-      tasks: snapshot.tasks.map(t => Task.restore(t)),
       
       createdAt: snapshot.createdAt,
       updatedAt: snapshot.updatedAt,
@@ -158,13 +135,6 @@ export class Resident {
       room: this.props.room,
       status: this.props.status,
     
-      
-      allergies: this.props.allergies.map(a => a.snapshot()),
-      medications: this.props.medications.map(m => m.snapshot()),
-      emergencyContacts: this.props.emergencyContacts.map(e => e.snapshot()),
-      taskAssignments: this.props.taskAssignments.map(t => t.snapshot()),
-      tasks: this.props.tasks.map(t => t.snapshot()),
-      
       createdAt: this.props.createdAt,
       updatedAt: this.props.updatedAt,
     };
@@ -174,7 +144,6 @@ export class Resident {
 
   public discharge(): void {
     this.props.status = ResidentStatus.Discharged;
-    this.props.taskAssignments.forEach(assignment => assignment.deactivate());
     this.thisTrackUpdate();
   }
 
@@ -184,30 +153,6 @@ export class Resident {
     this.thisTrackUpdate();
   }
 
-
-  public addMedication(med: Medication): void {
-    const exists = this.props.medications.some(m => m.id === med.id);
-    if (!exists) {
-      this.props.medications.push(med);
-      this.thisTrackUpdate();
-    }
-  }
-
-  public addAllergy(allergy: Allergy): void {
-    const alreadyExists = this.props.allergies.some(a => a.id === allergy.id);
-    if (alreadyExists) {
-      throw new Error(`Allergy with ID ${allergy.id} is already recorded for this resident.`);
-    }
-
-    this.props.allergies.push(allergy);
-    this.thisTrackUpdate();
-  }
-
-
-  public assignTaskTemplate(templateId: number): void {
-    // Logic to add assignment goes here
-    this.thisTrackUpdate();
-  }
 
   public updateIdentity(data: {
     firstName?: string;
@@ -240,7 +185,6 @@ export class Resident {
       throw new Error("Memory Care residents must have at least one emergency contact.");
     }
 
-    this.props.emergencyContacts = [...contacts];
     this.thisTrackUpdate();
   }
 

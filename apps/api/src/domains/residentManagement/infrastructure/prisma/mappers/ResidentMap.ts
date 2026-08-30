@@ -10,30 +10,16 @@ import { toDomainMobilityLevel } from "./MobilityLevelMap";
 
 import type {
   Resident as PrismaResident,
-  Allergy as PrismaAllergy,
-  Medication as PrismaMedication,
-  EmergencyContact as PrismaEC,
-  ResidentTaskAssignment as PrismaTaskAssignment,
-  Task as PrismaTask,
-  ChecklistItem as PrismaChecklistItem,
-  ActionRecord as PrismaActionRecord
 } from "../../../../../generated/prisma";
 
 // Define the full Prisma row type for clean arguments
-type FullPrismaResident = PrismaResident & {
-  allergies?: PrismaAllergy[];
-  medications?: PrismaMedication[];
-  emergencyContacts?: PrismaEC[];
-  taskAssignments?: PrismaTaskAssignment[];
-  tasks?: (PrismaTask & { checklist: PrismaChecklistItem[]; actionRecords: PrismaActionRecord[] })[];
-};
 
 export class ResidentMap {
 
   /**
    * 1. INFRASTRUCTURE -> DOMAIN (Read)
    */
-  static toDomain(row: FullPrismaResident | null): Resident | null {
+  static toDomain(row: PrismaResident | null): Resident | null {
     if (!row) return null;
 
     // Use the Rehydration Factory to load the aggregate safely
@@ -49,14 +35,6 @@ export class ResidentMap {
       status: toDomainResidentStatus(row.status),
       mobilityLevel: toDomainMobilityLevel(row.mobilityLevel),
       room: row.room ?? null,
-
-      // Pass the raw arrays; Resident.restore() will map them to ChildEntity.restore() internally
-      allergies: row.allergies ?? [],
-      medications: row.medications ?? [],
-      emergencyContacts: row.emergencyContacts ?? [],
-      taskAssignments: row.taskAssignments ?? [],
-      tasks: row.tasks ?? [],
-
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
@@ -80,49 +58,6 @@ export class ResidentMap {
       status: state.status,
       mobilityLevel: state.mobilityLevel,
       room: state.room,
-      allergies: {
-        deleteMany: {},
-        create: state.allergies.map(a => ({
-          id: a.id,
-          name: a.name,
-          reaction: a.reaction,
-          severity: a.severity,
-          notes: a.notes
-        }))
-      },
-
-      medications: {
-        deleteMany: {},
-        create: state.medications.map(m => ({
-          id: m.id,
-          name: m.name,
-          dosage: m.dosage,
-          frequency: m.frequency,
-          startDate: m.startDate,
-          endDate: m.endDate,
-          prescribedBy: m.prescribedBy
-        }))
-      },
-      emergencyContacts: {
-        deleteMany: {},
-        create: state.emergencyContacts.map(ec => ({
-          id: ec.id,
-          name: ec.name,
-          relation: ec.relation,
-          phone: ec.phone,
-          email: ec.email,
-          isPrimary: ec.isPrimary
-        }))
-      },
-
-      taskAssignments: {
-        deleteMany: {},
-        create: state.taskAssignments.map(ta => ({
-          id: ta.id,
-          taskTemplateId: ta.taskTemplateId,
-          isActive: ta.isActive,
-        }))
-      },
 
     }
 
@@ -147,33 +82,6 @@ export class ResidentMap {
       status: state.status,
       mobilityLevel: state.mobilityLevel,
       room: state.room,
-
-      allergies: (state.allergies || []).map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        reaction: a.reaction,
-        severity: a.severity,
-        notes: a.notes
-      })),
-      
-      medications: (state.medications || []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        dosage: m.dosage,
-        frequency: m.frequency,
-        startDate: m.startDate,
-        endDate: m.endDate,
-        prescribedBy: m.prescribedBy
-      })),
-      
-      emergencyContacts: (state.emergencyContacts || []).map((e: any) => ({
-        id: e.id,
-        name: e.name,
-        relation: e.relation,
-        phone: e.phone,
-        isPrimary: e.isPrimary
-      })),
-
       createdAt: state.createdAt,
       updatedAt: state.updatedAt,
     };

@@ -6,7 +6,6 @@ export const toDomainGender = (prismaGender: PrismaGender): DomainGender => {
   const mapping: Record<PrismaGender, DomainGender> = {
     [PrismaGender.MALE]: DomainGender.MALE,
     [PrismaGender.FEMALE]: DomainGender.FEMALE,
-    [PrismaGender.UNSPECIFIED]: DomainGender.UNSPECIFIED,
     [PrismaGender.OTHER]: DomainGender.OTHER
   };
 

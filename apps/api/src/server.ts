@@ -13,15 +13,15 @@ import { JwtTokenService } from "./domains/identityAccess/infrastructure/securit
 import { AuthResolver } from "./domains/identityAccess/api/resolvers/authResolver";
 import { UserResolver } from "./domains/identityAccess/api/resolvers/userResolver";
 import { ResidentResolver } from "./domains/residentManagement/api/graphql/resolvers/ResidentResolvers";
-import { TaskResolver } from "./domains/taskManagement/api/graphql/resolvers/TaskResolver";
+import { CareTaskResolvers } from "./domains/careTaskCoordination/api/graphql/resolvers/CareTaskResolvers";
 // CaregiverManagement BC imports
 import { StaffResolvers } from "./domains/staffManagement/api/resolvers/StaffResolvers";
 
 import { createCaregiverManagementContainer } from "./domains/staffManagement/infrastructure";
 import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure/prisma";
-import { createTaskManagementContainer } from "./domains/taskManagement/infrastructure";
+import { createTaskManagementContainer } from "./domains/careTaskCoordination/infrastructure";
 import { config } from "./config";
-import { initializeTaskScheduler } from "./domains/taskManagement/infrastructure/schedulers/TaskSchedulers";
+import { initializeTaskScheduler } from "./domains/careTaskCoordination/infrastructure/schedulers/TaskSchedulers";
 
 
 async function buildApplicationSchema() {
@@ -31,7 +31,7 @@ async function buildApplicationSchema() {
             UserResolver, 
             StaffResolvers,
             ResidentResolver,
-            TaskResolver,
+            CareTaskResolvers,
         ],
         scalarsMap: [{ type: Date, scalar: GraphQLDateTime }],
         validate: false,

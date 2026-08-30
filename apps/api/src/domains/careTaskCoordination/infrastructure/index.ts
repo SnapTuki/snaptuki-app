@@ -1,7 +1,7 @@
 import prisma from "../../../prisma/client";
-import { PrismaTaskRepo } from "./repos/PrismaTaskRepo";
+import { PrismaCareTaskRepository } from "./repos/PrismaTaskRepo";
 export function createTaskManagementContainer() {
-    const repo = new PrismaTaskRepo(prisma);
+    const repo = new PrismaCareTaskRepository(prisma);
     return {
         prisma,
         repo

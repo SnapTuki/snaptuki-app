@@ -23,32 +23,6 @@ export class GetResidentProfileUseCase {
       status: rawData.status as any,
       mobilityLevel: rawData.mobilityLevel as any,
       room: rawData.room,
-      
-      allergies: rawData.allergies.map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        reaction: a.reaction,
-        severity: a.severity as any,
-        notes: a.notes,
-      })),
-      
-      medications: rawData.medications.map((m:any) => ({
-        id: m.id,
-        name: m.name,
-        dosage: m.dosage,
-        frequency: m.frequency,
-        startDate: m.startDate,
-        endDate: m.endDate,
-        prescribedBy: m.prescribedBy,
-      })),
-      
-      emergencyContacts: rawData.emergencyContacts.map((e:any) => ({
-        id: e.id,
-        name: e.name,
-        relation: e.relation,
-        phone: e.phone,
-        isPrimary: e.isPrimary,
-      })),
 
       createdAt: rawData.createdAt,
       updatedAt: rawData.updatedAt,

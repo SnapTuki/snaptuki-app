@@ -2,8 +2,6 @@
 
 import { Resolver, Query, Mutation, Arg, Root, Ctx } from "type-graphql";
 import { ResidentType } from "../types/ResidentTypes";
-import { FieldResolver } from "type-graphql";
-import { TaskType } from "../../../../taskManagement/api/graphql/types/TaskTypes";
 import {
   RegisterResidentInput,
   AddResidentAllergyInput,
@@ -12,7 +10,6 @@ import {
   UpdateResidentIdentityInput,
 } from "../inputs/ResidentInputs";
 
-import { ResidentMap } from "../../../../residentManagement/infrastructure/prisma/mappers/ResidentMap";
 import { GraphQLContext } from '../../../../../lib/graphqlContext';
 
 import { RegisterResidentUseCase } from "../../../../residentManagement/application/useCases/RegisterResidentUseCase";
@@ -23,7 +20,6 @@ import { UpdateResidentIdentityUseCase } from "../../../application/useCases/Upd
 import { UpdateEmergencyContactsUseCase } from "../../../application/useCases/UpdateEmergencyContactsUseCase";
 import { ListResidentsUseCase } from "../../../application/useCases/ListResidentsUseCase";
 import { MobilityLevel } from "../../../domain/entities/Resident";
-import { FindAllTasksUseCase } from "../../../../taskManagement/application/useCases/FindAllTasksUseCase";
 import { GetResidentProfileUseCase } from "../../../application/useCases/GetResidentProfileUseCase";
 
 
@@ -32,17 +28,11 @@ export class ResidentResolver {
 
   @Query(() => [ResidentType])
   async residentList(
-    @Ctx() ctx: GraphQLContext,
-    @Arg("search", () => String, { nullable: true }) search?: string,
-    @Arg("mobilityLevel", () => MobilityLevel, { nullable: true }) mobilityLevel?: MobilityLevel,
-  ): Promise<ResidentType[]> {
+    @Ctx() ctx: GraphQLContext): Promise<ResidentType[]> {
 
     const useCase = new ListResidentsUseCase(ctx.residentManagement.repo);
     // The Use Case returns { residents: ResidentDTO[] }
-    const result = await useCase.execute({
-      search: search ?? null,
-      mobilityLevel: mobilityLevel ?? null
-    });
+    const result = await useCase.execute();
 
     console.log(result)
 
@@ -137,23 +127,4 @@ export class ResidentResolver {
     return result.resident;
   }
 
-
-  @FieldResolver(() => [TaskType])
-  async tasks(
-    @Root() resident: ResidentType, // <--- Access the parent Resident object
-    @Ctx() ctx: GraphQLContext,
-    @Arg("status", () => String, { nullable: true }) status?: string,
-    @Arg("limit", () => Number, { nullable: true, defaultValue: 50 }) limit?: number,
-    
-  ): Promise<TaskType[]> {
-    
-    // Executes logic entirely within the Task Management BC, 
-    // passing the Resident's ID as the connecting parameter.
-    const taskUseCase = new FindAllTasksUseCase(ctx.taskManagement.repo)
-    const result = await taskUseCase.execute({
-      residentId: resident.residentId, 
-    });
-
-    return result;
-  }
 }

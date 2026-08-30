@@ -5,7 +5,6 @@ export interface NewCareTaskInput {
     priority: string;
     status: string;
     assignedToResidentId: string;
-    assignedToCaregiverId?: string;
-    residentId: string;
+    assignedToCaregiverId: string|null;
 }
 

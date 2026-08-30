@@ -18,7 +18,7 @@ export type ResidentManagementContainer = {
   repo: any
 }
 
-export type TaskManagementContainer = {
+export type CareTaskCoordinationContainer = {
   repo: any
 }
 
@@ -28,5 +28,5 @@ export type GraphQLContext = {
   identityAccess: IdentityAccessContainer;
   caregiverManagement: CaregiverManagementContainer;
   residentManagement: ResidentManagementContainer;
-  taskManagement: TaskManagementContainer;
+  careTaskCoordination: CareTaskCoordinationContainer;
 };

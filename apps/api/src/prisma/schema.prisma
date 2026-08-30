@@ -31,21 +31,6 @@ enum ROLE {
 }
 
 
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  MISSED
-}
-
 
 enum ResidentStatus {
   ACTIVE
@@ -174,18 +159,6 @@ model Resident {
 }
 
 
-model EmergencyContact {
-  id         String   @id @default(cuid())
-  name       String
-  relation   String
-  phone      String
-  email      String   @default("Unknown")
-  residentId String
-  resident   Resident @relation(fields: [residentId], references: [residentId], onDelete: Cascade)
-
-  @@map("emergency_contacts")
-}
-
 // -----------------------------------------------------------------------------
 // CARE PLAN & UNIFIED TASK PIPELINE
 // -----------------------------------------------------------------------------
@@ -200,20 +173,19 @@ model CareTask {
 
   description         String
   // The foreign key field
-  assignedStaffId String    @map("assigned_staff_id")
+  assignedStaffId String?    @map("assigned_staff_id")
   // The relation field (points to the Caregiver model)
-  assignedStaff   Staff @relation("CaregiverAssignments", fields: [assignedStaffId], references: [id])
+  assignedStaff   Staff? @relation("CaregiverAssignments", fields: [assignedStaffId], references: [id])
 
-  status   TaskStatus
-  priority TaskPriority
+  status   String
+  priority String  
 
 
   dueAt       DateTime  @map("due_at")
   startedAt   DateTime? @map("started_at")
   completedAt DateTime? @map("completed_at")
 
-  completionNote String @map("completion_note")
-
+  completionNote String? @map("completion_note")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

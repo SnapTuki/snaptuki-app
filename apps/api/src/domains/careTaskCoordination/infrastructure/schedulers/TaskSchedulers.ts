@@ -1,32 +1,35 @@
 import { CronJob } from 'cron';
-import { PrismaTaskRepo } from '../repos/PrismaTaskRepo';
-import { ProcessImpendingDeadlines } from '../../application/useCases/ProcessImpendingDeadlines';
-import { EscalateMissedTasksUseCase } from '../../application/useCases/EscalateMissedTasks';
+import { PrismaCareTaskRepository } from '../repos/PrismaTaskRepo';
+import { FindAndMarkOverdueCareTasks } from '../../application/useCases/FindAndMarkOverdueCareTasks';
 import prisma from '../../../../prisma/client';
 export const initializeTaskScheduler = () => {
 
     console.log('🤖 Task Scheduler initialized. Monitoring healthcare building tasks...');
-    const taskRepository = new PrismaTaskRepo(prisma)
-    const processImpending = new ProcessImpendingDeadlines(taskRepository);
-    const escalateMissed = new EscalateMissedTasksUseCase(taskRepository);
+    const taskRepository = new PrismaCareTaskRepository(prisma)
+    const findAndMarkOverdueCareTasks = new FindAndMarkOverdueCareTasks(taskRepository);
 
     // The Cron Trigger: Runs every 60 seconds
 
-    const job = new CronJob(
-        '*/5 * * * *',
+    const TIME_ZONE = "Europe/Helsinki";
+
+    const overdueTasksJob = new CronJob(
+        "* * * * *",
         async () => {
             try {
-                console.log('Running background job for tasks')
-                await processImpending.execute();
-                await escalateMissed.execute();
+                console.log("Checking for overdue CareTasks");
+
+                await findAndMarkOverdueCareTasks.execute(new Date());
 
             } catch (error) {
-                console.error('Critical Error in Task Scheduler Pipeline:', error);
+                console.error(
+                    "Critical error in overdue CareTask job:",
+                    error,
+                );
             }
         },
         null,
         true,
-    )
-
+        TIME_ZONE,
+    );
 
 }

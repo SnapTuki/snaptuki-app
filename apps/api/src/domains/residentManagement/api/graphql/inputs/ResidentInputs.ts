@@ -1,12 +1,12 @@
 // src/domains/residentManagement/api/graphql/inputs/ResidentInputs.ts
 
-import { InputType, Field, ID, Int } from "type-graphql";
+import { InputType, Field, ID, Int, registerEnumType } from "type-graphql";
 import { GraphQLDateTime } from "graphql-scalars";
 
 // Import types exclusively from the domain boundaries
 import { Gender, MobilityLevel } from "../../../domain/entities/Resident";
 import { AllergySeverity } from "../../../domain/entities/Allergy";
-
+registerEnumType(AllergySeverity, { name: "AllergySeverity" });
 @InputType()
 export class RegisterResidentInput {
   @Field(() => Int) agencyId!: number; // Fixed type to map Int scalar properly
