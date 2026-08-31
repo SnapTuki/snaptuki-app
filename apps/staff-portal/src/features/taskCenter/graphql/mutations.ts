@@ -5,44 +5,34 @@ import type { Mutation } from "../../../lib/graphql/generated";
 
 export const CREATE_ADHOC_TASK: TypedDocumentNode<Mutation>= gql`
   mutation CreateAdHocTask($input: CreateTaskInput!) {
-    createTask(input: $input) {
+    createCareTask(input: $input) {
       id
-      status
-      priority
     }
   }
 `;
 
-export const UPDATE_TASK: TypedDocumentNode<Mutation> = gql`
-  mutation UpdateTask($input: UpdateTaskInput!) {
-    updateTask(input: $input) {
+export const UPDATE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
+  mutation UpdateCareTask($input: UpdateTaskInput!) {
+    updateCareTask(input: $input) {
       id
     }
   }
 `;
 
 
-export const COMPLETE_TASK_MUTATION: TypedDocumentNode<Mutation> = gql`
-  mutation CompleteTask($input: CompleteTaskInputGql!) {
-    completeTask(input: $input) {
-      id
-      status
-    }
-  }
-`;
-
-export const CANCEL_TASK_MUTATION: TypedDocumentNode<Mutation> = gql`
-  mutation CancelTask($id: String!, $reason: String) {
-    cancelTask(id: $id, reason: $reason) {
+export const COMPLETE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
+  mutation CompleteCareTask($input: CompleteTaskInputGql!) {
+    completeCareTask(input: $input) {
       id
     }
   }
 `;
 
-export const REACTIVATE_TASK: TypedDocumentNode<Mutation>= gql`
-mutation ReactivateTask($taskId: String!){
-  reactivateTask(taskId: $taskId){
-    id
+export const CANCEL_CARE_TASK: TypedDocumentNode<Mutation> = gql`
+  mutation CancelCareTask($id: String!, $reason: String) {
+    cancelCareTask(id: $id, reason: $reason) {
+      id
+    }
   }
-}
-`
+`;
+

@@ -1,9 +1,9 @@
-import {CareTaskTitle} from '../valueObjects/CareTaskTitle';
-import {CareTaskDescription} from '../valueObjects/CareTaskDescription';
-import {CareTaskPriority} from '../valueObjects/CareTaskPriority';
+import { CareTaskTitle } from '../valueObjects/CareTaskTitle';
+import { CareTaskDescription } from '../valueObjects/CareTaskDescription';
+import { CareTaskPriority } from '../valueObjects/CareTaskPriority';
 import { CareTaskStatus } from '../valueObjects/CareTaskStatus';
-import {DueTime} from '../valueObjects/DueTime';
-import {CareTaskNotes} from '../types/CareTaskNotes';
+import { DueTime } from '../valueObjects/DueTime';
+import { CareTaskNotes } from '../types/CareTaskNotes';
 import { CareTaskSnapshot } from '../types/CareTaskSnapshot';
 
 export class CareTask {
@@ -20,7 +20,7 @@ export class CareTask {
         private _description?: CareTaskDescription,
         private _assignedCaregiverId?: string,
 
-    ) {}
+    ) { }
 
     public static create(
         title: CareTaskTitle,
@@ -35,45 +35,40 @@ export class CareTask {
     }
 
     public cancelCareTask(): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot cancel a care task that is already completed or cancelled");
         }
         this._status = CareTaskStatus.create('cancelled');
     }
 
 
-    public completeCareTask(completionNote: string): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+    public completeCareTask(completionNote?: string): void {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot complete a care task that is already completed or cancelled");
         }
         this._status = CareTaskStatus.create('completed');
-        this._completionNote = completionNote;
+        if(completionNote)
+            this._completionNote = completionNote;
     }
 
     public updateCareTaskDetails(
-        title?: CareTaskTitle,
-        description?: CareTaskDescription,
-        priority?: CareTaskPriority,
-        status?: CareTaskStatus,
-        dueTime?: DueTime,
+        title: CareTaskTitle,
+        description: CareTaskDescription,
         assignedCaregiverId?: string,
     ): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot update a care task that is already completed or cancelled");
         }
-        if(title) this._title = title;
-        if(description) this._description = description;
-        if(priority) this._priority = priority;
-        if(status) this._status = status;
-        if(dueTime) this._dueTime = dueTime;
-        if(assignedCaregiverId) this._assignedCaregiverId = assignedCaregiverId;
+        if (title) this._title = title;
+        if (description) this._description = description;
+        if (assignedCaregiverId) this._assignedCaregiverId = assignedCaregiverId;
     }
 
     public addCareTaskNote(note: CareTaskNotes): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot add a note to a care task that is already completed or cancelled");
         }
-        if(!this._careTaskNotes) {
+        if (!this._careTaskNotes) {
             this._careTaskNotes = [];
         }
         this._careTaskNotes.push(note);
@@ -84,11 +79,11 @@ export class CareTask {
     }
 
     public markAsOverdue(currentTime: Date): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot mark a care task as overdue that is already completed or cancelled");
         }
 
-        if(currentTime.getTime() <= this._dueTime.getDueTime().getTime()){
+        if (currentTime.getTime() <= this._dueTime.getDueTime().getTime()) {
             throw new Error(
                 "Cannot mark a CareTask as overdue before its due time!"
             )
@@ -97,11 +92,11 @@ export class CareTask {
     }
 
     public markAsMissed(): void {
-        if(this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
             throw new Error("Cannot mark a care task as missed that is already completed or cancelled");
         }
         this._status = CareTaskStatus.create('missed');
-    }  
+    }
 
 
     public getSnapshot(): CareTaskSnapshot {
@@ -141,6 +136,34 @@ export class CareTask {
         }
 
         return careTask;
+    }
+
+    public assignToCaregiver(caregiverId: string): void {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+            throw new Error("Canceled or Completed care task cannot be assigned");
+        }
+
+        this._assignedCaregiverId = caregiverId;
+    }
+
+    public changePriority(input: {newPriority: CareTaskPriority }): void {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+            throw new Error("Canceled or Completed care task cannot be prioritized");
+        }
+
+        this._priority = input.newPriority;
+    }
+
+    public rescheduel(input: {newScheduel: DueTime }): void {
+        if (this._status.getStatus() === 'completed' || this._status.getStatus() === 'cancelled') {
+            throw new Error("Canceled or Completed care task cannot be prioritized");
+        }
+
+        if(input.newScheduel.getDueTime().getTime() <= this._dueTime.getDueTime().getTime()) {
+            throw new Error("New due time must be in the future");
+        }
+
+        this._dueTime = input.newScheduel;
     }
 
 
