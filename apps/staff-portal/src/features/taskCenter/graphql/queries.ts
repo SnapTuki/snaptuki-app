@@ -3,20 +3,19 @@ import type { TypedDocumentNode } from '@apollo/client';
 import type { Query } from '../../../lib/graphql/generated';
 
 export const GET_ALL_TASKS:TypedDocumentNode<Query> = gql`
-  query GetTodayCareTasks() {
-    todayCareTasks() {
+  query GetTodayCareTasks {
+    todayCareTasks {
       id
       title
       priority
       status
-      dueAt
     }
   }
 `;
 
 export const SEARCH_RESIDENTS:TypedDocumentNode<Query> = gql`
-  query SearchResidents() {
-    residentList() {
+  query SearchResidents{
+    residentList {
       residentId
       firstName
       lastName

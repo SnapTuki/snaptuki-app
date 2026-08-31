@@ -61,7 +61,6 @@ export class ResidentResolver {
       ssn: input.ssn,
       birthDate: input.birthDate,
       gender: input.gender, 
-      emergencyContacts: input.emergencyContacts,
       mobilityLevel: input.mobilityLevel,
       room: input.room ?? null,
     });

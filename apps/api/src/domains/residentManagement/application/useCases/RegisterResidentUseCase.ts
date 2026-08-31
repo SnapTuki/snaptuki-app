@@ -18,7 +18,6 @@ export interface RegisterResidentInput {
   birthDate: string;
   gender: Gender;
   agencyId: number;
-  emergencyContacts: EmergencyContactInput[];
   room?: string | null;
 }
 
@@ -44,16 +43,6 @@ export class RegisterResidentUseCase {
     // 2. Generate MRN numner
     const generatedMrn = `MRN-${input.lastName.substring(0, 3).toUpperCase()}`;
 
-    // 3.Create Emergency Contact object
-    const emgContacts = input.emergencyContacts.map((c: EmergencyContactInput) => EmergencyContact.createNew({
-      id: crypto.randomUUID(),
-      name: c.name,
-      relation: c.relation,
-      phone: c.phone,
-      email: c.email,
-    }))
-     
-
     
     // 3. Create the Aggregate Root
     const resident = Resident.createNew({
@@ -67,10 +56,6 @@ export class RegisterResidentUseCase {
       gender: input.gender,
       mobilityLevel: input.mobilityLevel,
       room: input.room ?? null,
-      emergencyContacts: emgContacts,
-      
-      // Note: We omit tasks, status, and timestamps because the domain 
-      // factory (createNew) handles all of those defaults internally!
     });
 
     // 4. Persist using the unified upsert pattern

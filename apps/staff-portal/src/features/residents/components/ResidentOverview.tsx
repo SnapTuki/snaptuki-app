@@ -3,7 +3,7 @@ import { User, Plus, Trash2, Users, Shield, RotateCcw } from 'lucide-react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Formik, Form, FieldArray, Field } from 'formik';
 // Ensure you have a GET_RESIDENT query defined in your mutations/queries file
-import { UPDATE_RESIDENT_IDENTITY, UPDATE_EMERGENCY_CONTACTS } from '../graphql/mutations';
+import { UPDATE_RESIDENT_IDENTITY } from '../graphql/mutations';
 import { GET_RESIDENT_IDENTITY_PROFILE } from '../graphql/queries';
 
 // --- NOTIFICATION COMPONENT ---
@@ -47,16 +47,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
     ]
   });
 
-  // 3. Contacts Mutation
-  const [updateContacts] = useMutation(UPDATE_EMERGENCY_CONTACTS, {
-    onError: (error) => setNotification({ message: `Contacts Update Failed: ${error.message}`, type: 'error' }),
-    refetchQueries: [
-      {
-        query: GET_RESIDENT_IDENTITY_PROFILE,
-        variables: { residentId }
-      }
-    ]
-  });
+
 
   if (loading) return <div className="p-10 text-[10px] font-black uppercase animate-pulse">Loading Resident Data...</div>;
   if (queryError) return <div className="p-10 text-[10px] font-black uppercase text-rose-500">Error loading resident: {queryError.message}</div>;
@@ -79,7 +70,6 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
           gender: resident.gender || 'FEMALE',
           room: resident.room || '',
           mobilityLevel: resident.mobilityLevel || 'INDEPENDENT',
-          emergencyContacts: resident.emergencyContacts || [],
         }}
         onSubmit={async (values, { resetForm }) => {
           try {
@@ -96,18 +86,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
               }
             });
 
-            // 2. Update Contacts
-            await updateContacts({
-              variables: {
-                residentId: resident.residentId,
-                contacts: values.emergencyContacts.map((c: any) => ({
-                  name: c.name,
-                  relation: c.relation,
-                  phone: c.phone,
-                  isPrimary: !!c.isPrimary
-                }))
-              }
-            });
+    
 
             resetForm({ values });
             setNotification({ message: 'Resident Profile Updated Successfully', type: 'success' });
@@ -194,33 +173,7 @@ const ResidentOverview = ({ residentId }: { residentId: string }) => {
                           <Plus className="w-3 h-3" /> Add New
                         </button>
                       </div>
-                      <div className="space-y-2">
-                        {values.emergencyContacts.map((contact: any, index: number) => (
-                          <div key={contact.id || index} className="flex items-center gap-3 group">
-                            <div className="flex-1 grid grid-cols-3 gap-3 bg-white border border-slate-200 p-2 rounded-xl">
-                              <div className="px-3">
-                                <label className={labelStyle}>Name</label>
-                                <Field name={`emergencyContacts.${index}.name`} className={inputStyle} />
-                              </div>
-                              <div className="px-3 border-l border-slate-100">
-                                <label className={labelStyle}>Relationship</label>
-                                <Field name={`emergencyContacts.${index}.relation`} className={inputStyle} />
-                              </div>
-                              <div className="px-3 border-l border-slate-100">
-                                <label className={labelStyle}>Phone</label>
-                                <Field name={`emergencyContacts.${index}.phone`} className={inputStyle} />
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="p-3 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                    
                     </>
                   )}
                 </FieldArray>

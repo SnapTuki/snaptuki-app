@@ -24,36 +24,20 @@ export const UPDATE_RESIDENT_IDENTITY: TypedDocumentNode<Mutation> = gql`
   }
 `;
 
-/**
- * Replaces or updates the list of emergency contacts for a resident.
- * This aligns with the Aggregate Root pattern where the collection is managed as a whole.
- */
-export const UPDATE_EMERGENCY_CONTACTS: TypedDocumentNode<Mutation> = gql`
-  mutation UpdateEmergencyContacts($residentId: String!, $contacts: [EmergencyContactInput!]!) {
-    updateEmergencyContacts(residentId: $residentId, contacts: $contacts) {
-      residentId
-      emergencyContacts{
-        name
-        relation
-        phone
-      }
-    }
-  }
-`;
 
 
 
 export const UPDATE_TASK: TypedDocumentNode<Mutation> = gql`
-  mutation UpdateTask($input: UpdateTaskInput!) {
-    updateTask(input: $input) {
+  mutation UpdateTask($input: UpdateCareTaskInput!) {
+    updateCareTask(input: $input) {
       id
     }
   }
 `;
 
 export const CREATE_ADHOC_TASK: TypedDocumentNode<Mutation>= gql`
-  mutation CreateAdHocTask($input: CreateTaskInput!) {
-    createTask(input: $input) {
+  mutation CreateCareTaskFromResidentProfile($input: CreateCareTaskInput!) {
+    createCareTask(input: $input) {
       id
       status
       priority

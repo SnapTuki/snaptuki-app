@@ -11,11 +11,10 @@ import {
 
 import { GET_TASK_LIST } from '../../graphql/queries';
 import {
-  COMPLETE_TASK_MUTATION,
-  CANCEL_TASK_MUTATION,
   UPDATE_TASK,
   CREATE_ADHOC_TASK
 } from '../../graphql/mutations';
+import { COMPLETE_CARE_TASK, CANCEL_CARE_TASK } from '../../../taskCenter/graphql/mutations';
 import NotificationToast from '../../../../components/ui/NotificationToast';
 import { SEARCH_CAREGIVERS } from '../../graphql/queries';
 
@@ -211,17 +210,17 @@ const CareTaskView = ({ residentId }: { residentId: string | null }) => {
     onError: (err) => notify(err.message, 'error')
   });
 
-  const [completeTask] = useMutation(COMPLETE_TASK_MUTATION, {
+  const [completeTask] = useMutation(COMPLETE_CARE_TASK, {
     onCompleted: () => { handleCloseModal(); refetch(); notify("Task marked as completed."); },
     onError: (err) => notify(err.message, 'error')
   });
 
-  const [cancelTask] = useMutation(CANCEL_TASK_MUTATION, {
+  const [cancelTask] = useMutation(CANCEL_CARE_TASK, {
     onCompleted: () => { handleCloseModal(); refetch(); notify("Task has been cancelled."); },
     onError: (err) => notify(err.message, 'error')
   });
 
-  const tasks = data?.taskList || [];
+  const tasks = data?.todayCareTasks || [];
   console.log('Tasks for this resident: ', tasks)
   const isCancelled = activeTask?.status === 'CANCELLED';
   

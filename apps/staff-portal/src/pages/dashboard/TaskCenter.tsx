@@ -13,201 +13,373 @@ import * as Yup from 'yup';
 import { GET_ALL_TASKS, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
 import { 
   CREATE_ADHOC_TASK, 
-  UPDATE_TASK,
-  CANCEL_TASK_MUTATION,
-  COMPLETE_TASK_MUTATION,
-  REACTIVATE_TASK
+  UPDATE_CARE_TASK,
+  CANCEL_CARE_TASK,
+  COMPLETE_CARE_TASK,
 } from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
 
 export default function TaskCenter() {
-  const [activeTab] = useState('Today'); // Today, Performance, History
+  const [activeTab] = useState('Today');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
 
-  // Schedule View State
-  const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
+  const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>(
+    'Today'
+  );
 
-  // Filtering states for Today Tab
   const [statusFilter] = useState('ALL');
   const [priorityFilter] = useState('ALL');
-
-  // History states
-  //const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]);
 
   const { data, refetch } = useQuery(GET_ALL_TASKS, {
     variables: { search: searchTerm },
   });
 
-  const allTasks = data?.taskList || [];
+  const allTasks = data?.todayCareTasks || [];
 
-  // Filtered tasks for Today View (Now with Date filtering)
   const filteredTasks = useMemo(() => {
-    // Calculate date boundaries
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const tomorrowStart = todayStart + 86400000; // +1 day (24h)
+
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    ).getTime();
+
+    const tomorrowStart = todayStart + 86400000;
     const dayAfterTomorrowStart = tomorrowStart + 86400000;
 
     return allTasks.filter((t: any) => {
-      const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
-      const matchesPriority = priorityFilter === 'ALL' || t.priority === priorityFilter;
-      
-      // Check if task falls within selected date
+      const matchesStatus =
+        statusFilter === 'ALL' || t.status === statusFilter;
+
+      const matchesPriority =
+        priorityFilter === 'ALL' || t.priority === priorityFilter;
+
       const taskTime = new Date(t.dueAt).getTime();
-      const matchesDate = scheduleView === 'Today' 
-        ? (taskTime >= todayStart && taskTime < tomorrowStart)
-        : (taskTime >= tomorrowStart && taskTime < dayAfterTomorrowStart);
+
+      const matchesDate =
+        scheduleView === 'Today'
+          ? taskTime >= todayStart && taskTime < tomorrowStart
+          : taskTime >= tomorrowStart &&
+            taskTime < dayAfterTomorrowStart;
 
       return matchesStatus && matchesPriority && matchesDate;
     });
-  }, [allTasks, statusFilter, priorityFilter, scheduleView]);
+  }, [
+    allTasks,
+    scheduleView,
+    statusFilter,
+    priorityFilter,
+  ]);
 
-  // Group tasks by status for the new UI layout
-  const pendingTasks = filteredTasks.filter((t: any) => t.status === 'PENDING');
-  const assignedTasks = filteredTasks.filter((t: any) => t.status === 'ASSIGNED');
-  const completedTasks = filteredTasks.filter((t: any) => t.status === 'COMPLETED');
-  const cancelledTasks = filteredTasks.filter((t: any) => t.status === 'CANCELLED');
+  const pendingTasks = filteredTasks.filter(
+    (t: any) => t.status === 'PENDING'
+  );
+
+  const assignedTasks = filteredTasks.filter(
+    (t: any) => t.status === 'ASSIGNED'
+  );
+
+  const completedTasks = filteredTasks.filter(
+    (t: any) => t.status === 'COMPLETED'
+  );
+
+  const cancelledTasks = filteredTasks.filter(
+    (t: any) => t.status === 'CANCELLED'
+  );
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
+    <div className="min-h-screen bg-slate-50">
 
-      {/* HEADER SECTION (Matching screenshot layout) */}
-      <div className="shrink-0 z-50 bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            Tasks
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Track and organize all your team's clinical projects in one place</p>
-        </div>
+      {/* ========================================================= */}
+      {/* FIXED HEADER */}
+      {/* ========================================================= */}
 
-        <div className="flex items-center gap-4">
-           <div className="relative group flex items-center">
-             <Search className="absolute left-3 w-4 h-4 text-slate-400" />
-             <input
-               type="text"
-               placeholder="Search..."
-               className="pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg w-64 outline-none focus:bg-white focus:border-slate-300 transition-all text-sm"
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-             />
-             <div className="absolute right-2 px-1.5 py-0.5 border border-slate-200 rounded text-[10px] text-slate-400 font-bold bg-white">⌘K</div>
-           </div>
+      <header className="fixed top-0  right-0 left-0 h-16 z-40 bg-white border-b border-slate-200">
+        <div className="h-full px-10 flex items-center justify-between">
 
-           <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-             <button className="p-2 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-full"><Info className="w-4 h-4" /></button>
-             <button className="p-2 text-slate-400 hover:text-slate-600 border border-slate-200 rounded-full"><Activity className="w-4 h-4" /></button>
-           </div>
-        </div>
-      </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500 flex items-center justify-center shadow-sm">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
 
-      {/* CONTENT AREA */}
-      <main className="flex-1 flex overflow-hidden">
+            <div>
+              <h1 className="text-lg font-semibold text-slate-900">
+                Task Center
+              </h1>
 
-        {/* TODAY TAB VIEW */}
-        {activeTab === 'Today' && (
-          <div className="flex-1 overflow-y-auto bg-slate-50 p-8 scrollbar-hide">
+              <p className="text-xs text-slate-500">
+                Clinical Operations Dashboard
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => refetch()}
+              className="h-10 w-10 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+            >
+              <RefreshCcw className="w-4 h-4 text-slate-500" />
+            </button>
+
             
-            <div className="max-w-7xl mx-auto space-y-6">
-              
-              {/* Toolbar */}
-              <div className="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search Task..." 
-                      className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm w-56 outline-none focus:border-slate-300 transition-all"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <button className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors">
-                    <Filter className="w-4 h-4" /> Filter
-                  </button>
 
-                  {/* Added Schedule Toggle here to maintain logic while fitting new design */}
-                  <div className="flex bg-slate-100 p-1 rounded-lg ml-2">
-                    <button
-                      onClick={() => setScheduleView('Today')}
-                      className={`px-4 text-xs font-semibold rounded-md transition-all ${scheduleView === 'Today' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      Today
-                    </button>
-                    <button
-                      onClick={() => setScheduleView('Tomorrow')}
-                      className={`px-4 text-xs font-semibold rounded-md transition-all ${scheduleView === 'Tomorrow' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      Tomorrow
-                    </button>
-                  </div>
-                </div>
+            <button
+              onClick={() => setIsDispatchOpen(true)}
+              className="h-10 px-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl flex items-center gap-2 text-sm font-medium transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Add Task
+            </button>
+          </div>
+        </div>
+      </header>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-200">
-                     <button className="flex items-center gap-2 px-4 py-1.5 bg-white shadow-sm rounded-md text-sm font-semibold text-slate-800">
-                       <LayoutList className="w-4 h-4" /> List
-                     </button>
-                     <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-800">
-                       <Kanban className="w-4 h-4" /> Kanban
-                     </button>
-                     <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-800">
-                       <CalendarDays className="w-4 h-4" /> Calendar
-                     </button>
+      {/* ========================================================= */}
+      {/* CONTENT */}
+      {/* ========================================================= */}
+
+      <main className="pt-16">
+
+        {activeTab === 'Today' && (
+          <div className="w-full">
+
+            <div className="px-6 py-6 space-y-6">
+
+              {/* ===================================================== */}
+              {/* STICKY TOOLBAR */}
+              {/* ===================================================== */}
+
+              <div className="sticky top-16 z-40 bg-slate-50 pb-4">
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+
+                  <div className="flex flex-wrap items-center gap-3">
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+                      <input
+                        type="text"
+                        placeholder="Search tasks..."
+                        value={searchTerm}
+                        onChange={(e) =>
+                          setSearchTerm(e.target.value)
+                        }
+                        className="
+                          w-80
+                          h-11
+                          pl-10
+                          pr-4
+                          border
+                          border-slate-200
+                          rounded-xl
+                          bg-white
+                          text-sm
+                          outline-none
+                          focus:ring-2
+                          focus:ring-cyan-200
+                        "
+                      />
+                    </div>
+
+                    <div className="flex bg-slate-100 rounded-xl p-1">
+
+                      <button
+                        onClick={() =>
+                          setScheduleView('Today')
+                        }
+                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
+                          scheduleView === 'Today'
+                            ? 'bg-white shadow-sm text-slate-900'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        Today
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          setScheduleView('Tomorrow')
+                        }
+                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
+                          scheduleView === 'Tomorrow'
+                            ? 'bg-white shadow-sm text-slate-900'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        Tomorrow
+                      </button>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => setIsDispatchOpen(true)}
-                    className="bg-[#00c9c9] hover:bg-[#00b0b0] text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all active:scale-95 shadow-sm shadow-[#00c9c9]/30"
-                  >
-                    <Plus className="w-4 h-4" /> Add Task
-                  </button>
+                  <div className="flex items-center gap-8">
+
+                    <div>
+                      <div className="text-xl font-semibold text-slate-900">
+                        {filteredTasks.length}
+                      </div>
+
+                      <div className="text-xs text-slate-500">
+                        Total Tasks
+                      </div>
+                    </div>
+
+                    <div className="w-px h-8 bg-slate-200" />
+
+                    <div>
+                      <div className="text-xl font-semibold text-slate-800">
+                        {pendingTasks.length}
+                      </div>
+
+                      <div className="text-xs text-slate-500">
+                        To Do
+                      </div>
+                    </div>
+
+                    <div className="w-px h-8 bg-slate-200" />
+
+                    <div>
+                      <div className="text-xl font-semibold text-amber-500">
+                        {assignedTasks.length}
+                      </div>
+
+                      <div className="text-xs text-slate-500">
+                        Active
+                      </div>
+                    </div>
+
+                    <div className="w-px h-8 bg-slate-200" />
+
+                    <div>
+                      <div className="text-xl font-semibold text-cyan-500">
+                        {completedTasks.length}
+                      </div>
+
+                      <div className="text-xs text-slate-500">
+                        Completed
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
+              {/* ===================================================== */}
+              {/* TASK SECTIONS */}
+              {/* ===================================================== */}
+
               {filteredTasks.length === 0 ? (
-                 <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-700">No tasks found for {scheduleView}</h3>
-                    <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or dispatch a new task.</p>
-                 </div>
+                <div className="bg-white border border-slate-200 rounded-2xl py-24 text-center">
+
+                  <Inbox className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    No tasks found for {scheduleView}
+                  </h3>
+
+                  <p className="text-sm text-slate-500 mt-2">
+                    Try adjusting filters or create a new task.
+                  </p>
+
+                </div>
               ) : (
-                <div className="space-y-6 pb-20">
-                  {/* Task Groups */}
-                  {pendingTasks.length > 0 && <TaskGroup title="To Do" count={pendingTasks.length} tasks={pendingTasks} colorClass="bg-slate-800" textClass="text-slate-800" onRowClick={setSelectedTask} />}
-                  {assignedTasks.length > 0 && <TaskGroup title="In Progress" count={assignedTasks.length} tasks={assignedTasks} colorClass="bg-amber-400" textClass="text-amber-500" onRowClick={setSelectedTask} />}
-                  {completedTasks.length > 0 && <TaskGroup title="Completed" count={completedTasks.length} tasks={completedTasks} colorClass="bg-[#00c9c9]" textClass="text-[#00c9c9]" onRowClick={setSelectedTask} />}
-                  {cancelledTasks.length > 0 && <TaskGroup title="Cancelled" count={cancelledTasks.length} tasks={cancelledTasks} colorClass="bg-rose-500" textClass="text-rose-500" onRowClick={setSelectedTask} />}
+                <div className="space-y-6 pb-12">
+
+                  {pendingTasks.length > 0 && (
+                    <TaskGroup
+                      title="To Do"
+                      count={pendingTasks.length}
+                      tasks={pendingTasks}
+                      colorClass="bg-slate-800"
+                      textClass="text-slate-800"
+                      onRowClick={setSelectedTask}
+                    />
+                  )}
+
+                  {assignedTasks.length > 0 && (
+                    <TaskGroup
+                      title="In Progress"
+                      count={assignedTasks.length}
+                      tasks={assignedTasks}
+                      colorClass="bg-amber-400"
+                      textClass="text-amber-500"
+                      onRowClick={setSelectedTask}
+                    />
+                  )}
+
+                  {completedTasks.length > 0 && (
+                    <TaskGroup
+                      title="Completed"
+                      count={completedTasks.length}
+                      tasks={completedTasks}
+                      colorClass="bg-cyan-500"
+                      textClass="text-cyan-500"
+                      onRowClick={setSelectedTask}
+                    />
+                  )}
+
+                  {cancelledTasks.length > 0 && (
+                    <TaskGroup
+                      title="Cancelled"
+                      count={cancelledTasks.length}
+                      tasks={cancelledTasks}
+                      colorClass="bg-rose-500"
+                      textClass="text-rose-500"
+                      onRowClick={setSelectedTask}
+                    />
+                  )}
+
                 </div>
               )}
+
             </div>
           </div>
         )}
-
       </main>
 
-      {/* TASK DETAIL DRAWER (Replaces the split pane to maintain full-width table view) */}
+      {/* ========================================================= */}
+      {/* TASK DETAILS DRAWER */}
+      {/* ========================================================= */}
+
       {selectedTask && (
-        <div className="fixed inset-0 z-80 flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedTask(null)} />
-          <div className="w-full max-w-2xl h-full bg-white shadow-2xl relative flex flex-col animate-in slide-in-from-right-4 duration-300">
-             <div className="absolute top-4 right-4 z-10">
-                <button onClick={() => setSelectedTask(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
-                   <X className="w-5 h-5" />
-                </button>
-             </div>
-             <TaskDetailView task={selectedTask} key={selectedTask.id} onUpdate={() => refetch()} />
+        <div className="fixed inset-0 z-[80] flex justify-end">
+
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setSelectedTask(null)}
+          />
+
+          <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl">
+
+            <div className="absolute top-4 right-4 z-10">
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <TaskDetailView
+              task={selectedTask}
+              key={selectedTask.id}
+              onUpdate={() => refetch()}
+            />
           </div>
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* DISPATCH DRAWER */}
+      {/* ========================================================= */}
+
       <DispatchDrawer
         isOpen={isDispatchOpen}
         onClose={() => setIsDispatchOpen(false)}
-        onSuccess={() => refetch()} 
+        onSuccess={() => refetch()}
       />
     </div>
   );
@@ -355,7 +527,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   const canEdit = isPending; 
   const canRetask = isCancelled && new Date(task.dueAt).getTime() > Date.now() + 15 * 60000;
 
-  const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_TASK, {
+  const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -367,7 +539,7 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   });
 
-  const [cancelTaskMutation] = useMutation(CANCEL_TASK_MUTATION, {
+  const [cancelTaskMutation] = useMutation(CANCEL_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -379,21 +551,8 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   });
 
-  const [reactivateTask] = useMutation(REACTIVATE_TASK, {
-    onCompleted: () => {
-      setMutationStatus('SUCCESS');
-      setErrorMessage('Task Reactivated Successfully')
-      if (onUpdate) onUpdate();
-      setTimeout(() => setMutationStatus('IDLE'), 3000);
-    },
 
-    onError: (error) => {
-      setMutationStatus('ERROR');
-      setErrorMessage(error.message || 'Failed to Reactivate Task')
-    }
-  })
-
-  const [completeTaskMutation] = useMutation(COMPLETE_TASK_MUTATION, {
+  const [completeTaskMutation] = useMutation(COMPLETE_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -423,11 +582,7 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   };
 
-  const handleRetask = () => {
-    if (window.confirm("Are you sure you want to bring this task back to life?")) {
-      reactivateTask({ variables: {taskId: task.id} });
-    }
-  };
+
 
   return (
     <div className="h-full flex flex-col overflow-hidden relative">
@@ -689,19 +844,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                 )}
                 
                 {isCancelled ? (
-                  canRetask ? (
-                    <button
-                      type="button"
-                      onClick={handleRetask}
-                      className="px-10 py-4 bg-indigo-600 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
-                    >
-                      Retask
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Deadline Elapsed (Cannot Retask)
-                    </span>
-                  )
+                  <p>Cancelled</p>
                 ) : (
                   canEdit && (
                     <button
@@ -849,21 +992,39 @@ const DispatchSchema = Yup.object().shape({
   steps: Yup.array().of(Yup.string().min(2, 'Step is too short'))
 });
 
-function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
+function DispatchDrawer({
+  isOpen,
+  onClose,
+  onSuccess,
+}: any) {
   const [residentSearch, setResidentSearch] = useState('');
 
-  const { data: resData } = useQuery(SEARCH_RESIDENTS, {
-    variables: { search: residentSearch },
-  });
+  const { data: resData } = useQuery(
+    SEARCH_RESIDENTS,
+    {
+      variables: {
+        search: residentSearch,
+      },
+    }
+  );
 
-  const [createTask, { loading }] = useMutation(CREATE_ADHOC_TASK);
-  const residents = resData?.residentList ?? [];
+  const [createTask, { loading }] =
+    useMutation(CREATE_ADHOC_TASK);
+
+  const residents =
+    resData?.residentList ?? [];
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex justify-end">
+
+      {/* Overlay */}
+
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+      />
 
       <Formik
         initialValues={{
@@ -872,18 +1033,15 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
           residentId: '',
           residentName: '',
           assignedCaregiverId: '',
-          assignedCaregiver: null, 
+          assignedCaregiver: null,
           category: 'CARE',
           priority: 'MEDIUM',
-          dueAt: new Date(Date.now() + 30 * 60000).toISOString(),
-          steps: ['Initial assessment']
+          dueAt: new Date(
+            Date.now() + 30 * 60000
+          ).toISOString(),
         }}
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
-          const checklistInput = values.steps.map(label => ({
-            label,
-          }));
-
           try {
             await createTask({
               variables: {
@@ -893,191 +1051,357 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                   category: values.category,
                   priority: values.priority,
                   residentId: values.residentId,
-                  assignedCaregiverId: values.assignedCaregiverId || null,
-                  dueAt: values.dueAt, 
-                  checklist: checklistInput,
-                }
-              }
+                  assignedCaregiverId:
+                    values.assignedCaregiverId ||
+                    null,
+                  dueAt: values.dueAt,
+
+                },
+              },
             });
+
             onSuccess();
             onClose();
           } catch (err) {
-            console.error("Dispatch Error:", err);
+            console.error(err);
           }
         }}
       >
         {({ values, setFieldValue }) => (
-          <Form className="relative w-full max-w-6xl bg-white rounded-[40px] shadow-2xl flex flex-col h-[90vh] animate-in fade-in zoom-in duration-300 overflow-hidden text-slate-800">
-            
+          <Form
+            className="
+              relative
+              w-full
+              max-w-xl
+              h-full
+              bg-white
+              shadow-2xl
+              flex
+              flex-col
+              animate-in
+              slide-in-from-right
+              duration-300
+            "
+          >
+
+            {/* ================================================= */}
             {/* HEADER */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100">
-                  <Plus className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Global Dispatch</h2>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Initialize Clinical Workload</p>
-                </div>
+            {/* ================================================= */}
+
+            <div className="h-16 shrink-0 border-b border-slate-200 px-6 flex items-center justify-between">
+
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Create Task
+                </h2>
+
+                <p className="text-xs text-slate-500">
+                  Dispatch new care task
+                </p>
               </div>
-              <button type="button" onClick={onClose} className="p-3 hover:bg-slate-200 rounded-2xl transition-all">
-                <X className="w-7 h-7 text-slate-400" />
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
               </button>
+
             </div>
 
-            <div className="flex-1 overflow-hidden flex bg-white">
-              {/* LEFT: CONTENT (Protocol) */}
-              <section className="flex-[1.5] overflow-y-auto p-12 border-r border-slate-100 space-y-12">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">01. Task Definition</h3>
-                  <Field
-                    name="title"
-                    placeholder="Task Title (e.g. Wound Care)"
-                    className="w-full text-3xl font-black text-slate-900 placeholder:text-slate-200 outline-none border-none p-0"
-                  />
-                  <Field
-                    as="textarea"
-                    name="description"
-                    placeholder="Clinical notes..."
-                    className="w-full min-h-25 text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none border-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
-                  />
-                </div>
+            {/* ================================================= */}
+            {/* CONTENT */}
+            {/* ================================================= */}
 
-                <div className="space-y-6">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">02. Execution Checklist</h3>
-                  <FieldArray name="steps">
-                    {({ push, remove }) => (
-                      <div className="space-y-3">
-                        {values.steps.map((_, index) => (
-                          <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group border border-transparent hover:border-indigo-100 transition-all">
-                            <span className="text-[10px] font-black text-slate-300 w-4">{index + 1}</span>
-                            <Field
-                              name={`steps.${index}`}
-                              placeholder="Describe protocol step..."
-                              className="flex-1 bg-transparent outline-none font-bold text-sm text-slate-700"
-                            />
-                            <button type="button" onClick={() => remove(index)} className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-all">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => push('')}
-                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
-                        >
-                          + Add Protocol Step
-                        </button>
-                      </div>
-                    )}
-                  </FieldArray>
-                </div>
-              </section>
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
-              {/* RIGHT: LOGISTICS */}
-              <section className="flex-1 overflow-y-auto p-12 bg-slate-50/30 space-y-10">
-                <div className="space-y-8">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
+              {/* Title */}
 
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resident</label>
-                    {values.residentId ? (
-                      <div className="flex items-center justify-between p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-right-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                             <User className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-black text-slate-800">{values.residentName}</span>
-                        </div>
-                        <button type="button" onClick={() => { setFieldValue('residentId', ''); setFieldValue('residentName', ''); }} className="text-rose-400 hover:text-rose-600 transition-colors">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input
-                          placeholder="Search residents..."
-                          className="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-indigo-300 transition-all"
-                          value={residentSearch}
-                          onChange={(e) => setResidentSearch(e.target.value)}
-                        />
-                        {residents.length > 0 && residentSearch && (
-                          <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
-                            {residents.map((res: any) => (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">
+                  Task Title
+                </label>
+
+                <Field
+                  name="title"
+                  placeholder="Medication administration"
+                  className="
+                    w-full
+                    border
+                    border-slate-200
+                    rounded-xl
+                    p-3
+                    text-sm
+                    outline-none
+                    focus:border-cyan-500
+                  "
+                />
+              </div>
+
+              {/* Description */}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">
+                  Description
+                </label>
+
+                <Field
+                  as="textarea"
+                  name="description"
+                  rows={5}
+                  placeholder="Clinical notes..."
+                  className="
+                    w-full
+                    border
+                    border-slate-200
+                    rounded-xl
+                    p-3
+                    text-sm
+                    outline-none
+                    resize-none
+                    focus:border-cyan-500
+                  "
+                />
+              </div>
+
+              {/* Resident */}
+
+              <div>
+
+                <label className="block text-xs font-medium text-slate-500 mb-2">
+                  Resident
+                </label>
+
+                {values.residentId ? (
+                  <div className="flex items-center justify-between border border-cyan-200 bg-cyan-50 rounded-xl p-3">
+
+                    <span className="font-medium text-sm">
+                      {values.residentName}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFieldValue(
+                          'residentId',
+                          ''
+                        );
+                        setFieldValue(
+                          'residentName',
+                          ''
+                        );
+                      }}
+                    >
+                      <X className="w-4 h-4 text-slate-500" />
+                    </button>
+
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      value={residentSearch}
+                      onChange={(e) =>
+                        setResidentSearch(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Search resident..."
+                      className="
+                        w-full
+                        border
+                        border-slate-200
+                        rounded-xl
+                        p-3
+                        text-sm
+                      "
+                    />
+
+                    {residentSearch &&
+                      residents.length > 0 && (
+                        <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
+
+                          {residents.map(
+                            (res: any) => (
                               <button
-                                key={res.residentId} type="button"
-                                className="w-full px-5 py-3 text-left hover:bg-slate-50 text-xs font-bold border-b border-slate-50 last:border-0 hover:text-indigo-600 transition-colors"
+                                key={
+                                  res.residentId
+                                }
+                                type="button"
+                                className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
                                 onClick={() => {
-                                  setFieldValue('residentId', res.residentId);
-                                  setFieldValue('residentName', `${res.firstName} ${res.lastName}`);
-                                  setResidentSearch('');
+                                  setFieldValue(
+                                    'residentId',
+                                    res.residentId
+                                  );
+
+                                  setFieldValue(
+                                    'residentName',
+                                    `${res.firstName} ${res.lastName}`
+                                  );
+
+                                  setResidentSearch(
+                                    ''
+                                  );
                                 }}
                               >
-                                {res.firstName} {res.lastName}
+                                {res.firstName}{' '}
+                                {res.lastName}
                               </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                            )
+                          )}
 
-                  <CaregiverSelect
-                    value={values.assignedCaregiver}
-                    onChange={(cg: any) => {
-                      setFieldValue('assignedCaregiverId', cg?.id || '');
-                      setFieldValue('assignedCaregiver', cg);
-                    }}
-                  />
+                        </div>
+                      )}
+                  </>
+                )}
+              </div>
+
+              {/* Caregiver */}
+
+              <CaregiverSelect
+                value={
+                  values.assignedCaregiver
+                }
+                onChange={(cg: any) => {
+                  setFieldValue(
+                    'assignedCaregiverId',
+                    cg?.id || ''
+                  );
+
+                  setFieldValue(
+                    'assignedCaregiver',
+                    cg
+                  );
+                }}
+              />
+
+              {/* Due Date */}
+
+              <div>
+
+                <label className="block text-xs font-medium text-slate-500 mb-2">
+                  Schedule
+                </label>
+
+                <ClinicalScheduler
+                  value={values.dueAt}
+                  onChange={(iso) =>
+                    setFieldValue(
+                      'dueAt',
+                      iso
+                    )
+                  }
+                />
+
+              </div>
+
+              {/* Priority */}
+
+              <div>
+
+                <label className="block text-xs font-medium text-slate-500 mb-3">
+                  Priority
+                </label>
+
+                <div className="grid grid-cols-4 gap-2">
+
+                  {[
+                    'LOW',
+                    'MEDIUM',
+                    'HIGH',
+                    'CRITICAL',
+                  ].map((priority) => (
+                    <button
+                      key={priority}
+                      type="button"
+                      onClick={() =>
+                        setFieldValue(
+                          'priority',
+                          priority
+                        )
+                      }
+                      className={`
+                        h-11
+                        rounded-xl
+                        border
+                        text-xs
+                        font-medium
+                        transition-all
+                        ${
+                          values.priority ===
+                          priority
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-500 border-slate-200'
+                        }
+                      `}
+                    >
+                      {priority}
+                    </button>
+                  ))}
+
                 </div>
 
-                <div className="space-y-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
-                  
-                  <ClinicalScheduler
-                    value={values.dueAt}
-                    onChange={(iso) => setFieldValue('dueAt', iso)}
-                  />
-                  
-                  <div className="space-y-3">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
-                    <div className="flex gap-2">
-                      {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                        <button
-                          key={p} type="button"
-                          onClick={() => setFieldValue('priority', p)}
-                          className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase transition-all duration-200 ${
-                            values.priority === p 
-                              ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200' 
-                              : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-                            }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
+              </div>
+
+
             </div>
 
-            <div className="p-10 border-t border-slate-100 bg-white flex justify-end items-center gap-6 shrink-0">
-              <button 
-                type="button" 
-                onClick={onClose} 
-                className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+            {/* ================================================= */}
+            {/* FOOTER */}
+            {/* ================================================= */}
+
+            <div className="border-t border-slate-200 p-5 bg-white flex justify-end gap-3">
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="
+                  px-4
+                  py-2
+                  rounded-xl
+                  border
+                  border-slate-200
+                  text-sm
+                "
               >
-                Discard
+                Cancel
               </button>
+
               <button
                 type="submit"
-                disabled={loading || !values.residentId || !values.title}
-                className="px-12 py-5 bg-slate-900 text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-200 transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center gap-3 active:scale-95"
+                disabled={
+                  loading ||
+                  !values.title ||
+                  !values.residentId
+                }
+                className="
+                  px-5
+                  py-2
+                  rounded-xl
+                  bg-cyan-500
+                  hover:bg-cyan-600
+                  text-white
+                  text-sm
+                  font-medium
+                  disabled:opacity-50
+                  flex
+                  items-center
+                  gap-2
+                "
               >
-                {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm Dispatch'}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Create Task
+                  </>
+                )}
               </button>
+
             </div>
+
           </Form>
         )}
       </Formik>

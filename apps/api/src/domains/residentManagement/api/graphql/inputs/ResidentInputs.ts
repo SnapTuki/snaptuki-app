@@ -15,7 +15,6 @@ export class RegisterResidentInput {
   @Field(() => String) ssn!: string;
   @Field(() => String) birthDate!: string;
   @Field(() => Gender) gender!: Gender;
-  @Field(() => [EmergencyContactInput]) emergencyContacts!: EmergencyContactInput[]
   @Field(() => MobilityLevel) mobilityLevel!: MobilityLevel;
   @Field(() => String, { nullable: true }) room?: string | null;
 }

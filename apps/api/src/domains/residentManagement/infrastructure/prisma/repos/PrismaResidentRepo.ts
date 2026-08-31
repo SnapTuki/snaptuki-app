@@ -9,27 +9,15 @@ export class PrismaResidentRepo implements IResidentRepo {
 
   constructor(private readonly prisma: PrismaClient) { }
 
-  // --- 1. Centralized Includes ---
-  // Define this once to guarantee you never miss a relation and cause data loss
-  private readonly aggregateIncludes = {
-    allergies: true,
-    medications: true,
-    emergencyContacts: true,
-    taskAssignments: true, 
-    tasks: true, // Optional: Only include if you intend to load full care history every time
-  };
-
   async getById(id: string) {
     return await this.prisma.resident.findUnique({
       where: { residentId: id },
-      include: this.aggregateIncludes,
     });
   }
 
   async getByMRN(mrn: string) {
     const row = await this.prisma.resident.findUnique({
       where: { mrn },
-      include: this.aggregateIncludes,
     });
     return row;
   }
@@ -55,7 +43,6 @@ export class PrismaResidentRepo implements IResidentRepo {
       take,
       skip,
       orderBy: { createdAt: "desc" },
-      include: this.aggregateIncludes,
     });
 
     // Map safely, filtering out any potential nulls

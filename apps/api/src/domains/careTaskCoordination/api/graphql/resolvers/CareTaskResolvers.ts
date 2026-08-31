@@ -61,7 +61,7 @@ export class CareTaskResolvers {
     return result
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async updateCareTask(@Arg("input", () => UpdateCareTaskInput)
   input: UpdateCareTaskInput, @Ctx() ctx: GraphQLContext) {
 
@@ -74,7 +74,7 @@ export class CareTaskResolvers {
 
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async assignCareTask(
     @Arg("input", () => AssignCareTaskInput) input: AssignCareTaskInput,
     @Ctx() ctx: GraphQLContext) {
@@ -82,7 +82,7 @@ export class CareTaskResolvers {
     return assignUseCase.execute(input);
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async changeCareTaskPriority(
     @Arg("input", () => ChangeCareTaskPriorityInput)
     input: ChangeCareTaskPriorityInput,
@@ -94,7 +94,7 @@ export class CareTaskResolvers {
     return useCase.execute(input);
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async rescheduleCareTask(
     @Arg("input", () => RescheduleCareTaskInput)
     input: RescheduleCareTaskInput,
@@ -107,7 +107,7 @@ export class CareTaskResolvers {
     return useCase.execute(input);
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async cancelCareTask(
     @Arg("input", () => CancelCareTaskInput)
     input: CancelCareTaskInput,
@@ -119,7 +119,7 @@ export class CareTaskResolvers {
     return useCase.execute(input);
   }
 
-  @Mutation()
+  @Mutation(() => CareTaskType)
   async completeCareTask(@Arg("input", () => CompleteCareTaskInput)
   input: CompleteCareTaskInput,
 

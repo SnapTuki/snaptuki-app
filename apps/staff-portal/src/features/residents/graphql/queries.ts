@@ -3,8 +3,8 @@ import type { TypedDocumentNode } from "@apollo/client";
 import type { Query } from "../../../lib/graphql/generated";
 
 export const GET_RESIDENTS: TypedDocumentNode<Query> = gql`
-  query ResidentList() {
-    residentList() {
+  query ResidentList {
+    residentList {
         residentId
         mrn
         firstName
@@ -19,8 +19,8 @@ export const GET_RESIDENTS: TypedDocumentNode<Query> = gql`
 `;
 
 export const GET_RESIDENT_SUGGESTIONS: TypedDocumentNode<Query> = gql`
-  query ResidentSuggestions($search: String) {
-    residentList(search: $search) {
+  query ResidentSuggestions{
+    residentList {
         residentId
         mrn
         firstName
@@ -43,22 +43,12 @@ export const GET_RESIDENT_BY_ID: TypedDocumentNode<Query> = gql`
 
 // --- QUERIES ---
 export const GET_TASK_LIST: TypedDocumentNode<Query> = gql`
-  query GetTaskListResident($residentId: String, $startDate: DateTime, $endDate: DateTime, $status: String) {
-    taskList(residentId: $residentId, startDate: $startDate, endDate: $endDate, status: $status) {
+  query GetTaskListResident{
+    todayCareTasks {
       id
       title
-      description
       status
       priority
-      dueAt
-      assignedCaregiver {
-        firstName
-        lastName
-      }
-      checklist{
-        id
-        label
-      }
     }
   }
 `;
@@ -84,12 +74,6 @@ query GetResidentIdentityProfile($residentId: String!) {
     room
     gender
     birthDate
-    emergencyContacts{
-      id
-      name
-      phone
-      relation
-    }
     mobilityLevel
 }
 }

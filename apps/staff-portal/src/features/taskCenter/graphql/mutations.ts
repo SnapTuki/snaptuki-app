@@ -4,7 +4,7 @@ import type { Mutation } from "../../../lib/graphql/generated";
 
 
 export const CREATE_ADHOC_TASK: TypedDocumentNode<Mutation>= gql`
-  mutation CreateAdHocTask($input: CreateTaskInput!) {
+  mutation CreateAdHocTask($input: CreateCareTaskInput!) {
     createCareTask(input: $input) {
       id
     }
@@ -12,7 +12,7 @@ export const CREATE_ADHOC_TASK: TypedDocumentNode<Mutation>= gql`
 `;
 
 export const UPDATE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
-  mutation UpdateCareTask($input: UpdateTaskInput!) {
+  mutation UpdateCareTask($input: UpdateCareTaskInput!) {
     updateCareTask(input: $input) {
       id
     }
@@ -21,7 +21,7 @@ export const UPDATE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
 
 
 export const COMPLETE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
-  mutation CompleteCareTask($input: CompleteTaskInputGql!) {
+  mutation CompleteCareTask($input: CompleteCareTaskInput!) {
     completeCareTask(input: $input) {
       id
     }
@@ -29,8 +29,8 @@ export const COMPLETE_CARE_TASK: TypedDocumentNode<Mutation> = gql`
 `;
 
 export const CANCEL_CARE_TASK: TypedDocumentNode<Mutation> = gql`
-  mutation CancelCareTask($id: String!, $reason: String) {
-    cancelCareTask(id: $id, reason: $reason) {
+  mutation CancelCareTask($input: CancelCareTaskInput!) {
+    cancelCareTask(input: $input) {
       id
     }
   }
