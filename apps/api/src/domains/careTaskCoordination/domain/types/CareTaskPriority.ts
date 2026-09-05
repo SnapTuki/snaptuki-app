@@ -1,8 +1,8 @@
 export const CareTaskPriorities = {
-    LOW: 'low',
-    NORMAL: 'normal',
-    HIGH: 'high',
-    CRITICAL: 'critical',
+    LOW: 'LOW',
+    NORMAL: 'NORMAL',
+    HIGH: 'HIGH',
+    CRITICAL: 'CRITICAL',
 } as const;
 
-export type CareTaskPriority = typeof CareTaskPriorities[keyof typeof CareTaskPriorities];
+export type CareTaskPriorityType = typeof CareTaskPriorities[keyof typeof CareTaskPriorities];

@@ -1,13 +1,13 @@
-const CareTaskStatuses = {
-    PLANNED: 'planned',
-    ASSIGNED: 'assigned',
-    IN_PROGRESS: 'in_progress',
-    COMPLETED: 'completed',
-    UNABLE_TO_COMPLETE: 'unable_to_complete',
-    NEED_ASSISTANCE: 'need_assistance',
-    OVERDUE: 'overdue',
-    MISSED: 'missed',
-    CANCELLED: 'cancelled',
-}
+export const CareTaskStatuses = {
+    PLANNED: 'PLANNED',
+    ASSIGNED: 'ASSIGNED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    COMPLETED: 'COMPLETED',
+    UNABLE_TO_COMPLETE: 'UNABLE_TO_COMPLETE',
+    NEED_ASSISTANCE: 'NEED_ASSISTANCE',
+    OVERDUE: 'OVERDUE',
+    MISSED: 'MISSED',
+    CANCELLED: 'CANCELLED',
+} as const;
 
-export type CareTaskStatus = typeof CareTaskStatuses[keyof typeof CareTaskStatuses];
+export type CareTaskStatusType = typeof CareTaskStatuses[keyof typeof CareTaskStatuses];

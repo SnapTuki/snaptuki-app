@@ -1,23 +1,37 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useLazyQuery } from '@apollo/client/react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useLazyQuery, useQuery, useMutation } from '@apollo/client/react';
 import {
   Plus, Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X,
-  ChevronDown, AlertCircle, Check, User, CheckCircle2,Filter, RefreshCcw,
-  MoreHorizontal, ChevronUp, LayoutList, Kanban, CalendarDays,
-  ArrowUpRight, Inbox
+  ChevronDown, AlertCircle, Check, User, CheckCircle2, Filter, RefreshCcw,
+  MoreHorizontal, ChevronUp, Inbox
 } from "lucide-react";
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
-import { GET_ALL_TASKS, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
+// Added GET_TOMORROW_CARE_TASKS to your imports
 import { 
-  CREATE_ADHOC_TASK, 
+  GET_TODAY_CARE_TASKS, 
+  GET_TOMORROW_CARE_TASKS, 
+  SEARCH_CAREGIVERS, 
+  SEARCH_RESIDENTS 
+} from '../../features/taskCenter/graphql/queries';
+import {
+  CREATE_ADHOC_TASK,
   UPDATE_CARE_TASK,
   CANCEL_CARE_TASK,
   COMPLETE_CARE_TASK,
 } from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
+
+const TASK_STATUS_GROUPS = [
+  { key: 'PLANNED', label: 'Planned', colorClass: 'bg-slate-400', textClass: 'text-slate-600' },
+  { key: 'ASSIGNED', label: 'Assigned', colorClass: 'bg-indigo-400', textClass: 'text-indigo-500' },
+  { key: 'IN_PROGRESS', label: 'In Progress', colorClass: 'bg-amber-400', textClass: 'text-amber-500' },
+  { key: 'COMPLETED', label: 'Completed', colorClass: 'bg-emerald-500', textClass: 'text-emerald-500' },
+  { key: 'UNABLE_TO_COMPLETE', label: 'Unable to Complete', colorClass: 'bg-rose-400', textClass: 'text-rose-500' },
+  { key: 'OVERDUE', label: 'Overdue', colorClass: 'bg-orange-500', textClass: 'text-orange-600' },
+  { key: 'MISSED', label: 'Missed', colorClass: 'bg-red-600', textClass: 'text-red-600' }
+];
 
 export default function TaskCenter() {
   const [activeTab] = useState('Today');
@@ -25,70 +39,50 @@ export default function TaskCenter() {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDispatchOpen, setIsDispatchOpen] = useState(false);
 
-  const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>(
-    'Today'
-  );
+  const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
 
-  const [statusFilter] = useState('ALL');
-  const [priorityFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [priorityFilter, setPriorityFilter] = useState('ALL');
 
-  const { data, refetch } = useQuery(GET_ALL_TASKS, {
-    variables: { search: searchTerm },
+  // Query for Today (Skips if viewing Tomorrow)
+  const { data: todayData, refetch: refetchToday } = useQuery(GET_TODAY_CARE_TASKS, {
+    skip: scheduleView !== 'Today'
   });
 
-  const allTasks = data?.todayCareTasks || [];
+  // Query for Tomorrow (Skips if viewing Today)
+  const { data: tomorrowData, refetch: refetchTomorrow } = useQuery(GET_TOMORROW_CARE_TASKS, {
+    skip: scheduleView !== 'Tomorrow'
+  });
 
+  // Dynamically pull from the active query result
+  const allTasks = scheduleView === 'Today' 
+    ? (todayData?.todayCareTasks || []) 
+    : (tomorrowData?.todayCareTasks || []);
+
+  const handleRefresh = () => {
+    if (scheduleView === 'Today') {
+      refetchToday();
+    } else {
+      refetchTomorrow();
+    }
+  };
+
+  // The local date filtering is gone—we only filter by status, priority, and text search
   const filteredTasks = useMemo(() => {
-    const now = new Date();
-
-    const todayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    ).getTime();
-
-    const tomorrowStart = todayStart + 86400000;
-    const dayAfterTomorrowStart = tomorrowStart + 86400000;
-
     return allTasks.filter((t: any) => {
-      const matchesStatus =
-        statusFilter === 'ALL' || t.status === statusFilter;
+      const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
+      const matchesPriority = priorityFilter === 'ALL' || t.priority === priorityFilter;
+      const matchesSearch = !searchTerm || t.title?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesPriority =
-        priorityFilter === 'ALL' || t.priority === priorityFilter;
-
-      const taskTime = new Date(t.dueAt).getTime();
-
-      const matchesDate =
-        scheduleView === 'Today'
-          ? taskTime >= todayStart && taskTime < tomorrowStart
-          : taskTime >= tomorrowStart &&
-            taskTime < dayAfterTomorrowStart;
-
-      return matchesStatus && matchesPriority && matchesDate;
+      return matchesStatus && matchesPriority && matchesSearch;
     });
-  }, [
-    allTasks,
-    scheduleView,
-    statusFilter,
-    priorityFilter,
-  ]);
+  }, [allTasks, statusFilter, priorityFilter, searchTerm]);
 
-  const pendingTasks = filteredTasks.filter(
-    (t: any) => t.status === 'PENDING'
-  );
-
-  const assignedTasks = filteredTasks.filter(
-    (t: any) => t.status === 'ASSIGNED'
-  );
-
-  const completedTasks = filteredTasks.filter(
-    (t: any) => t.status === 'COMPLETED'
-  );
-
-  const cancelledTasks = filteredTasks.filter(
-    (t: any) => t.status === 'CANCELLED'
-  );
+  // Aggregate stats based on our filtered dataset
+  const todoCount = filteredTasks.filter((t: any) => ['PLANNED', 'ASSIGNED'].includes(t.status)).length;
+  const activeCount = filteredTasks.filter((t: any) => t.status === 'IN_PROGRESS').length;
+  const completedCount = filteredTasks.filter((t: any) => t.status === 'COMPLETED').length;
+  const issueCount = filteredTasks.filter((t: any) => ['UNABLE_TO_COMPLETE', 'OVERDUE', 'MISSED'].includes(t.status)).length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -96,42 +90,30 @@ export default function TaskCenter() {
       {/* ========================================================= */}
       {/* FIXED HEADER */}
       {/* ========================================================= */}
-
-      <header className="fixed top-0  right-0 left-0 h-16 z-40 bg-white border-b border-slate-200">
+      <header className="fixed top-0 right-0 left-0 h-16 z-40 bg-white border-b border-slate-200">
         <div className="h-full px-10 flex items-center justify-between">
-
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-cyan-500 flex items-center justify-center shadow-sm">
               <Activity className="w-5 h-5 text-white" />
             </div>
-
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">
-                Task Center
-              </h1>
-
-              <p className="text-xs text-slate-500">
-                Clinical Operations Dashboard
-              </p>
+              <h1 className="text-lg font-semibold text-slate-900">Task Center</h1>
+              <p className="text-xs text-slate-500">Clinical Operations Dashboard</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               className="h-10 w-10 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
             >
               <RefreshCcw className="w-4 h-4 text-slate-500" />
             </button>
-
-            
-
             <button
               onClick={() => setIsDispatchOpen(true)}
               className="h-10 px-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl flex items-center gap-2 text-sm font-medium transition-all"
             >
-              <Plus className="w-4 h-4" />
-              Add Task
+              <Plus className="w-4 h-4" /> Add Task
             </button>
           </div>
         </div>
@@ -140,74 +122,76 @@ export default function TaskCenter() {
       {/* ========================================================= */}
       {/* CONTENT */}
       {/* ========================================================= */}
-
       <main className="pt-16">
-
         {activeTab === 'Today' && (
           <div className="w-full">
-
             <div className="px-6 py-6 space-y-6">
 
               {/* ===================================================== */}
               {/* STICKY TOOLBAR */}
               {/* ===================================================== */}
-
               <div className="sticky top-16 z-40 bg-slate-50 pb-4">
-
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
 
+                  {/* left: Search & Filters */}
                   <div className="flex flex-wrap items-center gap-3">
-
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-
                       <input
                         type="text"
                         placeholder="Search tasks..."
                         value={searchTerm}
-                        onChange={(e) =>
-                          setSearchTerm(e.target.value)
-                        }
-                        className="
-                          w-80
-                          h-11
-                          pl-10
-                          pr-4
-                          border
-                          border-slate-200
-                          rounded-xl
-                          bg-white
-                          text-sm
-                          outline-none
-                          focus:ring-2
-                          focus:ring-cyan-200
-                        "
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-64 h-11 pl-10 pr-4 border border-slate-200 rounded-xl bg-white text-sm outline-none focus:ring-2 focus:ring-cyan-200"
                       />
                     </div>
 
-                    <div className="flex bg-slate-100 rounded-xl p-1">
+                    <div className="relative">
+                      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="h-11 pl-9 pr-8 border border-slate-200 rounded-xl bg-white text-sm outline-none focus:ring-2 focus:ring-cyan-200 appearance-none text-slate-600"
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="PLANNED">Planned</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="UNABLE_TO_COMPLETE">Unable to Complete</option>
+                        <option value="OVERDUE">Overdue</option>
+                        <option value="MISSED">Missed</option>
+                      </select>
+                    </div>
 
+                    <div className="relative">
+                      <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <select
+                        value={priorityFilter}
+                        onChange={(e) => setPriorityFilter(e.target.value)}
+                        className="h-11 pl-9 pr-8 border border-slate-200 rounded-xl bg-white text-sm outline-none focus:ring-2 focus:ring-cyan-200 appearance-none text-slate-600"
+                      >
+                        <option value="ALL">All Priorities</option>
+                        <option value="LOW">Low</option>
+                        <option value="NORMAL">Normal</option>
+                        <option value="HIGH">High</option>
+                        <option value="CRITICAL">Critical</option>
+                      </select>
+                    </div>
+
+                    <div className="flex bg-slate-100 rounded-xl p-1 ml-4">
                       <button
-                        onClick={() =>
-                          setScheduleView('Today')
-                        }
+                        onClick={() => setScheduleView('Today')}
                         className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
-                          scheduleView === 'Today'
-                            ? 'bg-white shadow-sm text-slate-900'
-                            : 'text-slate-500'
+                          scheduleView === 'Today' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
                         }`}
                       >
                         Today
                       </button>
-
                       <button
-                        onClick={() =>
-                          setScheduleView('Tomorrow')
-                        }
+                        onClick={() => setScheduleView('Tomorrow')}
                         className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
-                          scheduleView === 'Tomorrow'
-                            ? 'bg-white shadow-sm text-slate-900'
-                            : 'text-slate-500'
+                          scheduleView === 'Tomorrow' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
                         }`}
                       >
                         Tomorrow
@@ -215,52 +199,26 @@ export default function TaskCenter() {
                     </div>
                   </div>
 
+                  {/* right: Stats */}
                   <div className="flex items-center gap-8">
-
                     <div>
-                      <div className="text-xl font-semibold text-slate-900">
-                        {filteredTasks.length}
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        Total Tasks
-                      </div>
+                      <div className="text-xl font-semibold text-slate-900">{filteredTasks.length}</div>
+                      <div className="text-xs text-slate-500">Total Tasks</div>
                     </div>
-
                     <div className="w-px h-8 bg-slate-200" />
-
                     <div>
-                      <div className="text-xl font-semibold text-slate-800">
-                        {pendingTasks.length}
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        To Do
-                      </div>
+                      <div className="text-xl font-semibold text-slate-800">{todoCount}</div>
+                      <div className="text-xs text-slate-500">To Do</div>
                     </div>
-
                     <div className="w-px h-8 bg-slate-200" />
-
                     <div>
-                      <div className="text-xl font-semibold text-amber-500">
-                        {assignedTasks.length}
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        Active
-                      </div>
+                      <div className="text-xl font-semibold text-amber-500">{activeCount}</div>
+                      <div className="text-xs text-slate-500">Active</div>
                     </div>
-
                     <div className="w-px h-8 bg-slate-200" />
-
                     <div>
-                      <div className="text-xl font-semibold text-cyan-500">
-                        {completedTasks.length}
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        Completed
-                      </div>
+                      <div className="text-xl font-semibold text-rose-500">{issueCount}</div>
+                      <div className="text-xs text-slate-500">Issues</div>
                     </div>
                   </div>
 
@@ -270,68 +228,35 @@ export default function TaskCenter() {
               {/* ===================================================== */}
               {/* TASK SECTIONS */}
               {/* ===================================================== */}
-
               {filteredTasks.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-2xl py-24 text-center">
-
                   <Inbox className="w-14 h-14 text-slate-300 mx-auto mb-4" />
-
                   <h3 className="text-lg font-semibold text-slate-800">
                     No tasks found for {scheduleView}
                   </h3>
-
                   <p className="text-sm text-slate-500 mt-2">
                     Try adjusting filters or create a new task.
                   </p>
-
                 </div>
               ) : (
                 <div className="space-y-6 pb-12">
+                  {TASK_STATUS_GROUPS.map((statusGroup) => {
+                    const tasksForGroup = filteredTasks.filter((t: any) => t.status === statusGroup.key);
+                    
+                    if (tasksForGroup.length === 0) return null;
 
-                  {pendingTasks.length > 0 && (
-                    <TaskGroup
-                      title="To Do"
-                      count={pendingTasks.length}
-                      tasks={pendingTasks}
-                      colorClass="bg-slate-800"
-                      textClass="text-slate-800"
-                      onRowClick={setSelectedTask}
-                    />
-                  )}
-
-                  {assignedTasks.length > 0 && (
-                    <TaskGroup
-                      title="In Progress"
-                      count={assignedTasks.length}
-                      tasks={assignedTasks}
-                      colorClass="bg-amber-400"
-                      textClass="text-amber-500"
-                      onRowClick={setSelectedTask}
-                    />
-                  )}
-
-                  {completedTasks.length > 0 && (
-                    <TaskGroup
-                      title="Completed"
-                      count={completedTasks.length}
-                      tasks={completedTasks}
-                      colorClass="bg-cyan-500"
-                      textClass="text-cyan-500"
-                      onRowClick={setSelectedTask}
-                    />
-                  )}
-
-                  {cancelledTasks.length > 0 && (
-                    <TaskGroup
-                      title="Cancelled"
-                      count={cancelledTasks.length}
-                      tasks={cancelledTasks}
-                      colorClass="bg-rose-500"
-                      textClass="text-rose-500"
-                      onRowClick={setSelectedTask}
-                    />
-                  )}
-
+                    return (
+                      <TaskGroup
+                        key={statusGroup.key}
+                        title={statusGroup.label}
+                        count={tasksForGroup.length}
+                        tasks={tasksForGroup}
+                        colorClass={statusGroup.colorClass}
+                        textClass={statusGroup.textClass}
+                        onRowClick={setSelectedTask}
+                      />
+                    );
+                  })}
                 </div>
               )}
 
@@ -343,17 +268,13 @@ export default function TaskCenter() {
       {/* ========================================================= */}
       {/* TASK DETAILS DRAWER */}
       {/* ========================================================= */}
-
       {selectedTask && (
         <div className="fixed inset-0 z-[80] flex justify-end">
-
           <div
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setSelectedTask(null)}
           />
-
           <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl">
-
             <div className="absolute top-4 right-4 z-10">
               <button
                 onClick={() => setSelectedTask(null)}
@@ -362,11 +283,10 @@ export default function TaskCenter() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <TaskDetailView
               task={selectedTask}
               key={selectedTask.id}
-              onUpdate={() => refetch()}
+              onUpdate={handleRefresh}
             />
           </div>
         </div>
@@ -375,18 +295,17 @@ export default function TaskCenter() {
       {/* ========================================================= */}
       {/* DISPATCH DRAWER */}
       {/* ========================================================= */}
-
       <DispatchDrawer
         isOpen={isDispatchOpen}
         onClose={() => setIsDispatchOpen(false)}
-        onSuccess={() => refetch()}
+        onSuccess={handleRefresh}
       />
     </div>
   );
 }
 
 // =========================================
-// NEW: TASK GROUP COMPONENT
+// TASK GROUP COMPONENT
 // =========================================
 function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: { title: string, count: number, tasks: any[], colorClass: string, textClass: string, onRowClick: (t: any) => void }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -395,10 +314,10 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
     return (
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setIsOpen(true)}>
         <div className="flex items-center gap-4">
-           <div className={`w-1 h-5 rounded-full ${colorClass}`} />
-           <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
-           <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
-           <ChevronDown className="w-4 h-4 text-slate-400" />
+          <div className={`w-1 h-5 rounded-full ${colorClass}`} />
+          <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
+          <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
+          <ChevronDown className="w-4 h-4 text-slate-400" />
         </div>
       </div>
     );
@@ -406,20 +325,15 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
-      {/* Header */}
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => setIsOpen(false)}>
-           <div className={`w-1 h-5 rounded-full ${colorClass}`} />
-           <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
-           <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
-           <ChevronUp className="w-4 h-4 text-slate-400" />
+          <div className={`w-1 h-5 rounded-full ${colorClass}`} />
+          <span className={`text-[15px] font-bold ${textClass}`}>{title}</span>
+          <span className="px-2.5 py-0.5 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">{count}</span>
+          <ChevronUp className="w-4 h-4 text-slate-400" />
         </div>
-        <button className="text-sm font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors">
-          View All <ArrowUpRight className="w-4 h-4" />
-        </button>
       </div>
 
-      {/* Table */}
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -429,7 +343,6 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
               <th className="py-3 px-4 font-medium min-w-50">Task Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium min-w-37.5">Assignee <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium min-w-37.5">Resident Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
-              <th className="py-3 px-4 font-medium">Progress <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Deadline <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Priority <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 text-center">Action</th>
@@ -437,28 +350,19 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
           </thead>
           <tbody>
             {tasks.map(task => {
-              // Calculate mock progress from checklist
-              let progressStr = "0%";
-              if (task.status === 'COMPLETED') progressStr = "100%";
-              else if (task.checklist?.length > 0) {
-                const done = task.checklist.filter((c: any) => c.done).length;
-                progressStr = `${Math.round((done / task.checklist.length) * 100)}%`;
-              } else if (task.status === 'ASSIGNED') {
-                 progressStr = "50%";
-              }
+              
 
-              // Priority formatting
               const prioMap: Record<string, string> = {
-                'HIGH': 'bg-rose-50 text-rose-500',
                 'CRITICAL': 'bg-rose-50 text-rose-500',
-                'MEDIUM': 'bg-teal-50 text-teal-500', // Using teal/cyan for medium as requested by screenshot
+                'HIGH': 'bg-orange-50 text-orange-500',
+                'NORMAL': 'bg-teal-50 text-teal-500', 
                 'LOW': 'bg-purple-50 text-purple-500'
               };
               const prioClass = prioMap[task.priority] || 'bg-slate-100 text-slate-600';
 
               return (
-                <tr 
-                  key={task.id} 
+                <tr
+                  key={task.id}
                   className="border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                   onClick={() => onRowClick(task)}
                 >
@@ -466,13 +370,13 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                     <div className="w-4 h-4 border-2 border-slate-200 rounded shrink-0 group-hover:border-slate-300" />
                   </td>
                   <td className="py-4 px-4 text-sm font-medium text-slate-500">
-                    P{task.id?.slice(0,6) || "000000"}
+                    P{task.id?.slice(0, 6) || "000000"}
                   </td>
                   <td className="py-4 px-4 text-sm font-semibold text-slate-700 truncate max-w-62">
                     {task.title}
                   </td>
                   <td className="py-4 px-4">
-                    {task.assignedCaregiver ? (
+                    {task.caregiver ? (
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-white shrink-0 shadow-sm">
                           {task.assignedCaregiver.firstName[0]}
@@ -488,11 +392,9 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                   <td className="py-4 px-4 text-sm font-medium text-slate-500 truncate max-w-45">
                     {task.assignedResident?.firstName} {task.assignedResident?.lastName}
                   </td>
-                  <td className="py-4 px-4 text-sm font-semibold text-slate-700">
-                    {progressStr}
-                  </td>
+                
                   <td className="py-4 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
-                    {task.dueAt ? new Date(task.dueAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                    {task.dueTime ? new Date(task.dueTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                   </td>
                   <td className="py-4 px-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${prioClass}`}>
@@ -515,17 +417,16 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
 }
 
 // =========================================
-// HELPER COMPONENTS (Preserved entirely from original logic)
+// HELPER COMPONENTS 
 // =========================================
 
 function TaskDetailView({ task, onUpdate }: any) {
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const isPending = task.status === 'PENDING';
-  const isCancelled = task.status === 'CANCELLED';
-  const canEdit = isPending; 
-  const canRetask = isCancelled && new Date(task.dueAt).getTime() > Date.now() + 15 * 60000;
+  const isPending = task.status === 'PLANNED' || task.status === 'ASSIGNED';
+  const isCancelled = task.status === 'CANCELLED' || task.status === 'UNABLE_TO_COMPLETE' || task.status === 'MISSED';
+  const canEdit = isPending || task.status === 'IN_PROGRESS';
 
   const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_CARE_TASK, {
     onCompleted: () => {
@@ -550,7 +451,6 @@ function TaskDetailView({ task, onUpdate }: any) {
       setErrorMessage(error.message || "Failed to cancel task.");
     }
   });
-
 
   const [completeTaskMutation] = useMutation(COMPLETE_CARE_TASK, {
     onCompleted: () => {
@@ -582,12 +482,8 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   };
 
-
-
   return (
     <div className="h-full flex flex-col overflow-hidden relative">
-      
-      {/* SUCCESS NOTIFICATION OVERLAY */}
       {mutationStatus === 'SUCCESS' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-emerald-200 flex items-center gap-3 border border-emerald-400">
@@ -597,7 +493,6 @@ function TaskDetailView({ task, onUpdate }: any) {
         </div>
       )}
 
-      {/* ERROR BADGE */}
       {mutationStatus === 'ERROR' && (
         <div className="mx-10 mt-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4">
           <div className="flex items-center gap-3">
@@ -614,14 +509,14 @@ function TaskDetailView({ task, onUpdate }: any) {
           </button>
         </div>
       )}
-      
+
       <Formik
         initialValues={{
           id: task.id,
           title: task.title || '',
           description: task.description || '',
-          status: task.status || 'PENDING',
-          priority: task.priority || 'MEDIUM',
+          status: task.status || 'PLANNED',
+          priority: task.priority || 'NORMAL',
           residentId: task.residentId || '',
           residentName: `${task.assignedResident?.firstName} ${task.assignedResident?.lastName}` || 'Unknown Resident',
           assignedCaregiverId: task.assignedCaregiverId || '',
@@ -638,7 +533,7 @@ function TaskDetailView({ task, onUpdate }: any) {
         }}
         enableReinitialize
         onSubmit={async (values) => {
-          if (!canEdit) return; // safety check
+          if (!canEdit) return; 
           const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, status, ...cleanPayload } = values;
           if (!dueAt) {
             setMutationStatus('ERROR');
@@ -657,8 +552,6 @@ function TaskDetailView({ task, onUpdate }: any) {
       >
         {({ values, setFieldValue, dirty }) => (
           <Form className="flex flex-col h-full">
-
-            {/* 1. HEADER SECTION */}
             <header className="px-10 py-8 border-b border-slate-100 bg-white pt-14">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
@@ -685,14 +578,14 @@ function TaskDetailView({ task, onUpdate }: any) {
                     />
                   </div>
 
-                  <Field 
-                    as="select" 
-                    name="priority" 
+                  <Field
+                    as="select"
+                    name="priority"
                     disabled={!canEdit}
                     className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
+                    <option value="NORMAL">Normal</option>
                     <option value="HIGH">High</option>
                     <option value="CRITICAL">Critical</option>
                   </Field>
@@ -707,22 +600,17 @@ function TaskDetailView({ task, onUpdate }: any) {
               />
             </header>
 
-            {/* 2. SCROLLABLE CONTENT */}
             <div className="flex-1 overflow-y-auto p-10 space-y-12 bg-white scrollbar-hide">
-
               <div className="grid grid-cols-2 gap-12">
-                {/* Resident & Room */}
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                     <User className="w-3.5 h-3.5" /> Subject & Location
                   </h3>
-
                   <div className="space-y-4">
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Resident</p>
                       <p className="text-sm font-bold text-slate-800">{values.residentName}</p>
                     </div>
-
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Room Assignment</p>
@@ -733,17 +621,15 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </div>
                 </div>
 
-                {/* Status & Caregiver Selector */}
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Assignments
                   </h3>
-
                   <div className="space-y-4">
                     <div className="relative group mt-5">
                       <CaregiverSelect
                         disabled={!canEdit}
-                        value={values.assignedCaregiver} 
+                        value={values.assignedCaregiver}
                         onChange={(cg: any) => {
                           setFieldValue('assignedCaregiverId', cg?.id || '');
                           setFieldValue('assignedCaregiver', cg ? {
@@ -758,7 +644,6 @@ function TaskDetailView({ task, onUpdate }: any) {
                 </div>
               </div>
 
-              {/* Description Section */}
               <div className="space-y-6">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5" /> Clinical Instructions
@@ -772,12 +657,10 @@ function TaskDetailView({ task, onUpdate }: any) {
                 />
               </div>
 
-              {/* Checklist Section */}
               <div className="space-y-6 pb-10">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Execution Checklist</h3>
                 </div>
-
                 <FieldArray name="checklist">
                   {({ push, remove }) => (
                     <div className="space-y-3">
@@ -786,14 +669,12 @@ function TaskDetailView({ task, onUpdate }: any) {
                           <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${item.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
                             {item.done ? '✓' : index + 1}
                           </div>
-
                           <Field
                             name={`checklist.${index}.label`}
                             placeholder="Instruction step..."
                             disabled={!canEdit}
                             className="flex-1 bg-transparent border-none text-sm font-bold text-slate-700 outline-none p-0 focus:ring-0 disabled:opacity-70"
                           />
-
                           {canEdit && (
                             <button
                               type="button"
@@ -805,11 +686,10 @@ function TaskDetailView({ task, onUpdate }: any) {
                           )}
                         </div>
                       ))}
-
                       {canEdit && (
                         <button
                           type="button"
-                          onClick={() => push({ label: ''})}
+                          onClick={() => push({ label: '' })}
                           className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
                         >
                           <Plus className="w-4 h-4" /> Add Protocol Step
@@ -821,7 +701,6 @@ function TaskDetailView({ task, onUpdate }: any) {
               </div>
             </div>
 
-            {/* 3. FOOTER ACTIONS */}
             <footer className="p-10 border-t border-slate-100 bg-white flex items-center justify-between">
               <div className="flex gap-4">
                 {task.status !== 'CANCELLED' && task.status !== 'COMPLETED' && (
@@ -835,14 +714,12 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </>
                 )}
               </div>
-
               <div className="flex items-center gap-6">
                 {dirty && mutationStatus === 'IDLE' && canEdit && (
                   <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
                     <AlertCircle className="w-3 h-3" /> Unsaved Changes
                   </span>
                 )}
-                
                 {isCancelled ? (
                   <p>Cancelled</p>
                 ) : (
@@ -858,7 +735,6 @@ function TaskDetailView({ task, onUpdate }: any) {
                 )}
               </div>
             </footer>
-
           </Form>
         )}
       </Formik>
@@ -988,43 +864,24 @@ const DispatchSchema = Yup.object().shape({
   title: Yup.string().min(3, 'Title too short').required('Required'),
   residentId: Yup.string().required('Please select a resident'),
   priority: Yup.string().required(),
-  dueAt: Yup.date().required('Due date is required'),
-  steps: Yup.array().of(Yup.string().min(2, 'Step is too short'))
+  dueTime: Yup.date().required('Due date is required'),
 });
 
-function DispatchDrawer({
-  isOpen,
-  onClose,
-  onSuccess,
-}: any) {
+function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
   const [residentSearch, setResidentSearch] = useState('');
 
-  const { data: resData } = useQuery(
-    SEARCH_RESIDENTS,
-    {
-      variables: {
-        search: residentSearch,
-      },
-    }
-  );
+  const { data: resData } = useQuery(SEARCH_RESIDENTS, {
+    variables: { search: residentSearch },
+  });
 
-  const [createTask, { loading }] =
-    useMutation(CREATE_ADHOC_TASK);
-
-  const residents =
-    resData?.residentList ?? [];
+  const [createTask, { loading }] = useMutation(CREATE_ADHOC_TASK);
+  const residents = resData?.residentList ?? [];
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">
-
-      {/* Overlay */}
-
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-      />
+      <div onClick={onClose} className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
 
       <Formik
         initialValues={{
@@ -1032,13 +889,10 @@ function DispatchDrawer({
           description: '',
           residentId: '',
           residentName: '',
-          assignedCaregiverId: '',
+          caregiverId: '',
           assignedCaregiver: null,
-          category: 'CARE',
-          priority: 'MEDIUM',
-          dueAt: new Date(
-            Date.now() + 30 * 60000
-          ).toISOString(),
+          priority: 'NORMAL',
+          dueTime: new Date(Date.now() + 30 * 60000).toISOString(),
         }}
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
@@ -1048,18 +902,14 @@ function DispatchDrawer({
                 input: {
                   title: values.title,
                   description: values.description,
-                  category: values.category,
                   priority: values.priority,
                   residentId: values.residentId,
-                  assignedCaregiverId:
-                    values.assignedCaregiverId ||
-                    null,
-                  dueAt: values.dueAt,
-
+                  caregiverId: values.caregiverId || null,
+                  dueTime: values.dueTime,
+                  status: "ASSIGNED"
                 },
               },
             });
-
             onSuccess();
             onClose();
           } catch (err) {
@@ -1068,340 +918,136 @@ function DispatchDrawer({
         }}
       >
         {({ values, setFieldValue }) => (
-          <Form
-            className="
-              relative
-              w-full
-              max-w-xl
-              h-full
-              bg-white
-              shadow-2xl
-              flex
-              flex-col
-              animate-in
-              slide-in-from-right
-              duration-300
-            "
-          >
-
-            {/* ================================================= */}
-            {/* HEADER */}
-            {/* ================================================= */}
-
+          <Form className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="h-16 shrink-0 border-b border-slate-200 px-6 flex items-center justify-between">
-
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Create Task
-                </h2>
-
-                <p className="text-xs text-slate-500">
-                  Dispatch new care task
-                </p>
+                <h2 className="text-lg font-semibold text-slate-900">Create Task</h2>
+                <p className="text-xs text-slate-500">Dispatch new care task</p>
               </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-slate-100"
-              >
+              <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100">
                 <X className="w-4 h-4" />
               </button>
-
             </div>
 
-            {/* ================================================= */}
-            {/* CONTENT */}
-            {/* ================================================= */}
-
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-
-              {/* Title */}
-
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Task Title
-                </label>
-
+                <label className="block text-xs font-medium text-slate-500 mb-2">Task Title</label>
                 <Field
                   name="title"
                   placeholder="Medication administration"
-                  className="
-                    w-full
-                    border
-                    border-slate-200
-                    rounded-xl
-                    p-3
-                    text-sm
-                    outline-none
-                    focus:border-cyan-500
-                  "
+                  className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-cyan-500"
                 />
               </div>
 
-              {/* Description */}
-
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Description
-                </label>
-
+                <label className="block text-xs font-medium text-slate-500 mb-2">Description</label>
                 <Field
                   as="textarea"
                   name="description"
                   rows={5}
                   placeholder="Clinical notes..."
-                  className="
-                    w-full
-                    border
-                    border-slate-200
-                    rounded-xl
-                    p-3
-                    text-sm
-                    outline-none
-                    resize-none
-                    focus:border-cyan-500
-                  "
+                  className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none resize-none focus:border-cyan-500"
                 />
               </div>
 
-              {/* Resident */}
-
               <div>
-
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Resident
-                </label>
-
+                <label className="block text-xs font-medium text-slate-500 mb-2">Resident</label>
                 {values.residentId ? (
                   <div className="flex items-center justify-between border border-cyan-200 bg-cyan-50 rounded-xl p-3">
-
-                    <span className="font-medium text-sm">
-                      {values.residentName}
-                    </span>
-
+                    <span className="font-medium text-sm">{values.residentName}</span>
                     <button
                       type="button"
                       onClick={() => {
-                        setFieldValue(
-                          'residentId',
-                          ''
-                        );
-                        setFieldValue(
-                          'residentName',
-                          ''
-                        );
+                        setFieldValue('residentId', '');
+                        setFieldValue('residentName', '');
                       }}
                     >
                       <X className="w-4 h-4 text-slate-500" />
                     </button>
-
                   </div>
                 ) : (
                   <>
                     <input
                       value={residentSearch}
-                      onChange={(e) =>
-                        setResidentSearch(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setResidentSearch(e.target.value)}
                       placeholder="Search resident..."
-                      className="
-                        w-full
-                        border
-                        border-slate-200
-                        rounded-xl
-                        p-3
-                        text-sm
-                      "
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm"
                     />
-
-                    {residentSearch &&
-                      residents.length > 0 && (
-                        <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
-
-                          {residents.map(
-                            (res: any) => (
-                              <button
-                                key={
-                                  res.residentId
-                                }
-                                type="button"
-                                className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
-                                onClick={() => {
-                                  setFieldValue(
-                                    'residentId',
-                                    res.residentId
-                                  );
-
-                                  setFieldValue(
-                                    'residentName',
-                                    `${res.firstName} ${res.lastName}`
-                                  );
-
-                                  setResidentSearch(
-                                    ''
-                                  );
-                                }}
-                              >
-                                {res.firstName}{' '}
-                                {res.lastName}
-                              </button>
-                            )
-                          )}
-
-                        </div>
-                      )}
+                    {residentSearch && residents.length > 0 && (
+                      <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
+                        {residents.map((res: any) => (
+                          <button
+                            key={res.residentId}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
+                            onClick={() => {
+                              setFieldValue('residentId', res.residentId);
+                              setFieldValue('residentName', `${res.firstName} ${res.lastName}`);
+                              setResidentSearch('');
+                            }}
+                          >
+                            {res.firstName} {res.lastName}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
 
-              {/* Caregiver */}
-
               <CaregiverSelect
-                value={
-                  values.assignedCaregiver
-                }
+                value={values.assignedCaregiver}
                 onChange={(cg: any) => {
-                  setFieldValue(
-                    'assignedCaregiverId',
-                    cg?.id || ''
-                  );
-
-                  setFieldValue(
-                    'assignedCaregiver',
-                    cg
-                  );
+                  setFieldValue('caregiverId', cg?.id || '');
+                  setFieldValue('assignedCaregiver', cg);
                 }}
               />
 
-              {/* Due Date */}
-
               <div>
-
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Schedule
-                </label>
-
+                <label className="block text-xs font-medium text-slate-500 mb-2">Schedule</label>
                 <ClinicalScheduler
-                  value={values.dueAt}
-                  onChange={(iso) =>
-                    setFieldValue(
-                      'dueAt',
-                      iso
-                    )
-                  }
+                  value={values.dueTime}
+                  onChange={(iso) => setFieldValue('dueTime', iso)}
                 />
-
               </div>
 
-              {/* Priority */}
-
               <div>
-
-                <label className="block text-xs font-medium text-slate-500 mb-3">
-                  Priority
-                </label>
-
+                <label className="block text-xs font-medium text-slate-500 mb-3">Priority</label>
                 <div className="grid grid-cols-4 gap-2">
-
-                  {[
-                    'LOW',
-                    'MEDIUM',
-                    'HIGH',
-                    'CRITICAL',
-                  ].map((priority) => (
+                  {['LOW', 'NORMAL', 'HIGH', 'CRITICAL'].map((priority) => (
                     <button
                       key={priority}
                       type="button"
-                      onClick={() =>
-                        setFieldValue(
-                          'priority',
-                          priority
-                        )
-                      }
-                      className={`
-                        h-11
-                        rounded-xl
-                        border
-                        text-xs
-                        font-medium
-                        transition-all
-                        ${
-                          values.priority ===
-                          priority
-                            ? 'bg-slate-900 text-white border-slate-900'
-                            : 'bg-white text-slate-500 border-slate-200'
-                        }
-                      `}
+                      onClick={() => setFieldValue('priority', priority)}
+                      className={`h-11 rounded-xl border text-xs font-medium transition-all ${
+                        values.priority === priority
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'bg-white text-slate-500 border-slate-200'
+                      }`}
                     >
                       {priority}
                     </button>
                   ))}
-
                 </div>
-
               </div>
-
-
             </div>
 
-            {/* ================================================= */}
-            {/* FOOTER */}
-            {/* ================================================= */}
-
             <div className="border-t border-slate-200 p-5 bg-white flex justify-end gap-3">
-
               <button
                 type="button"
                 onClick={onClose}
-                className="
-                  px-4
-                  py-2
-                  rounded-xl
-                  border
-                  border-slate-200
-                  text-sm
-                "
+                className="px-4 py-2 rounded-xl border border-slate-200 text-sm"
               >
                 Cancel
               </button>
-
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  !values.title ||
-                  !values.residentId
-                }
-                className="
-                  px-5
-                  py-2
-                  rounded-xl
-                  bg-cyan-500
-                  hover:bg-cyan-600
-                  text-white
-                  text-sm
-                  font-medium
-                  disabled:opacity-50
-                  flex
-                  items-center
-                  gap-2
-                "
+                disabled={loading || !values.title || !values.residentId}
+                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Create Task
-                  </>
-                )}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Create Task</>}
               </button>
-
             </div>
-
           </Form>
         )}
       </Formik>

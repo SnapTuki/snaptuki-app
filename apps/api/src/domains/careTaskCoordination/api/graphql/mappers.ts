@@ -4,13 +4,13 @@ export class CareTaskPriorityGraphQLMapper {
 
     static toGraphQL(priority: string): CareTaskPriorityGraphQL {
         switch (priority) {
-            case 'low':
+            case 'LOW':
                 return CareTaskPriorityGraphQL.LOW;
-            case 'normal':
+            case 'NORMAL':
                 return CareTaskPriorityGraphQL.NORMAL;
-            case 'high':
+            case 'HIGH':
                 return CareTaskPriorityGraphQL.HIGH;
-            case 'critical':
+            case 'CRITICAL':
                 return CareTaskPriorityGraphQL.CRITICAL;
             default:
                 throw new Error(`Unknown priority: ${priority}`);

@@ -19,7 +19,7 @@ import { StaffResolvers } from "./domains/staffManagement/api/resolvers/StaffRes
 
 import { createCaregiverManagementContainer } from "./domains/staffManagement/infrastructure";
 import { createResidentManagementContainer } from "./domains/residentManagement/infrastructure/prisma";
-import { createTaskManagementContainer } from "./domains/careTaskCoordination/infrastructure";
+import { createCareTaskCoordinationContainer } from "./domains/careTaskCoordination/infrastructure";
 import { config } from "./config";
 import { initializeTaskScheduler } from "./domains/careTaskCoordination/infrastructure/schedulers/TaskSchedulers";
 
@@ -69,13 +69,13 @@ async function buildContext({ req }: any) {
     const identityAccess = createIdentityAccessContainer();
     const caregiverManagement = createCaregiverManagementContainer();
     const residentManagement = createResidentManagementContainer();
-    const taskManagement = createTaskManagementContainer();
+    const careTaskCoordination = createCareTaskCoordinationContainer();
     return {
         currentUser,
         identityAccess,
         caregiverManagement,
         residentManagement,
-        taskManagement,
+        careTaskCoordination,
     };
 
 }

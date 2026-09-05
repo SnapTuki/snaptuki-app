@@ -16,7 +16,8 @@ import { ChangeCareTaskPriority } from "../../../application/useCases/ChangeCare
 import { RescheduleCareTask } from "../../../application/useCases/RescheduelCareTask";
 import { CancelCareTask } from "../../../application/useCases/CancelCareTask";
 import { CompleteCareTask } from "../../../application/useCases/CompleteCareTask";
-
+import { CareTaskPriorityGraphQL } from "../enums/CareTaskPriorityGraphQL";
+import {ViewTomorrowCareTasks} from "../../../application/useCases/ViewTomorrowCareTasks";
 @Resolver(() => CareTaskType)
 export class CareTaskResolvers {
 
@@ -30,6 +31,7 @@ export class CareTaskResolvers {
   async todayCareTasks(@Ctx() ctx: GraphQLContext): Promise<CareTaskListItemType[]> {
     const useCase = new ViewTodayCareTasks(ctx.careTaskCoordination.repo);
     const result = await useCase.execute();
+    console.log("Today tasks: ",result);
     return result.map((task) => ({
       id: task.id,
       title: task.title,
@@ -40,11 +42,28 @@ export class CareTaskResolvers {
   }
 
 
+  @Query(() => [CareTaskListItemType])
+  async tomorrowCareTasks(@Ctx() ctx: GraphQLContext): Promise<CareTaskListItemType[]>{
+
+    const useCase = new ViewTomorrowCareTasks(ctx.careTaskCoordination.repo);
+    const result = await useCase.execute();
+
+    return result.map((task) => ({
+        id: task.id,
+        title: task.title,
+        priority: CareTaskPriorityGraphQLMapper.toGraphQL(task.priority),
+        status: CareTaskStatusGraphQLMapper.toGraphQL(task.status),
+        dueTime: task.dueTime,
+      }))
+    
+
+  }
+
   @Mutation(() => CareTaskType)
   async createCareTask(
     @Arg("input", () => CreateCareTaskInput) input: CreateCareTaskInput,
     @Ctx() ctx: GraphQLContext
-  ) {
+  ): Promise<CareTaskListItemType> {
     const useCase = new CreateCareTask(ctx.careTaskCoordination.repo);
 
 
@@ -58,7 +77,9 @@ export class CareTaskResolvers {
       status: input.status
     });
 
-    return result
+    return {...result, 
+      priority: CareTaskPriorityGraphQLMapper.toGraphQL(result.priority), 
+      status: CareTaskStatusGraphQLMapper.toGraphQL(result.status)}
   }
 
   @Mutation(() => CareTaskType)

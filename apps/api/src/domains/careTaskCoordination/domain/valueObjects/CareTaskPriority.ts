@@ -1,5 +1,4 @@
-import {CareTaskPriority as CareTaskPriorityType} from "../types/CareTaskPriority";
-import {CareTaskPriorities} from "../types/CareTaskPriority";
+import {CareTaskPriorityType, CareTaskPriorities} from "../types/CareTaskPriority";
 
 export class CareTaskPriority {
     private constructor(private readonly _priority: string) {}
@@ -11,8 +10,9 @@ export class CareTaskPriority {
 
     private static validatePriority(priority: string): void {
         // Implement your validation logic here
-        const validPriorities: string[] = [CareTaskPriorities.LOW, CareTaskPriorities.NORMAL, CareTaskPriorities.HIGH, CareTaskPriorities.CRITICAL];
-        if (!validPriorities.includes(priority)) {
+        const validPriorities = Object.values(CareTaskPriorities);
+
+        if (!validPriorities.includes(priority as CareTaskPriorityType)) {
             throw new Error(`Invalid priority value: ${priority}`);
         }
     }

@@ -2,7 +2,7 @@ import { ICareTaskRepository } from "../interfaces/ICareTaskRepository";
 import { CareTaskListItemDto } from "../dtos/CareTaskListItemDto";
 
 export class ViewTodayCareTasks {
-    constructor(private readonly careTaskRepo: ICareTaskRepository) {}
+    constructor(private careTaskRepo: ICareTaskRepository) {}
     
     async execute(): Promise<CareTaskListItemDto[]> {
         const today = new Date();

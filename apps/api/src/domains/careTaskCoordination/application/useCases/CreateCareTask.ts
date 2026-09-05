@@ -6,11 +6,12 @@ import { CareTaskDescription } from "../../domain/valueObjects/CareTaskDescripti
 import {CareTaskPriority} from "../../domain/valueObjects/CareTaskPriority";
 import { CareTaskStatus } from "../../domain/valueObjects/CareTaskStatus";
 import { DueTime } from "../../domain/valueObjects/DueTime";
+import { CareTaskListItemDto } from "../dtos/CareTaskListItemDto";
 
 export class CreateCareTask {
     constructor(private readonly careTaskRepository: ICareTaskRepository) { }
 
-    async execute(careTaskInput: NewCareTaskInput): Promise<void> {
+    async execute(careTaskInput: NewCareTaskInput): Promise<CareTaskListItemDto> {
 
         //validate all fields and create value objects for each field
         const title = CareTaskTitle.create(careTaskInput.title);
@@ -27,6 +28,13 @@ export class CreateCareTask {
 
         //save care task entity to repository
         await this.careTaskRepository.save(careTask);
+        return {
+            id: careTask.getId(),
+            title: title.getTitle(),
+            status: stauts.getStatus(),
+            priority: priority.getPriority(),
+            dueTime: dueTime.getDueTime(),
+        }
     }
 
 }

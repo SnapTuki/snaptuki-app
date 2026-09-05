@@ -1,33 +1,23 @@
-import {CareTaskStatus as CareTaskStatusType} from '../types/CareTaskStatus';
+import { CareTaskStatusType, CareTaskStatuses} from '../types/CareTaskStatus';
 
 export class CareTaskStatus {
-    private constructor(private readonly _status: CareTaskStatusType) {}
+    private constructor(private readonly _status: string) {}
 
-    public static create(status: CareTaskStatusType): CareTaskStatus {
+    public static create(status: string): CareTaskStatus {
         CareTaskStatus.validateStatus(status);
         return new CareTaskStatus(status);
     }
 
-    private static validateStatus(status: CareTaskStatusType): void {
+    private static validateStatus(status: string): void {
         // Implement your validation logic here
-        const validStatuses = [
-            'planned',
-            'assigned',
-            'in_progress',
-            'completed',
-            'unable_to_complete',
-            'need_assistance',
-            'overdue',
-            'missed',
-            'cancelled'
-        ];
+        const validStatus = Object.values(CareTaskStatuses);
 
-        if (!validStatuses.includes(status)) {
+        if (!validStatus.includes(status as CareTaskStatusType)) {
             throw new Error(`Invalid status: ${status}`);
         }
     }
 
-    public getStatus(): CareTaskStatusType {
+    public getStatus(): string {
         return this._status;
     }
 }
