@@ -1,6 +1,6 @@
 name: Business Case
 description: Propose a business problem or capability that delivers value to customers.
-title: "[BC\]: "
+title: "[BC]: "
 labels:
   - business-case
 
