@@ -1,6 +1,6 @@
 name: Task
 description: Technical implementation task supporting a business case or feature.
-title: "[TASK\]: "
+title: "[TASK]: "
 labels:
   - task
 
