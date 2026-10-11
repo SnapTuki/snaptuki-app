@@ -1,0 +1,69 @@
+name: Task
+description: Technical implementation task supporting a business case or feature.
+title: "[TASK\]: "
+labels:
+  - task
+
+body:
+  - type: input
+    id: parent_item
+    attributes:
+      label: Parent Business Case / Feature
+      description: Reference the related Business Case or Feature.
+      placeholder: |
+        BC-001 or FEAT-001
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What needs to be implemented?
+      placeholder: |
+        Create a service that detects overdue care tasks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: Technical Notes
+      description: Design ideas, architecture notes, dependencies, or constraints.
+      placeholder: |
+        - Subscribe to CareTask events
+        - Use PostgreSQL indexes
+        - Publish domain events
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Conditionst be met before closing this task.
+      placeholder: |
+        - Service runs successfully.
+        - Unit tests pass.
+        - Overdue tasks are detected correctly.
+        - Documentation updated.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Related issues or blockers.
+      placeholder: |
+        - Depends on BC-001
+        - Depends on FEAT-002
