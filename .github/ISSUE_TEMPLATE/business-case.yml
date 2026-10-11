@@ -1,0 +1,70 @@
+name: Business Case
+description: Propose a business problem or capability that delivers value to customers.
+title: "[BC\]: "
+labels:
+  - business-case
+
+body:
+  - type: textarea
+    id: business_problem
+    attributes:
+      label: Business Problem
+      description: What problem are we trying to solve?
+      placeholder: |
+        Care organizations cannot easily identify overdue care tasks, leading to missed activities and patient safety risks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: business_value
+    attributes:
+      label: Business Value
+      description: Why is this important for the customer or organization?
+      placeholder: |
+        Improve patient safety, reduce missed tasks, and increase operational visibility.
+    validations:
+      required: true
+
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: Stakeholders
+      description: Who benefits from this capability?
+      placeholder: |
+        - Caregiver
+        - Supervisor
+        - Care Coordinator
+        - Care Organization
+    validations:
+      required: true
+
+  - type: textarea
+    id: capability
+    attributes:
+      label: Desired Business Capability
+      description: Describe the capability from a business perspective.
+      placeholder: |
+        The system should continuously monitor care tasks and notify responsible personnel when tasks become overdue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know the business case has been fulfilled?
+      placeholder: |
+        - Overdue tasks are identified automatically.
+        - Responsible users receive notifications.
+        - Supervisors can monitor overdue tasks from a dashboard.
+    validations:
+      required: true
+
+  - type: textarea
+    id: assumptions_constraints
+    attributes:
+      label: Assumptions & Constraints
+      description: Business assumptions, risks, or constraints.
+      placeholder: |
+        - Care tasks have due dates.
+        - Users are assigned to tasks.
