@@ -4,7 +4,7 @@ import { ICareTaskRepository } from "../../application/interfaces/ICareTaskRepos
 import { CareTask } from "../../domain/entities/CareTask";
 import { PrismaClient } from "../../../../generated/prisma";
 import { CareTaskMapper, CareTaskPersistenceSnapshot } from "../mappers/CareTaskMapper";
-import {CareTaskDetailsDTO} from "../../application/dtos/CareTaskDetailsDto";
+import {CareTaskDetailsDTO, CareTaskPriorityDto, CareTaskStatusDto} from "../../application/dtos/CareTaskDetailsDto";
 import { CareTaskListItemDto } from "../../application/dtos/CareTaskListItemDto";
 
 export class PrismaCareTaskRepository implements ICareTaskRepository {
@@ -66,6 +66,22 @@ export class PrismaCareTaskRepository implements ICareTaskRepository {
           lte: endOfDay,
         },
       },
+      include: {
+        assignedStaff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        resident: {
+          select: {
+            residentId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
     });
 
     return careTaskRecords.map((record: any) => ({
@@ -74,6 +90,16 @@ export class PrismaCareTaskRepository implements ICareTaskRepository {
       dueTime: record.dueAt,
       priority: record.priority,
       status: record.status,
+      assignedToCaregiver: record.assignedStaff ? {
+        id: record.assignedStaff.id,
+        firstName: record.assignedStaff.firstName,
+        lastName: record.assignedStaff.lastName
+      } : null,
+      assignedToResident: record.resident ? {
+        residentId: record.resident.id,
+        firstName: record.resident.firstName,
+        lastName: record.resident.lastName
+      } : null
     }));
   }
 
@@ -102,6 +128,53 @@ export class PrismaCareTaskRepository implements ICareTaskRepository {
     })
 
     return records.map(CareTaskMapper.toDomain);
+  }
+
+  async findCareTaskDetailsById(careTaskId: string): Promise<CareTaskDetailsDTO | null> {
+    const careTaskRecord = await this.prisma.careTask.findUnique({
+      where: { id: careTaskId },
+      include: {
+        assignedStaff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        resident: {
+          select: {
+            residentId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    if (!careTaskRecord) {
+      return null;
+    }
+
+    return {
+      id: careTaskRecord.id,
+      title: careTaskRecord.title,
+      description: careTaskRecord.description,
+      priority: careTaskRecord.priority as CareTaskPriorityDto,
+      status: careTaskRecord.status as CareTaskStatusDto,
+      dueTime: careTaskRecord.dueAt,
+      assignedToCaregiver: careTaskRecord.assignedStaff ? {
+        id: careTaskRecord.assignedStaff.id,
+        firstName: careTaskRecord.assignedStaff.firstName,
+        lastName: careTaskRecord.assignedStaff.lastName
+      } : null,
+      assignedToResident: careTaskRecord.resident ? {
+        residentId: careTaskRecord.resident.residentId,
+        firstName: careTaskRecord.resident.firstName,
+        lastName: careTaskRecord.resident.lastName
+      } : null,
+
+      completionNote: careTaskRecord.completionNote
+    };
   }
 
 

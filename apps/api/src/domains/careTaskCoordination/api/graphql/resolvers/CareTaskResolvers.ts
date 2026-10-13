@@ -1,7 +1,7 @@
 // src/domains/taskManagement/api/graphql/resolvers/TaskResolver.ts
 
 import { Resolver, Query, Mutation, Arg, Ctx } from "type-graphql";
-import { CareTaskType } from "../types/CareTaskType";
+import { CareTaskDetailsType, CareTaskType } from "../types/CareTaskType";
 import { CreateCareTaskInput } from "../inputs/CreateCareTaskInput";
 import { GraphQLContext } from "../../../../../lib/graphqlContext";
 import { CreateCareTask } from "../../../application/useCases/CreateCareTask";
@@ -16,14 +16,40 @@ import { ChangeCareTaskPriority } from "../../../application/useCases/ChangeCare
 import { RescheduleCareTask } from "../../../application/useCases/RescheduelCareTask";
 import { CancelCareTask } from "../../../application/useCases/CancelCareTask";
 import { CompleteCareTask } from "../../../application/useCases/CompleteCareTask";
+import {ViewCareTaskDetails} from "../../../application/useCases/ViewCareTaskDetails";
 import { CareTaskPriorityGraphQL } from "../enums/CareTaskPriorityGraphQL";
 import {ViewTomorrowCareTasks} from "../../../application/useCases/ViewTomorrowCareTasks";
 @Resolver(() => CareTaskType)
 export class CareTaskResolvers {
 
-  @Query(() => CareTaskType, { nullable: true })
-  async careTaskDetails(@Arg("id", () => String) id: string, @Ctx() ctx: GraphQLContext) {
-    //
+  @Query(() => CareTaskDetailsType, { nullable: true })
+  async careTaskDetails(@Arg("careTaskId", () => String) careTaskId: string, @Ctx() ctx: GraphQLContext) {
+    const useCase = new ViewCareTaskDetails(ctx.careTaskCoordination.repo);
+    const result = await useCase.execute(careTaskId);
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      title: result.title,
+      description: result.description,
+      priority: CareTaskPriorityGraphQLMapper.toGraphQL(result.priority),
+      status: CareTaskStatusGraphQLMapper.toGraphQL(result.status),
+      dueTime: result.dueTime,
+      completionNote: result.completionNote,
+      assignedToCaregiver: result.assignedToCaregiver ? {
+        id: result.assignedToCaregiver.id,
+        firstName: result.assignedToCaregiver.firstName,
+        lastName: result.assignedToCaregiver.lastName
+      } : null,
+      assignedToResident: result.assignedToResident ? {
+        residentId: result.assignedToResident.residentId,
+        firstName: result.assignedToResident.firstName,
+        lastName: result.assignedToResident.lastName
+      } : null
+    };
   }
 
 
@@ -38,6 +64,16 @@ export class CareTaskResolvers {
       priority: CareTaskPriorityGraphQLMapper.toGraphQL(task.priority),
       status: CareTaskStatusGraphQLMapper.toGraphQL(task.status),
       dueTime: task.dueTime,
+      assignedToCaregiver: task.assignedToCaregiver ? {
+        id: task.assignedToCaregiver.id,
+        firstName: task.assignedToCaregiver.firstName,
+        lastName: task.assignedToCaregiver.lastName
+      } : null,
+      assignedToResident: task.assignedToResident ? {
+        residentId: task.assignedToResident.residentId,
+        firstName: task.assignedToResident.firstName,
+        lastName: task.assignedToResident.lastName
+      } : null
     }));
   }
 
@@ -54,6 +90,16 @@ export class CareTaskResolvers {
         priority: CareTaskPriorityGraphQLMapper.toGraphQL(task.priority),
         status: CareTaskStatusGraphQLMapper.toGraphQL(task.status),
         dueTime: task.dueTime,
+        assignedToCaregiver: task.assignedToCaregiver ? {
+          id: task.assignedToCaregiver.id,
+          firstName: task.assignedToCaregiver.firstName,
+          lastName: task.assignedToCaregiver.lastName
+        } : null,
+        assignedToResident: task.assignedToResident ? {
+          residentId: task.assignedToResident.residentId,
+          firstName: task.assignedToResident.firstName,
+          lastName: task.assignedToResident.lastName
+        } : null
       }))
     
 
@@ -74,7 +120,7 @@ export class CareTaskResolvers {
       assignedToResidentId: input.residentId,
       assignedToCaregiverId: input.caregiverId,
       dueTime: input.dueTime,
-      status: input.status
+      status: input.status,
     });
 
     return {...result, 

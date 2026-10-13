@@ -7,7 +7,19 @@ export interface CareTaskDetailsDTO {
     dueTime: Date;
     priority: CareTaskPriorityDto;
     status: CareTaskStatusDto;
-    assignedToResidentId: string;
-    assignedToCaregiverId: string | null;
     completionNote: string | null;
+    assignedToCaregiver: AssignedToCaregiver | null;
+    assignedToResident: AssignedToResident | null;
+}
+
+interface AssignedToCaregiver {
+    id: string;
+    firstName: string;
+    lastName: string;
+}
+
+interface AssignedToResident {
+    residentId: string;
+    firstName: string;
+    lastName: string;
 }

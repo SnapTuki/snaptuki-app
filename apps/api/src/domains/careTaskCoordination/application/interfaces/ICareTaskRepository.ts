@@ -11,4 +11,6 @@ export interface ICareTaskRepository {
   findTasksEligibleForOverdue(currentTime: Date,): Promise<CareTask[]>;
 
   findTasksEligibleForMissed(currentTime: Date,): Promise<CareTask[]>;
+
+  findCareTaskDetailsById(careTaskId: string): Promise<CareTaskDetailsDTO | null>;
 }

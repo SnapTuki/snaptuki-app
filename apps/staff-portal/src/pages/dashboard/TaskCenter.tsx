@@ -3,17 +3,19 @@ import { useLazyQuery, useQuery, useMutation } from '@apollo/client/react';
 import {
   Plus, Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X,
   ChevronDown, AlertCircle, Check, User, CheckCircle2, Filter, RefreshCcw,
-  MoreHorizontal, ChevronUp, Inbox
+  MoreHorizontal, ChevronUp, Inbox,
+  Ban
 } from "lucide-react";
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
 // Added GET_TOMORROW_CARE_TASKS to your imports
-import { 
-  GET_TODAY_CARE_TASKS, 
-  GET_TOMORROW_CARE_TASKS, 
-  SEARCH_CAREGIVERS, 
-  SEARCH_RESIDENTS 
+import {
+  GET_TODAY_CARE_TASKS,
+  GET_TOMORROW_CARE_TASKS,
+  SEARCH_CAREGIVERS,
+  SEARCH_RESIDENTS,
+  GET_CARE_TASK_DETAILS,
 } from '../../features/taskCenter/graphql/queries';
 import {
   CREATE_ADHOC_TASK,
@@ -22,6 +24,7 @@ import {
   COMPLETE_CARE_TASK,
 } from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
+import { DateTimePicker } from '../../features/taskCenter/components/DateTimePicker';
 
 const TASK_STATUS_GROUPS = [
   { key: 'PLANNED', label: 'Planned', colorClass: 'bg-slate-400', textClass: 'text-slate-600' },
@@ -55,8 +58,8 @@ export default function TaskCenter() {
   });
 
   // Dynamically pull from the active query result
-  const allTasks = scheduleView === 'Today' 
-    ? (todayData?.todayCareTasks || []) 
+  const allTasks = scheduleView === 'Today'
+    ? (todayData?.todayCareTasks || [])
     : (tomorrowData?.todayCareTasks || []);
 
   const handleRefresh = () => {
@@ -182,17 +185,15 @@ export default function TaskCenter() {
                     <div className="flex bg-slate-100 rounded-xl p-1 ml-4">
                       <button
                         onClick={() => setScheduleView('Today')}
-                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
-                          scheduleView === 'Today' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                        }`}
+                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${scheduleView === 'Today' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
+                          }`}
                       >
                         Today
                       </button>
                       <button
                         onClick={() => setScheduleView('Tomorrow')}
-                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${
-                          scheduleView === 'Tomorrow' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
-                        }`}
+                        className={`h-9 px-4 rounded-lg text-sm font-medium transition-all ${scheduleView === 'Tomorrow' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
+                          }`}
                       >
                         Tomorrow
                       </button>
@@ -242,7 +243,7 @@ export default function TaskCenter() {
                 <div className="space-y-6 pb-12">
                   {TASK_STATUS_GROUPS.map((statusGroup) => {
                     const tasksForGroup = filteredTasks.filter((t: any) => t.status === statusGroup.key);
-                    
+
                     if (tasksForGroup.length === 0) return null;
 
                     return (
@@ -274,7 +275,7 @@ export default function TaskCenter() {
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setSelectedTask(null)}
           />
-          <div className="relative w-full max-w-2xl h-full bg-white shadow-2xl">
+          <div className="relative w-full max-w-4xl h-full bg-white shadow-2xl">
             <div className="absolute top-4 right-4 z-10">
               <button
                 onClick={() => setSelectedTask(null)}
@@ -345,19 +346,31 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
               <th className="py-3 px-4 font-medium min-w-37.5">Resident Name <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Deadline <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
               <th className="py-3 px-4 font-medium">Priority <ChevronDown className="w-3 h-3 inline-block ml-1" /></th>
-              <th className="py-3 px-4 text-center">Action</th>
+              <th className="py-3 px-4 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
             {tasks.map(task => {
-              
+
 
               const prioMap: Record<string, string> = {
                 'CRITICAL': 'bg-rose-50 text-rose-500',
                 'HIGH': 'bg-orange-50 text-orange-500',
-                'NORMAL': 'bg-teal-50 text-teal-500', 
+                'NORMAL': 'bg-teal-50 text-teal-500',
                 'LOW': 'bg-purple-50 text-purple-500'
               };
+
+              const statusMap: Record<string, string> = {
+                'PLANNED': 'bg-slate-100 text-slate-600',
+                'ASSIGNED': 'bg-indigo-50 text-indigo-500',
+                'IN_PROGRESS': 'bg-amber-50 text-amber-500',
+                'COMPLETED': 'bg-emerald-50 text-emerald-500',
+                'UNABLE_TO_COMPLETE': 'bg-rose-50 text-rose-500',
+                'OVERDUE': 'bg-orange-50 text-orange-500',
+                'MISSED': 'bg-red-50 text-red-500'
+              };
+
+              const statusClass = statusMap[task.status] || 'bg-slate-100 text-slate-600';
               const prioClass = prioMap[task.priority] || 'bg-slate-100 text-slate-600';
 
               return (
@@ -376,13 +389,13 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                     {task.title}
                   </td>
                   <td className="py-4 px-4">
-                    {task.caregiver ? (
+                    {task.assignedToCaregiver ? (
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-white shrink-0 shadow-sm">
-                          {task.assignedCaregiver.firstName[0]}
+                          {task.assignedToCaregiver.firstName[0]}
                         </div>
                         <span className="text-sm font-semibold text-slate-700 truncate max-w-30">
-                          {task.assignedCaregiver.firstName} {task.assignedCaregiver.lastName}
+                          {task.assignedToCaregiver.firstName} {task.assignedToCaregiver.lastName}
                         </span>
                       </div>
                     ) : (
@@ -390,9 +403,9 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                     )}
                   </td>
                   <td className="py-4 px-4 text-sm font-medium text-slate-500 truncate max-w-45">
-                    {task.assignedResident?.firstName} {task.assignedResident?.lastName}
+                    {task.assignedToResident?.firstName} {task.assignedToResident?.lastName}
                   </td>
-                
+
                   <td className="py-4 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
                     {task.dueTime ? new Date(task.dueTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                   </td>
@@ -402,9 +415,9 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
-                    <button className="p-1 border border-slate-200 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" onClick={(e) => { e.stopPropagation(); onRowClick(task); }}>
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${statusClass}`}>
+                      {task.status?.charAt(0) + task.status?.slice(1).toLowerCase().replace(/_/g, ' ')}
+                    </span>
                   </td>
                 </tr>
               );
@@ -421,12 +434,22 @@ function TaskGroup({ title, count, tasks, colorClass, textClass, onRowClick }: {
 // =========================================
 
 function TaskDetailView({ task, onUpdate }: any) {
+  // 1. Fetch fresh task details based on the passed task ID
+  const { data: detailData, loading: detailLoading } = useQuery(GET_CARE_TASK_DETAILS, {
+    variables: { careTaskId: task.id },
+    fetchPolicy: 'network-only', // Ensures we always get the freshest data
+  });
+
+  // 2. Use fetched data if available, otherwise fallback to the basic prop data
+  const activeTask = detailData?.careTaskDetails || task;
+
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const isPending = task.status === 'PLANNED' || task.status === 'ASSIGNED';
-  const isCancelled = task.status === 'CANCELLED' || task.status === 'UNABLE_TO_COMPLETE' || task.status === 'MISSED';
-  const canEdit = isPending || task.status === 'IN_PROGRESS';
+  // 3. Update status checks to use activeTask
+  const isPending = activeTask.status === 'PLANNED' || activeTask.status === 'ASSIGNED';
+  const isCancelled = activeTask.status === 'CANCELLED' || activeTask.status === 'UNABLE_TO_COMPLETE' || activeTask.status === 'MISSED';
+  const canEdit = isPending || activeTask.status === 'IN_PROGRESS';
 
   const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_CARE_TASK, {
     onCompleted: () => {
@@ -467,7 +490,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   const handleCancel = () => {
     const reason = window.prompt("Please provide a reason for cancelling this task:");
     if (reason !== null && reason.trim() !== "") {
-      cancelTaskMutation({ variables: { id: task.id, reason } });
+      cancelTaskMutation({ variables: { id: activeTask.id, reason } });
     } else if (reason !== null) {
       alert("A reason is required to cancel a task.");
     }
@@ -476,11 +499,21 @@ function TaskDetailView({ task, onUpdate }: any) {
   const handleForceComplete = () => {
     const reason = window.prompt("Please provide a reason for force completing this task:");
     if (reason !== null && reason.trim() !== "") {
-      completeTaskMutation({ variables: { input: { id: task.id, reason } } });
+      completeTaskMutation({ variables: { input: { id: activeTask.id, reason } } });
     } else if (reason !== null) {
       alert("A reason is required to force complete.");
     }
   };
+
+  // Show a loading state while fetching the detailed record
+  if (detailLoading && !detailData) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Clinical Record...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden relative">
@@ -512,30 +545,28 @@ function TaskDetailView({ task, onUpdate }: any) {
 
       <Formik
         initialValues={{
-          id: task.id,
-          title: task.title || '',
-          description: task.description || '',
-          status: task.status || 'PLANNED',
-          priority: task.priority || 'NORMAL',
-          residentId: task.residentId || '',
-          residentName: `${task.assignedResident?.firstName} ${task.assignedResident?.lastName}` || 'Unknown Resident',
-          assignedCaregiverId: task.assignedCaregiverId || '',
-          assignedCaregiver: task.assignedCaregiver || null,
-          caregiverName: task.assignedCaregiver
-            ? `${task.assignedCaregiver.firstName} ${task.assignedCaregiver.lastName}`
+          id: activeTask.id,
+          title: activeTask.title || '',
+          description: activeTask.description || '',
+          status: activeTask.status || 'PLANNED',
+          priority: activeTask.priority || 'NORMAL',
+          residentId: activeTask.residentId || '',
+          residentName: activeTask.assignedToResident
+            ? `${activeTask.assignedToResident?.firstName} ${activeTask.assignedToResident?.lastName}`
+            : 'Unknown Resident',
+          assignedCaregiverId: activeTask.assignedCaregiverId || '',
+          assignedCaregiver: activeTask.assignedToCaregiver || null,
+          caregiverName: activeTask.assignedToCaregiver
+            ? `${activeTask.assignedToCaregiver.firstName} ${activeTask.assignedToCaregiver.lastName}`
             : '',
-          room: task.resident?.room || '4002',
-          dueAt: task.dueAt,
-          checklist: task.checklist?.map((ci: any) => ({
-            id: ci.id,
-            label: ci.label,
-          })) || []
+          room: activeTask.resident?.room || 'ERROR',
+          dueTime: activeTask.dueTime,
         }}
-        enableReinitialize
+        enableReinitialize 
         onSubmit={async (values) => {
-          if (!canEdit) return; 
-          const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, status, ...cleanPayload } = values;
-          if (!dueAt) {
+          if (!canEdit) return;
+          const { caregiverName, residentName, residentId, room, dueTime, assignedCaregiver, status, ...cleanPayload } = values;
+          if (!dueTime) {
             setMutationStatus('ERROR');
             setErrorMessage("A valid due date and time is required.");
             return;
@@ -544,7 +575,7 @@ function TaskDetailView({ task, onUpdate }: any) {
             variables: {
               input: {
                 ...cleanPayload,
-                dueAt: new Date(values.dueAt)
+                dueAt: new Date(values.dueTime)
               }
             }
           });
@@ -552,6 +583,8 @@ function TaskDetailView({ task, onUpdate }: any) {
       >
         {({ values, setFieldValue, dirty }) => (
           <Form className="flex flex-col h-full">
+            
+            {/* 1. COMPACT HEADER */}
             <header className="px-10 py-8 border-b border-slate-100 bg-white pt-14">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
@@ -565,24 +598,19 @@ function TaskDetailView({ task, onUpdate }: any) {
                       {!canEdit && !isCancelled && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] uppercase tracking-widest font-bold">Read Only</span>}
                     </h1>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-                      System Reference: {task.id?.slice(-8)}
+                      System Reference: {activeTask.id?.slice(-8)}
                     </p>
                   </div>
                 </div>
 
+                {/* Priority Selector stays in header for high visibility */}
                 <div className="flex flex-col items-end gap-2">
-                  <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
-                    <ClinicalScheduler
-                      value={values.dueAt}
-                      onChange={(iso) => setFieldValue('dueAt', iso)}
-                    />
-                  </div>
-
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority Level</label>
                   <Field
                     as="select"
                     name="priority"
                     disabled={!canEdit}
-                    className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="bg-slate-50 border border-slate-100 text-xs font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-indigo-500/20"
                   >
                     <option value="LOW">Low</option>
                     <option value="NORMAL">Normal</option>
@@ -600,7 +628,23 @@ function TaskDetailView({ task, onUpdate }: any) {
               />
             </header>
 
+            {/* 2. MAIN SCROLLABLE CONTENT */}
             <div className="flex-1 overflow-y-auto p-10 space-y-12 bg-white scrollbar-hide">
+              
+              {/* Task Scheduling (Moved here for better layout) */}
+              <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
+                <Field name="dueTime">
+                  {({ field, form }: any) => (
+                    <DateTimePicker
+                      value={field.value}
+                      onChange={(isoString) => form.setFieldValue('dueTime', isoString)}
+                      disabled={!canEdit}
+                    />
+                  )}
+                </Field>
+              </div>
+
+              {/* Subject & Assignments */}
               <div className="grid grid-cols-2 gap-12">
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
@@ -644,7 +688,8 @@ function TaskDetailView({ task, onUpdate }: any) {
                 </div>
               </div>
 
-              <div className="space-y-6">
+              {/* Clinical Instructions */}
+              <div className="space-y-6 pb-6">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5" /> Clinical Instructions
                 </h3>
@@ -657,79 +702,67 @@ function TaskDetailView({ task, onUpdate }: any) {
                 />
               </div>
 
-              <div className="space-y-6 pb-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Execution Checklist</h3>
-                </div>
-                <FieldArray name="checklist">
-                  {({ push, remove }) => (
-                    <div className="space-y-3">
-                      {values.checklist.map((item: any, index: number) => (
-                        <div key={index} className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl group transition-all hover:border-indigo-200">
-                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${item.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
-                            {item.done ? '✓' : index + 1}
-                          </div>
-                          <Field
-                            name={`checklist.${index}.label`}
-                            placeholder="Instruction step..."
-                            disabled={!canEdit}
-                            className="flex-1 bg-transparent border-none text-sm font-bold text-slate-700 outline-none p-0 focus:ring-0 disabled:opacity-70"
-                          />
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => push({ label: '' })}
-                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" /> Add Protocol Step
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </FieldArray>
-              </div>
             </div>
 
-            <footer className="p-10 border-t border-slate-100 bg-white flex items-center justify-between">
-              <div className="flex gap-4">
-                {task.status !== 'CANCELLED' && task.status !== 'COMPLETED' && (
+            {/* 3. FOOTER */}
+            <footer className="p-6 md:p-8 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between shrink-0 gap-4">
+              
+              {/* LEFT: Secondary Actions */}
+              <div className="flex flex-wrap gap-3">
+                {activeTask.status !== 'CANCELLED' && activeTask.status !== 'COMPLETED' && (
                   <>
-                    <button type="button" onClick={handleCancel} className="text-rose-500 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-rose-50 rounded-lg transition-colors">
+                    <button 
+                      type="button" 
+                      onClick={handleCancel} 
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-rose-100 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-rose-500/10"
+                    >
+                      <X className="w-4 h-4" />
                       Cancel Task
                     </button>
-                    <button type="button" onClick={handleForceComplete} className="text-emerald-600 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-emerald-50 rounded-lg transition-colors">
+
+                    <button 
+                      type="button" 
+                      onClick={handleForceComplete} 
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-emerald-500/10"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
                       Force Complete
                     </button>
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-6">
+
+              {/* RIGHT: Primary Actions & Warnings */}
+              <div className="flex items-center gap-6 ml-auto">
                 {dirty && mutationStatus === 'IDLE' && canEdit && (
-                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
-                    <AlertCircle className="w-3 h-3" /> Unsaved Changes
-                  </span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">Unsaved Changes</span>
+                  </div>
                 )}
+                
                 {isCancelled ? (
-                  <p>Cancelled</p>
+                  <span className="px-4 py-2 bg-slate-200 text-slate-500 rounded-lg text-sm font-bold flex items-center gap-2">
+                    <Ban className="w-4 h-4" /> Cancelled
+                  </span>
                 ) : (
                   canEdit && (
                     <button
                       type="submit"
                       disabled={!dirty || updateLoading}
-                      className="px-12 py-4 bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 flex items-center gap-3"
+                      className="flex items-center gap-2 px-8 py-3 bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-300 transition-all focus:ring-4 focus:ring-indigo-500/20"
                     >
-                      {updateLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <><Save className="w-4 h-4" /> Save Updates</>}
+                      {updateLoading ? (
+                        <>
+                          <Loader2 className="animate-spin w-4 h-4" /> 
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" /> 
+                          Save Updates
+                        </>
+                      )}
                     </button>
                   )
                 )}
@@ -1019,11 +1052,10 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
                       key={priority}
                       type="button"
                       onClick={() => setFieldValue('priority', priority)}
-                      className={`h-11 rounded-xl border text-xs font-medium transition-all ${
-                        values.priority === priority
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-500 border-slate-200'
-                      }`}
+                      className={`h-11 rounded-xl border text-xs font-medium transition-all ${values.priority === priority
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-500 border-slate-200'
+                        }`}
                     >
                       {priority}
                     </button>

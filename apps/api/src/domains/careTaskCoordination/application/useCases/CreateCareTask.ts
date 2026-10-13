@@ -34,6 +34,16 @@ export class CreateCareTask {
             status: stauts.getStatus(),
             priority: priority.getPriority(),
             dueTime: dueTime.getDueTime(),
+            assignedToCaregiver: {
+                id: assignedCaregiverId!,
+                firstName: '',
+                lastName: ''
+            },
+            assignedToResident: {
+                residentId: assignedResidentId!,
+                firstName: '',
+                lastName: ''
+            }
         }
     }
 

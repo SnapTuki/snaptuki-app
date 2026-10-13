@@ -10,9 +10,42 @@ export const GET_TODAY_CARE_TASKS:TypedDocumentNode<Query> = gql`
       priority
       status
       dueTime
+      assignedToCaregiver {
+        id
+        firstName
+        lastName
+      }
+      assignedToResident {
+        firstName
+        lastName
+      }
     }
   }
 `;
+
+export const GET_CARE_TASK_DETAILS:TypedDocumentNode<Query> = gql`
+  query GetCareTaskDetails($careTaskId: String!) {
+    careTaskDetails(careTaskId: $careTaskId) {
+      id
+      title
+      description
+      priority
+      status
+      dueTime
+      completionNote
+      assignedToCaregiver {
+        id
+        firstName
+        lastName
+      }
+      assignedToResident {
+        residentId
+        firstName
+        lastName
+      }
+    }
+  }
+`;  
 
 export const GET_TOMORROW_CARE_TASKS:TypedDocumentNode<Query> = gql`
   query GetTomorrowCareTasks {
@@ -22,6 +55,16 @@ export const GET_TOMORROW_CARE_TASKS:TypedDocumentNode<Query> = gql`
       priority
       status
       dueTime
+      assignedToCaregiver {
+        id
+        firstName
+        lastName
+      }
+      assignedToResident {
+        residentId
+        firstName
+        lastName
+      } 
     }
   }
 `;
