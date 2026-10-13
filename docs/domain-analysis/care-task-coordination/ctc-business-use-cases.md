@@ -6,7 +6,7 @@
 The CareTaskCoordination bounded context manages the full lifecycle of care-related tasks inside a nursing home:
 
 ```text
-Create → Plan → Assign → Perform → Update Status → Monitor → Review → Close
+Create  → Assign → Perform → Update Status → Monitor → Review → Close
 ```
 
 It helps answer:
@@ -33,16 +33,6 @@ Caregiver
 System
 ```
 
-## Supporting Actors
-
-```text
-Manager
-Admin
-Resident Profile Management Context
-Caregiver Profile Management Context
-Authentication / Identity Context
-Logging / Audit Context
-```
 
 ---
 
@@ -52,7 +42,7 @@ The use cases can be grouped into these areas:
 
 ```text
 1. CareTask Creation and Planning
-2. CareTask Assignment
+2. CareTask Modification
 3. Caregiver Task Execution
 4. Status and Lifecycle Management
 5. Overdue and Missed Task Handling
@@ -82,13 +72,12 @@ Create a new CareTask that represents a care-related responsibility.
 
 ### Description
 
-A CareCoordinator creates a CareTask for a resident, room, location, or general care operation. The CareTask describes what needs to be done, when it should be done, and how important it is.
+A CareCoordinator creates a CareTask for a resident. The CareTask describes what needs to be done, when it should be done, and how important it is.
 
 ### Preconditions
 
 ```text
 CareCoordinator is authenticated.
-CareCoordinator has permission to create CareTasks.
 ```
 
 ### Main Flow
@@ -97,7 +86,7 @@ CareCoordinator has permission to create CareTasks.
 1. CareCoordinator starts creating a new CareTask.
 2. CareCoordinator enters task title.
 3. CareCoordinator optionally enters description.
-4. CareCoordinator selects Resident, Room, or Location if applicable.
+4. CareCoordinator selects Resident.
 5. CareCoordinator sets DueTime.
 6. CareCoordinator sets TaskPriority.
 7. CareCoordinator saves the CareTask.
@@ -110,23 +99,23 @@ CareCoordinator has permission to create CareTasks.
 A CareTask must have a title.
 A CareTask must have a DueTime.
 A CareTask must have a TaskPriority.
-A CareTask must be linked to a Resident, Room, or Location.
+A CareTask must be linked to a Resident.
 A CareTask must have a Creator.
 ```
 
 ### Result
 
 ```text
-A new CareTask exists in Planned status and automatically goes into Today's CareTaskList.
+A new CareTask exists in Assigned status for a specific resident.
 ```
 ---
 
 ---
 
-## UC-002: Update CareTask Details
+## UC-002: Update CareTask Title & Description
 
 As A CareCoordinator I should be able to modify CareTask information before it is completed or missed!
-A CareCoordinator updates the title, description, DueTime, priority, resident reference, room reference, or location reference of a CareTask.
+A CareCoordinator updates the title, description a CareTask.
 
 ### Preconditions
 
@@ -134,8 +123,7 @@ A CareCoordinator updates the title, description, DueTime, priority, resident re
 CareTask exists.
 CareTask is not Completed.
 CareTask is not Missed.
-CareTask is not Cancelled unless reactivation or correction is allowed.
-CareCoordinator has permission to update the CareTask.
+CareTask is not Cancelled.
 ```
 
 ### Main Flow
@@ -144,7 +132,6 @@ CareCoordinator has permission to update the CareTask.
 1. CareCoordinator opens CareTask details.
 2. CareCoordinator edits allowed fields.
 3. System checks whether the change is allowed.
-4. If the change happens close to DueTime, system requests LateChangeReason.
 5. CareCoordinator confirms the update.
 6. System saves updated details.
 7. System records the change.
@@ -153,10 +140,9 @@ CareCoordinator has permission to update the CareTask.
 ### Business Rules
 
 ```text
-CareTask details may be updated before DueTime.
-If CareTask details are updated less than 15 minutes before DueTime, LateChangeReason is required.
+CareTask title and description may be updated before DueTime.
 Completed CareTasks should not be edited.
-Cancelled CareTasks should not be edited unless reactivated.
+Cancelled CareTasks should not be edited.
 All detail changes must be recorded in history.
 ```
 
@@ -189,8 +175,6 @@ CareCoordinator has permission to update priority.
 
 ```text
 TaskPriority must be one of the allowed values.
-Critical or High priority tasks should be visible clearly in dashboard.
-Changing priority close to DueTime may require a reason.
 ```
 
 ---
@@ -214,7 +198,6 @@ CareCoordinator has permission to change DueTime.
 1. CareCoordinator opens the CareTask.
 2. CareCoordinator changes DueTime.
 3. System checks whether the new DueTime is valid.
-4. If the change is close to the current DueTime, system requires LateChangeReason.
 5. System updates DueTime.
 6. System records the change.
 ```
@@ -224,7 +207,6 @@ CareCoordinator has permission to change DueTime.
 ```text
 DueTime cannot be empty for a published CareTask.
 DueTime should not be in the past.
-Late DueTime changes require a reason.
 Changing DueTime may affect Overdue status.
 ```
 
