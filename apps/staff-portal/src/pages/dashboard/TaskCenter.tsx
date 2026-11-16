@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
-import { useQuery, Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, Filter, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox } from "lucide-react";
+import { useQuery, useMutation } from '@apollo/client/react';
+import { Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox, Plus } from 'lucide-react';
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
