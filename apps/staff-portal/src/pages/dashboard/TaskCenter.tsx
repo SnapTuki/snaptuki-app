@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Search, Activity, Loader2, Ban, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox, Plus } from 'lucide-react';
+import { Search, Activity, Loader2, Ban, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox, Plus, Pencil } from 'lucide-react';
 import { Formik, Form, Field, FieldArray } from 'formik';
 import { DateTimePicker } from '../../features/taskCenter/components/DateTimePicker';
 import * as Yup from 'yup';
@@ -273,6 +273,17 @@ function TaskDetailView({ task, onUpdate }: any) {
 
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const toggleField = (name: string) => setEditingFields(current => ({ ...current, [name]: !current[name] }));
+  const editButton = (name: string, label: string) => canEdit ? (
+    <button type="button" onClick={() => toggleField(name)}
+      aria-label={editingFields[name] ? `Finish editing ${label}` : `Edit ${label}`}
+      aria-pressed={!!editingFields[name]}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-teal-50 hover:text-teal-700 focus-visible:outline-2 focus-visible:outline-teal-600">
+      {editingFields[name] ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+    </button>
+  ) : null;
+
 
   // 3. Update status checks to use activeTask
   const isPending = activeTask.status === 'PLANNED' || activeTask.status === 'ASSIGNED';
@@ -431,29 +442,34 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </div>
                 </div>
 
-                {/* Priority Selector stays in header for high visibility */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-slate-600">Priority</label>
-                  <Field
-                    as="select"
-                    name="priority"
-                    disabled={!canEdit}
-                    className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <option value="LOW">Low</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="HIGH">High</option>
-                    <option value="CRITICAL">Critical</option>
-                  </Field>
+                <div className="min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-slate-500">Priority</span>
+                    {editButton('priority', 'priority')}
+                  </div>
+                  {editingFields.priority && canEdit ? (
+                    <Field as="select" name="priority" aria-label="Task priority"
+                      className="mt-1 w-full rounded-lg border border-teal-200 bg-white px-2 py-2 text-sm font-medium text-slate-900 outline-none focus:border-teal-600">
+                      <option value="LOW">Low</option>
+                      <option value="NORMAL">Normal</option>
+                      <option value="HIGH">High</option>
+                      <option value="CRITICAL">Critical</option>
+                    </Field>
+                  ) : <p className="py-2 text-sm font-semibold capitalize text-slate-900">{String(values.priority).toLowerCase()}</p>}
                 </div>
               </div>
 
-              <Field
-                name="title"
-                disabled={!canEdit}
-                className="w-full rounded-lg border-0 bg-transparent p-0 text-2xl font-semibold tracking-tight text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0 disabled:opacity-70 sm:text-3xl"
-                placeholder="Enter Task Title..."
-              />
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1 text-xs font-medium text-slate-500">Task name</p>
+                  {editingFields.title && canEdit ? (
+                    <Field name="title" aria-label="Task name" autoFocus
+                      className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-2xl font-semibold text-slate-900 outline-none focus:border-teal-600"
+                      placeholder="Enter task name" />
+                  ) : <h2 className="break-words text-2xl font-semibold leading-snug tracking-tight text-slate-900">{values.title || 'Untitled task'}</h2>}
+                </div>
+                {editButton('title', 'task name')}
+              </div>
             </header>
 
             {/* 2. MAIN SCROLLABLE CONTENT */}
@@ -498,19 +514,27 @@ function TaskDetailView({ task, onUpdate }: any) {
                     <CheckCircle2 className="w-3.5 h-3.5" /> Assignments
                   </h3>
                   <div className="space-y-3">
-                    <div className="relative mt-3">
-                      <CaregiverSelect
-                        disabled={!canEdit}
-                        value={values.assignedCaregiver}
-                        onChange={(cg: any) => {
-                          setFieldValue('assignedCaregiverId', cg?.id || '');
-                          setFieldValue('assignedCaregiver', cg ? {
-                            id: cg.id,
-                            firstName: cg.firstName,
-                            lastName: cg.lastName
-                          } : null);
-                        }}
-                      />
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-slate-500">Assigned caregiver</p>
+                        {editButton('caregiver', 'caregiver')}
+                      </div>
+                      {editingFields.caregiver && canEdit ? (
+                        <div className="mt-3">
+                          <CaregiverSelect value={values.assignedCaregiver}
+                            onChange={(cg: any) => {
+                              setFieldValue('assignedCaregiverId', cg?.id || '');
+                              setFieldValue('assignedCaregiver', cg ? { id: cg.id, firstName: cg.firstName, lastName: cg.lastName } : null);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {values.assignedCaregiver
+                            ? [values.assignedCaregiver.firstName, values.assignedCaregiver.lastName].filter(Boolean).join(' ')
+                            : 'Not assigned'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -521,13 +545,19 @@ function TaskDetailView({ task, onUpdate }: any) {
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                   <Info className="w-3.5 h-3.5" /> Clinical Instructions
                 </h3>
-                <Field
-                  as="textarea"
-                  name="description"
-                  disabled={!canEdit}
-                  className="min-h-32 w-full resize-y rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-800 outline-none transition-colors focus:border-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  placeholder="No description provided..."
-                />
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500">Care notes</span>
+                    {editButton('description', 'care instructions')}
+                  </div>
+                  {editingFields.description && canEdit ? (
+                    <Field as="textarea" name="description" aria-label="Care instructions"
+                      className="min-h-32 w-full resize-y rounded-xl border border-teal-200 bg-white p-3 text-sm leading-relaxed text-slate-800 outline-none focus:border-teal-600"
+                      placeholder="Enter care instructions…" />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{values.description || 'No instructions added.'}</p>
+                  )}
+                </div>
               </div>
 
             </div>
