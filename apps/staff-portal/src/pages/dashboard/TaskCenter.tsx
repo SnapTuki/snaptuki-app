@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox, Plus } from 'lucide-react';
+import { Search, Activity, Loader2, Ban, Save, Info, MapPin, Briefcase, X, AlertCircle, Check, User, CheckCircle2, RefreshCcw, LayoutList, CalendarDays, ChevronRight, Inbox, Plus } from 'lucide-react';
 import { Formik, Form, Field, FieldArray } from 'formik';
+import { DateTimePicker } from '../../features/taskCenter/components/DateTimePicker';
 import * as Yup from 'yup';
 
 // Added GET_TOMORROW_CARE_TASKS to your imports
@@ -28,9 +29,9 @@ type CareTask = {
   description?: string | null;
   priority?: string | null;
   status: string;
-  dueAt?: string | null;
-  assignedResident?: { firstName?: string | null; lastName?: string | null } | null;
-  assignedCaregiver?: { firstName?: string | null; lastName?: string | null } | null;
+  dueTime?: string | null;
+  assignedToResident?: { firstName?: string | null; lastName?: string | null } | null;
+  assignedToCaregiver?: { firstName?: string | null; lastName?: string | null } | null;
 };
 
 const taskStatus = [
@@ -40,7 +41,7 @@ const taskStatus = [
   { key: 'CANCELLED', label: 'Cancelled', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600' },
 ];
 
-const personName = (person?: CareTask['assignedResident']) =>
+const personName = (person?: CareTask['assignedToResident']) =>
   [person?.firstName, person?.lastName].filter(Boolean).join(' ') || 'Not specified';
 
 const taskTime = (value?: string | null) => {
@@ -56,9 +57,10 @@ export default function TaskCenter() {
   const [scheduleView, setScheduleView] = useState<'Today' | 'Tomorrow'>('Today');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const { data, loading, error, refetch } = useQuery(GET_ALL_TASKS);
-  const allTasks = (data?.taskList ?? []) as CareTask[];
-
+  const { data, loading, error, refetch } = useQuery(GET_TODAY_CARE_TASKS);
+  const allTasks = (data?.todayCareTasks ?? []) as CareTask[];
+  console.log('All tasks', allTasks);
+  
   const selectedDate = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -70,8 +72,8 @@ export default function TaskCenter() {
     const end = new Date(selectedDate);
     end.setDate(end.getDate() + 1);
     return allTasks.filter(task => {
-      if (!task.dueAt) return false;
-      const due = new Date(task.dueAt).getTime();
+      if (!task.dueTime) return false;
+      const due = new Date(task.dueTime).getTime();
       return due >= selectedDate.getTime() && due < end.getTime();
     });
   }, [allTasks, selectedDate]);
@@ -82,8 +84,8 @@ export default function TaskCenter() {
       if (statusFilter !== 'ALL' && task.status !== statusFilter) return false;
       if (!query) return true;
       return [
-        task.title, task.description, personName(task.assignedResident),
-        personName(task.assignedCaregiver), task.id,
+        task.title, task.description, personName(task.assignedToResident),
+        personName(task.assignedToCaregiver), task.id,
       ].some(value => (value ?? '').toLocaleLowerCase().includes(query));
     });
   }, [dayTasks, searchTerm, statusFilter]);
@@ -199,7 +201,7 @@ export default function TaskCenter() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100 border-t border-slate-100">
-                {filteredTasks.slice().sort((a, b) => new Date(a.dueAt ?? 0).getTime() - new Date(b.dueAt ?? 0).getTime()).map(task => {
+                {filteredTasks.slice().sort((a, b) => new Date(a.dueTime ?? 0).getTime() - new Date(b.dueTime ?? 0).getTime()).map(task => {
                   const status = taskStatus.find(item => item.key === task.status);
                   const important = task.priority === 'HIGH' || task.priority === 'CRITICAL';
                   return (
@@ -209,7 +211,7 @@ export default function TaskCenter() {
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
                           <CalendarDays className="h-4 w-4" aria-hidden="true" />
                         </div>
-                        <span className="text-sm font-semibold tabular-nums text-slate-800">{taskTime(task.dueAt)}</span>
+                        <span className="text-sm font-semibold tabular-nums text-slate-800">{taskTime(task.dueTime)}</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -217,9 +219,9 @@ export default function TaskCenter() {
                           {important && <span className="rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">{task.priority === 'CRITICAL' ? 'Critical' : 'High priority'}</span>}
                         </div>
                         <p className="mt-1 truncate text-xs text-slate-500">
-                          Resident: <span className="font-medium text-slate-700">{personName(task.assignedResident)}</span>
+                          Resident: <span className="font-medium text-slate-700">{personName(task.assignedToResident)}</span>
                           <span className="mx-2 text-slate-300">·</span>
-                          Caregiver: {task.assignedCaregiver ? personName(task.assignedCaregiver) : 'Not assigned'}
+                          Caregiver: {task.assignedToCaregiver ? personName(task.assignedToCaregiver) : 'Not assigned'}
                         </p>
                       </div>
                       <div className="flex items-center justify-between gap-3 sm:justify-end">
