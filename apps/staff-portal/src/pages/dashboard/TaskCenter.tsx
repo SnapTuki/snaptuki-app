@@ -336,20 +336,20 @@ function TaskDetailView({ task, onUpdate }: any) {
   // Show a loading state while fetching the detailed record
   if (detailLoading && !detailData) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Clinical Record...</p>
+      <div className="flex h-full flex-col items-center justify-center bg-white">
+        <Loader2 className="mb-4 h-8 w-8 animate-spin text-teal-700" />
+        <p className="text-sm text-slate-500">Loading care task…</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden relative">
+    <div className="relative flex h-full flex-col overflow-hidden bg-white">
       {mutationStatus === 'SUCCESS' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-emerald-200 flex items-center gap-3 border border-emerald-400">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="text-xs font-black uppercase tracking-widest">Clinical Record Synchronized</span>
+            <span className="text-sm font-medium">Task updated</span>
           </div>
         </div>
       )}
@@ -410,35 +410,35 @@ function TaskDetailView({ task, onUpdate }: any) {
         }}
       >
         {({ values, setFieldValue, dirty }) => (
-          <Form className="flex flex-col h-full">
+          <Form className="flex h-full flex-col">
             
             {/* 1. COMPACT HEADER */}
-            <header className="px-10 py-8 border-b border-slate-100 bg-white pt-14">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
+            <header className="shrink-0 border-b border-slate-100 bg-white px-6 pb-5 pt-14 sm:px-8">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`rounded-xl p-3 ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-teal-50 text-teal-700'}`}>
                     <Briefcase className="w-6 h-6" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                      Task Editor
+                    <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
+                      Care task
                       {isCancelled && <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded text-[10px] uppercase tracking-widest font-bold">Cancelled</span>}
                       {!canEdit && !isCancelled && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] uppercase tracking-widest font-bold">Read Only</span>}
                     </h1>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-                      System Reference: {activeTask.id?.slice(-8)}
+                    <p className="mt-1 text-xs text-slate-500">
+                      Reference: {activeTask.id?.slice(-8)}
                     </p>
                   </div>
                 </div>
 
                 {/* Priority Selector stays in header for high visibility */}
-                <div className="flex flex-col items-end gap-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority Level</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-slate-600">Priority</label>
                   <Field
                     as="select"
                     name="priority"
                     disabled={!canEdit}
-                    className="bg-slate-50 border border-slate-100 text-xs font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-indigo-500/20"
+                    className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <option value="LOW">Low</option>
                     <option value="NORMAL">Normal</option>
@@ -451,16 +451,16 @@ function TaskDetailView({ task, onUpdate }: any) {
               <Field
                 name="title"
                 disabled={!canEdit}
-                className="w-full text-4xl font-black text-slate-900 placeholder:text-slate-200 outline-none border-none p-0 focus:ring-0 bg-transparent disabled:opacity-70"
+                className="w-full rounded-lg border-0 bg-transparent p-0 text-2xl font-semibold tracking-tight text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0 disabled:opacity-70 sm:text-3xl"
                 placeholder="Enter Task Title..."
               />
             </header>
 
             {/* 2. MAIN SCROLLABLE CONTENT */}
-            <div className="flex-1 overflow-y-auto p-10 space-y-12 bg-white scrollbar-hide">
+            <div className="flex-1 space-y-7 overflow-y-auto bg-[#fbfcfc] px-6 py-6 sm:px-8 sm:py-8">
               
               {/* Task Scheduling (Moved here for better layout) */}
-              <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
+              <div>
                 <Field name="dueTime">
                   {({ field, form }: any) => (
                     <DateTimePicker
@@ -473,32 +473,32 @@ function TaskDetailView({ task, onUpdate }: any) {
               </div>
 
               {/* Subject & Assignments */}
-              <div className="grid grid-cols-2 gap-12">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                     <User className="w-3.5 h-3.5" /> Subject & Location
                   </h3>
-                  <div className="space-y-4">
-                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Resident</p>
-                      <p className="text-sm font-bold text-slate-800">{values.residentName}</p>
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="mb-1 text-xs font-medium text-slate-500">Resident</p>
+                      <p className="text-sm font-semibold text-slate-800">{values.residentName}</p>
                     </div>
-                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
                       <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Room Assignment</p>
-                        <p className="text-sm font-bold text-slate-800">{values.room}</p>
+                        <p className="mb-1 text-xs font-medium text-slate-500">Room Assignment</p>
+                        <p className="text-sm font-semibold text-slate-800">{values.room}</p>
                       </div>
                       <MapPin className="w-5 h-5 text-slate-300" />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
+                <div className="space-y-3">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Assignments
                   </h3>
-                  <div className="space-y-4">
-                    <div className="relative group mt-5">
+                  <div className="space-y-3">
+                    <div className="relative mt-3">
                       <CaregiverSelect
                         disabled={!canEdit}
                         value={values.assignedCaregiver}
@@ -517,15 +517,15 @@ function TaskDetailView({ task, onUpdate }: any) {
               </div>
 
               {/* Clinical Instructions */}
-              <div className="space-y-6 pb-6">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
+              <div className="space-y-3 pb-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                   <Info className="w-3.5 h-3.5" /> Clinical Instructions
                 </h3>
                 <Field
                   as="textarea"
                   name="description"
                   disabled={!canEdit}
-                  className="w-full min-h-30 p-8 bg-slate-50 border border-slate-100 rounded-4xl text-base font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none leading-relaxed disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="min-h-32 w-full resize-y rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-800 outline-none transition-colors focus:border-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                   placeholder="No description provided..."
                 />
               </div>
@@ -533,7 +533,7 @@ function TaskDetailView({ task, onUpdate }: any) {
             </div>
 
             {/* 3. FOOTER */}
-            <footer className="p-6 md:p-8 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between shrink-0 gap-4">
+            <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-6 py-4 sm:px-8">
               
               {/* LEFT: Secondary Actions */}
               <div className="flex flex-wrap gap-3">
@@ -542,7 +542,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                     <button 
                       type="button" 
                       onClick={handleCancel} 
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-rose-100 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-rose-500/10"
+                      className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-50"
                     >
                       <X className="w-4 h-4" />
                       Cancel Task
@@ -551,7 +551,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                     <button 
                       type="button" 
                       onClick={handleForceComplete} 
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-emerald-500/10"
+                      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Force Complete
@@ -561,11 +561,11 @@ function TaskDetailView({ task, onUpdate }: any) {
               </div>
 
               {/* RIGHT: Primary Actions & Warnings */}
-              <div className="flex items-center gap-6 ml-auto">
+              <div className="ml-auto flex flex-wrap items-center gap-3">
                 {dirty && mutationStatus === 'IDLE' && canEdit && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg">
                     <AlertCircle className="w-4 h-4" />
-                    <span className="text-[11px] font-bold uppercase tracking-widest">Unsaved Changes</span>
+                    <span className="text-xs font-medium">Unsaved changes</span>
                   </div>
                 )}
                 
@@ -578,7 +578,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                     <button
                       type="submit"
                       disabled={!dirty || updateLoading}
-                      className="flex items-center gap-2 px-8 py-3 bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-300 transition-all focus:ring-4 focus:ring-indigo-500/20"
+                      className="flex items-center gap-2 rounded-xl bg-teal-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                     >
                       {updateLoading ? (
                         <>
@@ -588,7 +588,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                       ) : (
                         <>
                           <Save className="w-4 h-4" /> 
-                          Save Updates
+                          Save changes
                         </>
                       )}
                     </button>
