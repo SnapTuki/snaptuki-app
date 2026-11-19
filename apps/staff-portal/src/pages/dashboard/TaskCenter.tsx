@@ -442,26 +442,17 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </div>
                 </div>
 
-                <div className="min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-slate-500">Priority</span>
-                    {editButton('priority', 'priority')}
-                  </div>
-                  {editingFields.priority && canEdit ? (
-                    <Field as="select" name="priority" aria-label="Task priority"
-                      className="mt-1 w-full rounded-lg border border-teal-200 bg-white px-2 py-2 text-sm font-medium text-slate-900 outline-none focus:border-teal-600">
-                      <option value="LOW">Low</option>
-                      <option value="NORMAL">Normal</option>
-                      <option value="HIGH">High</option>
-                      <option value="CRITICAL">Critical</option>
-                    </Field>
-                  ) : <p className="py-2 text-sm font-semibold capitalize text-slate-900">{String(values.priority).toLowerCase()}</p>}
-                </div>
+                <Field as="select" name="priority" aria-label="Task priority" disabled={!canEdit}
+                  className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-800 outline-none focus:border-teal-600 disabled:opacity-60">
+                  <option value="LOW">Low priority</option>
+                  <option value="NORMAL">Normal priority</option>
+                  <option value="HIGH">High priority</option>
+                  <option value="CRITICAL">Critical priority</option>
+                </Field>
               </div>
 
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="mb-1 text-xs font-medium text-slate-500">Task name</p>
                   {editingFields.title && canEdit ? (
                     <Field name="title" aria-label="Task name" autoFocus
                       className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-2xl font-semibold text-slate-900 outline-none focus:border-teal-600"
@@ -496,13 +487,11 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </h3>
                   <div className="space-y-3">
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <p className="mb-1 text-xs font-medium text-slate-500">Resident</p>
-                      <p className="text-sm font-semibold text-slate-800">{values.residentName}</p>
+                      <p className="text-sm font-semibold text-slate-800" title="Resident">{values.residentName}</p>
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
                       <div>
-                        <p className="mb-1 text-xs font-medium text-slate-500">Room Assignment</p>
-                        <p className="text-sm font-semibold text-slate-800">{values.room}</p>
+                        <p className="text-sm font-semibold text-slate-800" title="Room">{values.room}</p>
                       </div>
                       <MapPin className="w-5 h-5 text-slate-300" />
                     </div>
@@ -515,26 +504,14 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </h3>
                   <div className="space-y-3">
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-medium text-slate-500">Assigned caregiver</p>
-                        {editButton('caregiver', 'caregiver')}
-                      </div>
-                      {editingFields.caregiver && canEdit ? (
-                        <div className="mt-3">
-                          <CaregiverSelect value={values.assignedCaregiver}
-                            onChange={(cg: any) => {
-                              setFieldValue('assignedCaregiverId', cg?.id || '');
-                              setFieldValue('assignedCaregiver', cg ? { id: cg.id, firstName: cg.firstName, lastName: cg.lastName } : null);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="mt-2 text-sm font-semibold text-slate-900">
-                          {values.assignedCaregiver
-                            ? [values.assignedCaregiver.firstName, values.assignedCaregiver.lastName].filter(Boolean).join(' ')
-                            : 'Not assigned'}
-                        </p>
-                      )}
+                      <CaregiverSelect
+                        disabled={!canEdit}
+                        value={values.assignedCaregiver}
+                        onChange={(cg: any) => {
+                          setFieldValue('assignedCaregiverId', cg?.id || '');
+                          setFieldValue('assignedCaregiver', cg ? { id: cg.id, firstName: cg.firstName, lastName: cg.lastName } : null);
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -542,12 +519,8 @@ function TaskDetailView({ task, onUpdate }: any) {
 
               {/* Clinical Instructions */}
               <div className="space-y-3 pb-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                  <Info className="w-3.5 h-3.5" /> Clinical Instructions
-                </h3>
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Care notes</span>
+                  <div className="mb-2 flex items-center justify-end">
                     {editButton('description', 'care instructions')}
                   </div>
                   {editingFields.description && canEdit ? (
