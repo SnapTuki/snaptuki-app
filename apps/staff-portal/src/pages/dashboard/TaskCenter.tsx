@@ -505,6 +505,7 @@ function TaskDetailView({ task, onUpdate }: any) {
                   <div className="space-y-3">
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
                       <CaregiverSelect
+                        hideLabel
                         disabled={!canEdit}
                         value={values.assignedCaregiver}
                         onChange={(cg: any) => {
@@ -606,7 +607,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   );
 }
 
-function CaregiverSelect({ value, onChange, disabled }: any) {
+function CaregiverSelect({ value, onChange, disabled, hideLabel = false }: any) {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [open, setOpen] = useState(false);
@@ -639,9 +640,7 @@ function CaregiverSelect({ value, onChange, disabled }: any) {
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">
-        Assigned Provider
-      </label>
+      {!hideLabel && <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Assigned Provider</label>}
 
       {!isFocused && value ? (
         <div
@@ -684,6 +683,7 @@ function CaregiverSelect({ value, onChange, disabled }: any) {
               setIsFocused(true);
               setOpen(true);
             }}
+            aria-label="Search caregiver"
             placeholder={value ? `${value.firstName} ${value.lastName}` : "Search caregiver..."}
             className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none ring-4 ring-transparent focus:ring-indigo-500/5 focus:border-indigo-500 transition-all placeholder:text-slate-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
           />
