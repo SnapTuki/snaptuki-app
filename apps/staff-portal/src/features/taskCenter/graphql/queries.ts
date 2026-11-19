@@ -2,36 +2,75 @@ import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';
 import type { Query } from '../../../lib/graphql/generated';
 
-export const GET_ALL_TASKS:TypedDocumentNode<Query> = gql`
-  query GetTodayTasks($todayDate: DateTime) {
-    taskList(dueAt: $todayDate) {
+export const GET_TODAY_CARE_TASKS:TypedDocumentNode<Query> = gql`
+  query GetTodayCareTasks {
+    todayCareTasks {
       id
       title
       priority
-      description
       status
-      dueAt
-      assignedResident {
-        firstName
-        lastName
-      }
-      assignedCaregiver{
-        firstName
-        lastName
-      }
-
-      checklist{
+      dueTime
+      assignedToCaregiver {
         id
-        label
+        firstName
+        lastName
       }
-     
+      assignedToResident {
+        firstName
+        lastName
+      }
     }
   }
 `;
 
+export const GET_CARE_TASK_DETAILS:TypedDocumentNode<Query> = gql`
+  query GetCareTaskDetails($careTaskId: String!) {
+    careTaskDetails(careTaskId: $careTaskId) {
+      id
+      title
+      description
+      priority
+      status
+      dueTime
+      completionNote
+      assignedToCaregiver {
+        id
+        firstName
+        lastName
+      }
+      assignedToResident {
+        residentId
+        firstName
+        lastName
+      }
+    }
+  }
+`;  
+
+export const GET_TOMORROW_CARE_TASKS:TypedDocumentNode<Query> = gql`
+  query GetTomorrowCareTasks {
+    tomorrowCareTasks {
+      id
+      title
+      priority
+      status
+      dueTime
+      assignedToCaregiver {
+        id
+        firstName
+        lastName
+      }
+      assignedToResident {
+        residentId
+        firstName
+        lastName
+      } 
+    }
+  }
+`;
 export const SEARCH_RESIDENTS:TypedDocumentNode<Query> = gql`
-  query SearchResidents($search: String) {
-    residentList(search: $search) {
+  query SearchResidents{
+    residentList {
       residentId
       firstName
       lastName

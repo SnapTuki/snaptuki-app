@@ -70,11 +70,6 @@ export interface ResidentDTO {
   room: string | null;
   status: ResidentStatus;
 
-  // Nested Collections
-  allergies: AllergyDTO[];
-  medications: MedicationDTO[];
-  emergencyContacts: EmergencyContactDTO[];
-  
   createdAt: Date;
   updatedAt: Date;
 }

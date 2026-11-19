@@ -14,10 +14,9 @@ import type { Query } from '../../lib/graphql/generated';
 import { useQuery } from '@apollo/client/react';
 // Define the navigation links
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Inbox', icon: InboxIcon, exact: true },
+  { path: '/dashboard/tasks', label: 'Task Center', icon: ClipboardCheck, exact: true },
   { path: '/dashboard/residents', label: 'Residents', icon: HeartPulse },
   { path: '/dashboard/caregivers', label: 'Caregivers', icon: Users },
-  { path: '/dashboard/tasks', label: 'Task Center', icon: ClipboardCheck },
   { path: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 

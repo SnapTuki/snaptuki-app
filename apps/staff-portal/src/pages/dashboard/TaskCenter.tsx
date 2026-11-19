@@ -5,13 +5,19 @@ import { Search, Activity, Loader2, Trash2, Save, Info, MapPin, Briefcase, X, Al
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 
-import { GET_ALL_TASKS, SEARCH_CAREGIVERS, SEARCH_RESIDENTS } from '../../features/taskCenter/graphql/queries';
-import { 
-  CREATE_ADHOC_TASK, 
-  UPDATE_TASK,
-  CANCEL_TASK_MUTATION,
-  COMPLETE_TASK_MUTATION,
-  REACTIVATE_TASK
+// Added GET_TOMORROW_CARE_TASKS to your imports
+import {
+  GET_TODAY_CARE_TASKS,
+  GET_TOMORROW_CARE_TASKS,
+  SEARCH_CAREGIVERS,
+  SEARCH_RESIDENTS,
+  GET_CARE_TASK_DETAILS,
+} from '../../features/taskCenter/graphql/queries';
+import {
+  CREATE_ADHOC_TASK,
+  UPDATE_CARE_TASK,
+  CANCEL_CARE_TASK,
+  COMPLETE_CARE_TASK,
 } from '../../features/taskCenter/graphql/mutations';
 import { ClinicalScheduler } from '../../features/taskCenter/components/ClinicalScheduler';
 
@@ -254,15 +260,24 @@ export default function TaskCenter() {
 // Task details, mutation handlers, validation and the dispatch form remain unchanged.
 
 function TaskDetailView({ task, onUpdate }: any) {
+  // 1. Fetch fresh task details based on the passed task ID
+  const { data: detailData, loading: detailLoading } = useQuery(GET_CARE_TASK_DETAILS, {
+    variables: { careTaskId: task.id },
+    fetchPolicy: 'network-only', // Ensures we always get the freshest data
+  });
+
+  // 2. Use fetched data if available, otherwise fallback to the basic prop data
+  const activeTask = detailData?.careTaskDetails || task;
+
   const [mutationStatus, setMutationStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const isPending = task.status === 'PENDING';
-  const isCancelled = task.status === 'CANCELLED';
-  const canEdit = isPending; 
-  const canRetask = isCancelled && new Date(task.dueAt).getTime() > Date.now() + 15 * 60000;
+  // 3. Update status checks to use activeTask
+  const isPending = activeTask.status === 'PLANNED' || activeTask.status === 'ASSIGNED';
+  const isCancelled = activeTask.status === 'CANCELLED' || activeTask.status === 'UNABLE_TO_COMPLETE' || activeTask.status === 'MISSED';
+  const canEdit = isPending || activeTask.status === 'IN_PROGRESS';
 
-  const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_TASK, {
+  const [updateTask, { loading: updateLoading }] = useMutation(UPDATE_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -274,7 +289,7 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   });
 
-  const [cancelTaskMutation] = useMutation(CANCEL_TASK_MUTATION, {
+  const [cancelTaskMutation] = useMutation(CANCEL_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -286,21 +301,7 @@ function TaskDetailView({ task, onUpdate }: any) {
     }
   });
 
-  const [reactivateTask] = useMutation(REACTIVATE_TASK, {
-    onCompleted: () => {
-      setMutationStatus('SUCCESS');
-      setErrorMessage('Task Reactivated Successfully')
-      if (onUpdate) onUpdate();
-      setTimeout(() => setMutationStatus('IDLE'), 3000);
-    },
-
-    onError: (error) => {
-      setMutationStatus('ERROR');
-      setErrorMessage(error.message || 'Failed to Reactivate Task')
-    }
-  })
-
-  const [completeTaskMutation] = useMutation(COMPLETE_TASK_MUTATION, {
+  const [completeTaskMutation] = useMutation(COMPLETE_CARE_TASK, {
     onCompleted: () => {
       setMutationStatus('SUCCESS');
       if (onUpdate) onUpdate();
@@ -315,7 +316,7 @@ function TaskDetailView({ task, onUpdate }: any) {
   const handleCancel = () => {
     const reason = window.prompt("Please provide a reason for cancelling this task:");
     if (reason !== null && reason.trim() !== "") {
-      cancelTaskMutation({ variables: { id: task.id, reason } });
+      cancelTaskMutation({ variables: { id: activeTask.id, reason } });
     } else if (reason !== null) {
       alert("A reason is required to cancel a task.");
     }
@@ -324,22 +325,24 @@ function TaskDetailView({ task, onUpdate }: any) {
   const handleForceComplete = () => {
     const reason = window.prompt("Please provide a reason for force completing this task:");
     if (reason !== null && reason.trim() !== "") {
-      completeTaskMutation({ variables: { input: { id: task.id, reason } } });
+      completeTaskMutation({ variables: { input: { id: activeTask.id, reason } } });
     } else if (reason !== null) {
       alert("A reason is required to force complete.");
     }
   };
 
-  const handleRetask = () => {
-    if (window.confirm("Are you sure you want to bring this task back to life?")) {
-      reactivateTask({ variables: {taskId: task.id} });
-    }
-  };
+  // Show a loading state while fetching the detailed record
+  if (detailLoading && !detailData) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Clinical Record...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden relative">
-      
-      {/* SUCCESS NOTIFICATION OVERLAY */}
       {mutationStatus === 'SUCCESS' && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-emerald-200 flex items-center gap-3 border border-emerald-400">
@@ -349,7 +352,6 @@ function TaskDetailView({ task, onUpdate }: any) {
         </div>
       )}
 
-      {/* ERROR BADGE */}
       {mutationStatus === 'ERROR' && (
         <div className="mx-10 mt-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4">
           <div className="flex items-center gap-3">
@@ -366,33 +368,31 @@ function TaskDetailView({ task, onUpdate }: any) {
           </button>
         </div>
       )}
-      
+
       <Formik
         initialValues={{
-          id: task.id,
-          title: task.title || '',
-          description: task.description || '',
-          status: task.status || 'PENDING',
-          priority: task.priority || 'MEDIUM',
-          residentId: task.residentId || '',
-          residentName: `${task.assignedResident?.firstName} ${task.assignedResident?.lastName}` || 'Unknown Resident',
-          assignedCaregiverId: task.assignedCaregiverId || '',
-          assignedCaregiver: task.assignedCaregiver || null,
-          caregiverName: task.assignedCaregiver
-            ? `${task.assignedCaregiver.firstName} ${task.assignedCaregiver.lastName}`
+          id: activeTask.id,
+          title: activeTask.title || '',
+          description: activeTask.description || '',
+          status: activeTask.status || 'PLANNED',
+          priority: activeTask.priority || 'NORMAL',
+          residentId: activeTask.residentId || '',
+          residentName: activeTask.assignedToResident
+            ? `${activeTask.assignedToResident?.firstName} ${activeTask.assignedToResident?.lastName}`
+            : 'Unknown Resident',
+          assignedCaregiverId: activeTask.assignedCaregiverId || '',
+          assignedCaregiver: activeTask.assignedToCaregiver || null,
+          caregiverName: activeTask.assignedToCaregiver
+            ? `${activeTask.assignedToCaregiver.firstName} ${activeTask.assignedToCaregiver.lastName}`
             : '',
-          room: task.resident?.room || '4002',
-          dueAt: task.dueAt,
-          checklist: task.checklist?.map((ci: any) => ({
-            id: ci.id,
-            label: ci.label,
-          })) || []
+          room: activeTask.resident?.room || 'ERROR',
+          dueTime: activeTask.dueTime,
         }}
-        enableReinitialize
+        enableReinitialize 
         onSubmit={async (values) => {
-          if (!canEdit) return; // safety check
-          const { caregiverName, residentName, residentId, room, dueAt, assignedCaregiver, status, ...cleanPayload } = values;
-          if (!dueAt) {
+          if (!canEdit) return;
+          const { caregiverName, residentName, residentId, room, dueTime, assignedCaregiver, status, ...cleanPayload } = values;
+          if (!dueTime) {
             setMutationStatus('ERROR');
             setErrorMessage("A valid due date and time is required.");
             return;
@@ -401,7 +401,7 @@ function TaskDetailView({ task, onUpdate }: any) {
             variables: {
               input: {
                 ...cleanPayload,
-                dueAt: new Date(values.dueAt)
+                dueAt: new Date(values.dueTime)
               }
             }
           });
@@ -409,8 +409,8 @@ function TaskDetailView({ task, onUpdate }: any) {
       >
         {({ values, setFieldValue, dirty }) => (
           <Form className="flex flex-col h-full">
-
-            {/* 1. HEADER SECTION */}
+            
+            {/* 1. COMPACT HEADER */}
             <header className="px-10 py-8 border-b border-slate-100 bg-white pt-14">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
@@ -424,27 +424,22 @@ function TaskDetailView({ task, onUpdate }: any) {
                       {!canEdit && !isCancelled && <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] uppercase tracking-widest font-bold">Read Only</span>}
                     </h1>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-                      System Reference: {task.id?.slice(-8)}
+                      System Reference: {activeTask.id?.slice(-8)}
                     </p>
                   </div>
                 </div>
 
+                {/* Priority Selector stays in header for high visibility */}
                 <div className="flex flex-col items-end gap-2">
-                  <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
-                    <ClinicalScheduler
-                      value={values.dueAt}
-                      onChange={(iso) => setFieldValue('dueAt', iso)}
-                    />
-                  </div>
-
-                  <Field 
-                    as="select" 
-                    name="priority" 
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority Level</label>
+                  <Field
+                    as="select"
+                    name="priority"
                     disabled={!canEdit}
-                    className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="bg-slate-50 border border-slate-100 text-xs font-black uppercase tracking-widest rounded-xl px-4 py-2 outline-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-indigo-500/20"
                   >
                     <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
+                    <option value="NORMAL">Normal</option>
                     <option value="HIGH">High</option>
                     <option value="CRITICAL">Critical</option>
                   </Field>
@@ -459,22 +454,33 @@ function TaskDetailView({ task, onUpdate }: any) {
               />
             </header>
 
-            {/* 2. SCROLLABLE CONTENT */}
+            {/* 2. MAIN SCROLLABLE CONTENT */}
             <div className="flex-1 overflow-y-auto p-10 space-y-12 bg-white scrollbar-hide">
+              
+              {/* Task Scheduling (Moved here for better layout) */}
+              <div className={!canEdit ? 'opacity-60 pointer-events-none' : ''}>
+                <Field name="dueTime">
+                  {({ field, form }: any) => (
+                    <DateTimePicker
+                      value={field.value}
+                      onChange={(isoString) => form.setFieldValue('dueTime', isoString)}
+                      disabled={!canEdit}
+                    />
+                  )}
+                </Field>
+              </div>
 
+              {/* Subject & Assignments */}
               <div className="grid grid-cols-2 gap-12">
-                {/* Resident & Room */}
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                     <User className="w-3.5 h-3.5" /> Subject & Location
                   </h3>
-
                   <div className="space-y-4">
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Resident</p>
                       <p className="text-sm font-bold text-slate-800">{values.residentName}</p>
                     </div>
-
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Room Assignment</p>
@@ -485,17 +491,15 @@ function TaskDetailView({ task, onUpdate }: any) {
                   </div>
                 </div>
 
-                {/* Status & Caregiver Selector */}
                 <div className="space-y-6">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Assignments
                   </h3>
-
                   <div className="space-y-4">
                     <div className="relative group mt-5">
                       <CaregiverSelect
                         disabled={!canEdit}
-                        value={values.assignedCaregiver} 
+                        value={values.assignedCaregiver}
                         onChange={(cg: any) => {
                           setFieldValue('assignedCaregiverId', cg?.id || '');
                           setFieldValue('assignedCaregiver', cg ? {
@@ -510,8 +514,8 @@ function TaskDetailView({ task, onUpdate }: any) {
                 </div>
               </div>
 
-              {/* Description Section */}
-              <div className="space-y-6">
+              {/* Clinical Instructions */}
+              <div className="space-y-6 pb-6">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5" /> Clinical Instructions
                 </h3>
@@ -524,105 +528,72 @@ function TaskDetailView({ task, onUpdate }: any) {
                 />
               </div>
 
-              {/* Checklist Section */}
-              <div className="space-y-6 pb-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Execution Checklist</h3>
-                </div>
-
-                <FieldArray name="checklist">
-                  {({ push, remove }) => (
-                    <div className="space-y-3">
-                      {values.checklist.map((item: any, index: number) => (
-                        <div key={index} className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl group transition-all hover:border-indigo-200">
-                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${item.done ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
-                            {item.done ? '✓' : index + 1}
-                          </div>
-
-                          <Field
-                            name={`checklist.${index}.label`}
-                            placeholder="Instruction step..."
-                            disabled={!canEdit}
-                            className="flex-1 bg-transparent border-none text-sm font-bold text-slate-700 outline-none p-0 focus:ring-0 disabled:opacity-70"
-                          />
-
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => push({ label: ''})}
-                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:border-indigo-200 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" /> Add Protocol Step
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </FieldArray>
-              </div>
             </div>
 
-            {/* 3. FOOTER ACTIONS */}
-            <footer className="p-10 border-t border-slate-100 bg-white flex items-center justify-between">
-              <div className="flex gap-4">
-                {task.status !== 'CANCELLED' && task.status !== 'COMPLETED' && (
+            {/* 3. FOOTER */}
+            <footer className="p-6 md:p-8 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between shrink-0 gap-4">
+              
+              {/* LEFT: Secondary Actions */}
+              <div className="flex flex-wrap gap-3">
+                {activeTask.status !== 'CANCELLED' && activeTask.status !== 'COMPLETED' && (
                   <>
-                    <button type="button" onClick={handleCancel} className="text-rose-500 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-rose-50 rounded-lg transition-colors">
+                    <button 
+                      type="button" 
+                      onClick={handleCancel} 
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-rose-100 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-rose-500/10"
+                    >
+                      <X className="w-4 h-4" />
                       Cancel Task
                     </button>
-                    <button type="button" onClick={handleForceComplete} className="text-emerald-600 font-bold text-xs uppercase tracking-widest px-4 py-2 hover:bg-emerald-50 rounded-lg transition-colors">
+
+                    <button 
+                      type="button" 
+                      onClick={handleForceComplete} 
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 text-sm font-bold transition-all shadow-sm focus:ring-4 focus:ring-emerald-500/10"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
                       Force Complete
                     </button>
                   </>
                 )}
               </div>
 
-              <div className="flex items-center gap-6">
+              {/* RIGHT: Primary Actions & Warnings */}
+              <div className="flex items-center gap-6 ml-auto">
                 {dirty && mutationStatus === 'IDLE' && canEdit && (
-                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
-                    <AlertCircle className="w-3 h-3" /> Unsaved Changes
-                  </span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">Unsaved Changes</span>
+                  </div>
                 )}
                 
                 {isCancelled ? (
-                  canRetask ? (
-                    <button
-                      type="button"
-                      onClick={handleRetask}
-                      className="px-10 py-4 bg-indigo-600 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700"
-                    >
-                      Retask
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Deadline Elapsed (Cannot Retask)
-                    </span>
-                  )
+                  <span className="px-4 py-2 bg-slate-200 text-slate-500 rounded-lg text-sm font-bold flex items-center gap-2">
+                    <Ban className="w-4 h-4" /> Cancelled
+                  </span>
                 ) : (
                   canEdit && (
                     <button
                       type="submit"
                       disabled={!dirty || updateLoading}
-                      className="px-12 py-4 bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 flex items-center gap-3"
+                      className="flex items-center gap-2 px-8 py-3 bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-300 transition-all focus:ring-4 focus:ring-indigo-500/20"
                     >
-                      {updateLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <><Save className="w-4 h-4" /> Save Updates</>}
+                      {updateLoading ? (
+                        <>
+                          <Loader2 className="animate-spin w-4 h-4" /> 
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" /> 
+                          Save Updates
+                        </>
+                      )}
                     </button>
                   )
                 )}
               </div>
             </footer>
-
           </Form>
         )}
       </Formik>
@@ -752,8 +723,7 @@ const DispatchSchema = Yup.object().shape({
   title: Yup.string().min(3, 'Title too short').required('Required'),
   residentId: Yup.string().required('Please select a resident'),
   priority: Yup.string().required(),
-  dueAt: Yup.date().required('Due date is required'),
-  steps: Yup.array().of(Yup.string().min(2, 'Step is too short'))
+  dueTime: Yup.date().required('Due date is required'),
 });
 
 function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
@@ -769,8 +739,8 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      <div onClick={onClose} className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
 
       <Formik
         initialValues={{
@@ -778,211 +748,162 @@ function DispatchDrawer({ isOpen, onClose, onSuccess }: any) {
           description: '',
           residentId: '',
           residentName: '',
-          assignedCaregiverId: '',
-          assignedCaregiver: null, 
-          category: 'CARE',
-          priority: 'MEDIUM',
-          dueAt: new Date(Date.now() + 30 * 60000).toISOString(),
-          steps: ['Initial assessment']
+          caregiverId: '',
+          assignedCaregiver: null,
+          priority: 'NORMAL',
+          dueTime: new Date(Date.now() + 30 * 60000).toISOString(),
         }}
         validationSchema={DispatchSchema}
         onSubmit={async (values) => {
-          const checklistInput = values.steps.map(label => ({
-            label,
-          }));
-
           try {
             await createTask({
               variables: {
                 input: {
                   title: values.title,
                   description: values.description,
-                  category: values.category,
                   priority: values.priority,
                   residentId: values.residentId,
-                  assignedCaregiverId: values.assignedCaregiverId || null,
-                  dueAt: values.dueAt, 
-                  checklist: checklistInput,
-                }
-              }
+                  caregiverId: values.caregiverId || null,
+                  dueTime: values.dueTime,
+                  status: "ASSIGNED"
+                },
+              },
             });
             onSuccess();
             onClose();
           } catch (err) {
-            console.error("Dispatch Error:", err);
+            console.error(err);
           }
         }}
       >
         {({ values, setFieldValue }) => (
-          <Form className="relative w-full max-w-6xl bg-white rounded-[40px] shadow-2xl flex flex-col h-[90vh] animate-in fade-in zoom-in duration-300 overflow-hidden text-slate-800">
-            
-            {/* HEADER */}
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100">
-                  <Plus className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Global Dispatch</h2>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Initialize Clinical Workload</p>
-                </div>
+          <Form className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="h-16 shrink-0 border-b border-slate-200 px-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Create Task</h2>
+                <p className="text-xs text-slate-500">Dispatch new care task</p>
               </div>
-              <button type="button" onClick={onClose} className="p-3 hover:bg-slate-200 rounded-2xl transition-all">
-                <X className="w-7 h-7 text-slate-400" />
+              <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-hidden flex bg-white">
-              {/* LEFT: CONTENT (Protocol) */}
-              <section className="flex-[1.5] overflow-y-auto p-12 border-r border-slate-100 space-y-12">
-                <div className="space-y-6">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">01. Task Definition</h3>
-                  <Field
-                    name="title"
-                    placeholder="Task Title (e.g. Wound Care)"
-                    className="w-full text-3xl font-black text-slate-900 placeholder:text-slate-200 outline-none border-none p-0"
-                  />
-                  <Field
-                    as="textarea"
-                    name="description"
-                    placeholder="Clinical notes..."
-                    className="w-full min-h-25 text-base font-medium text-slate-500 bg-slate-50/50 p-6 rounded-3xl outline-none border-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
-                  />
-                </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">Task Title</label>
+                <Field
+                  name="title"
+                  placeholder="Medication administration"
+                  className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-cyan-500"
+                />
+              </div>
 
-                <div className="space-y-6">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-indigo-600 font-black">02. Execution Checklist</h3>
-                  <FieldArray name="steps">
-                    {({ push, remove }) => (
-                      <div className="space-y-3">
-                        {values.steps.map((_, index) => (
-                          <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl group border border-transparent hover:border-indigo-100 transition-all">
-                            <span className="text-[10px] font-black text-slate-300 w-4">{index + 1}</span>
-                            <Field
-                              name={`steps.${index}`}
-                              placeholder="Describe protocol step..."
-                              className="flex-1 bg-transparent outline-none font-bold text-sm text-slate-700"
-                            />
-                            <button type="button" onClick={() => remove(index)} className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-all">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">Description</label>
+                <Field
+                  as="textarea"
+                  name="description"
+                  rows={5}
+                  placeholder="Clinical notes..."
+                  className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none resize-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">Resident</label>
+                {values.residentId ? (
+                  <div className="flex items-center justify-between border border-cyan-200 bg-cyan-50 rounded-xl p-3">
+                    <span className="font-medium text-sm">{values.residentName}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFieldValue('residentId', '');
+                        setFieldValue('residentName', '');
+                      }}
+                    >
+                      <X className="w-4 h-4 text-slate-500" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      value={residentSearch}
+                      onChange={(e) => setResidentSearch(e.target.value)}
+                      placeholder="Search resident..."
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm"
+                    />
+                    {residentSearch && residents.length > 0 && (
+                      <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
+                        {residents.map((res: any) => (
+                          <button
+                            key={res.residentId}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0"
+                            onClick={() => {
+                              setFieldValue('residentId', res.residentId);
+                              setFieldValue('residentName', `${res.firstName} ${res.lastName}`);
+                              setResidentSearch('');
+                            }}
+                          >
+                            {res.firstName} {res.lastName}
+                          </button>
                         ))}
-                        <button
-                          type="button"
-                          onClick={() => push('')}
-                          className="w-full py-4 border-2 border-dashed border-slate-100 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all"
-                        >
-                          + Add Protocol Step
-                        </button>
                       </div>
                     )}
-                  </FieldArray>
+                  </>
+                )}
+              </div>
+
+              <CaregiverSelect
+                value={values.assignedCaregiver}
+                onChange={(cg: any) => {
+                  setFieldValue('caregiverId', cg?.id || '');
+                  setFieldValue('assignedCaregiver', cg);
+                }}
+              />
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-2">Schedule</label>
+                <ClinicalScheduler
+                  value={values.dueTime}
+                  onChange={(iso) => setFieldValue('dueTime', iso)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-3">Priority</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['LOW', 'NORMAL', 'HIGH', 'CRITICAL'].map((priority) => (
+                    <button
+                      key={priority}
+                      type="button"
+                      onClick={() => setFieldValue('priority', priority)}
+                      className={`h-11 rounded-xl border text-xs font-medium transition-all ${values.priority === priority
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-500 border-slate-200'
+                        }`}
+                    >
+                      {priority}
+                    </button>
+                  ))}
                 </div>
-              </section>
-
-              {/* RIGHT: LOGISTICS */}
-              <section className="flex-1 overflow-y-auto p-12 bg-slate-50/30 space-y-10">
-                <div className="space-y-8">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">03. Participants</h3>
-
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Resident</label>
-                    {values.residentId ? (
-                      <div className="flex items-center justify-between p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm animate-in fade-in slide-in-from-right-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                             <User className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-black text-slate-800">{values.residentName}</span>
-                        </div>
-                        <button type="button" onClick={() => { setFieldValue('residentId', ''); setFieldValue('residentName', ''); }} className="text-rose-400 hover:text-rose-600 transition-colors">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input
-                          placeholder="Search residents..."
-                          className="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-indigo-300 transition-all"
-                          value={residentSearch}
-                          onChange={(e) => setResidentSearch(e.target.value)}
-                        />
-                        {residents.length > 0 && residentSearch && (
-                          <div className="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2">
-                            {residents.map((res: any) => (
-                              <button
-                                key={res.residentId} type="button"
-                                className="w-full px-5 py-3 text-left hover:bg-slate-50 text-xs font-bold border-b border-slate-50 last:border-0 hover:text-indigo-600 transition-colors"
-                                onClick={() => {
-                                  setFieldValue('residentId', res.residentId);
-                                  setFieldValue('residentName', `${res.firstName} ${res.lastName}`);
-                                  setResidentSearch('');
-                                }}
-                              >
-                                {res.firstName} {res.lastName}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <CaregiverSelect
-                    value={values.assignedCaregiver}
-                    onChange={(cg: any) => {
-                      setFieldValue('assignedCaregiverId', cg?.id || '');
-                      setFieldValue('assignedCaregiver', cg);
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">04. Timeline & Priority</h3>
-                  
-                  <ClinicalScheduler
-                    value={values.dueAt}
-                    onChange={(iso) => setFieldValue('dueAt', iso)}
-                  />
-                  
-                  <div className="space-y-3">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
-                    <div className="flex gap-2">
-                      {['LOW', 'MEDIUM', 'HIGH'].map(p => (
-                        <button
-                          key={p} type="button"
-                          onClick={() => setFieldValue('priority', p)}
-                          className={`flex-1 py-4 rounded-xl border text-[10px] font-black uppercase transition-all duration-200 ${
-                            values.priority === p 
-                              ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200' 
-                              : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-                            }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
+              </div>
             </div>
 
-            <div className="p-10 border-t border-slate-100 bg-white flex justify-end items-center gap-6 shrink-0">
-              <button 
-                type="button" 
-                onClick={onClose} 
-                className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+            <div className="border-t border-slate-200 p-5 bg-white flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-sm"
               >
-                Discard
+                Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading || !values.residentId || !values.title}
-                className="px-12 py-5 bg-slate-900 text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-200 transition-all disabled:bg-slate-100 disabled:text-slate-300 flex items-center gap-3 active:scale-95"
+                disabled={loading || !values.title || !values.residentId}
+                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
               >
-                {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Confirm Dispatch'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Create Task</>}
               </button>
             </div>
           </Form>
